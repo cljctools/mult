@@ -1,0 +1,16 @@
+{:mult.conn/connections {:abc1 {:mult.conn/host "localhost"
+                                :mult.conn/port 7788
+                                :mult.conn/type :deps}
+                         :abc2 {:mult.conn/host "localhost"
+                                :mult.conn/port 8899
+                                :mult.conn/type :shadow-cljs}
+                         :abc3 {:mult.conn/host "example.com"
+                                :mult.conn/port 3449
+                                :mult.conn/type :figwheel}}
+ :mult.tabs/tabs {:system {:mult.tab/connections {:abc1 {:mult.conn/namespaces "*"}
+                                                  :abc2 {:mult.conn/namespaces "*"}
+                                                  :abc3 {:mult.conn/namespaces "*"}}
+                           :mult.tab/cljc-runtime :cljs}
+                  :xyz1 {:mult.tab/connections {:abc3 {:mult.conn/namespaces "*"}}
+                         :mult.tab/cljc-runtime :last-visited}}
+ :mult.tabs/default #{:system :xyz1}}

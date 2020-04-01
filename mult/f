@@ -1,0 +1,41 @@
+#!/bin/bash
+
+clean(){
+    rm -rf .shadow-cljs node_modules .cpcache out
+}
+
+shadow(){
+    ./node_modules/.bin/shadow-cljs "$@"
+}
+
+server(){
+    shadow -A:core:dev server
+    # yarn server
+}
+
+dev(){
+    npm i
+    shadow -A:core:dev watch :app
+}
+
+compile(){
+    npm i
+    shadow -A:core:dev compile app
+}
+
+dock() {
+
+    docker build -t mult -f Dockerfile .
+    docker run  --rm \
+                --cpus=4.0 \
+                --memory=4g \
+                --name mult \
+                -it \
+                -p 5566:5566 \
+                -v "$(pwd)":/ctx/app \
+                 mult \
+                 bash
+}
+
+
+"$@"
