@@ -9,7 +9,7 @@ shadow(){
 }
 
 server(){
-    shadow -A:core server
+    shadow -A:core:dev server
     # yarn server
 }
 
@@ -20,7 +20,7 @@ dev(){
 
 compile(){
     npm i
-    shadow -A:core compile app
+    shadow -A:core:dev compile app
 }
 
 origins(){
