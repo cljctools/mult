@@ -1,0 +1,29 @@
+{
+	"name": "mult",
+	"description": "cljc repl for vscode",
+	"version": "0.1.0",
+	"publisher": "github.com/fo4ram/mult",
+	"repository": "https://github.com/fo4ram/mult",
+	"engines": {
+		"vscode": "^1.25.0"
+	},
+	"activationEvents": [
+		"onCommand:mult.helloWorld"
+	],
+	"main": "./out/main.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "mult.helloWorld",
+				"title": "Hello World"
+			}
+		]
+	},
+	"scripts": {
+		"postinstall": "node ./node_modules/vscode/bin/install"
+	},
+	"devDependencies": {
+		"shadow-cljs": "2.8.94",
+		"vscode": "1.1.36"
+	}
+}

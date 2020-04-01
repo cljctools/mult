@@ -1,0 +1,11 @@
+{:source-paths ["src"]
+ :dependencies []
+ :nrepl {:port 5566}
+ :builds {:app {:target :node-library
+                :exports-var mult.main/exports
+                :output-to "out/main.js"
+                :devtools
+                {:repl-init-ns mult.main
+                 :repl-pprint true
+                 :autobuild false
+                 :after-load mult.main/reload}}}}
