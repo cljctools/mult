@@ -14,3 +14,15 @@
     - * if user chooses 'set everything up as in config'
   - mult exposes a menu with all this options (in a tab, or dropdown after press)
     - you shouldn't have to know secret keybindings to get a list of available options(actions)
+  - evaluation2
+    - should be always possible (besides automatic/config):
+      - open mult tab, add connections (connections are uris)
+      - mult will switch connections when files change
+      - but: tab may have a list of connections (like tags) on top, user can always override and select a connection
+      - if so, anything from anywhere when evaluated in this tab, is sent to that connection
+      - or user can by clicking switch tab to the another connection
+      - or user can switch to default behavior
+      - point is: user has full control over connections
+        - they don't result from keycombo-popups
+        - autodetection (if any) is secondary to: config, specifying connections as strings
+        - connections are just connections and can be added/removed to/from repl tab(s)
