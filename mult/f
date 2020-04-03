@@ -15,12 +15,12 @@ server(){
 
 dev(){
     npm i
-    shadow -A:core:dev watch :app
+    shadow -A:core:dev watch :extension :tabapp
 }
 
 compile(){
     npm i
-    shadow -A:core:dev compile app
+    shadow -A:core:dev compile :extension :tabapp
 }
 
 dock() {
@@ -31,8 +31,9 @@ dock() {
                 --memory=4g \
                 --name mult \
                 -it \
-                -p 5566:5566 \
-                -p 9631:9631 \
+                -p 5100:5100 \
+                -p 5101:5101 \
+                -p 5102:5102 \
                 -v "$(pwd)":/ctx/app \
                  mult \
                  bash

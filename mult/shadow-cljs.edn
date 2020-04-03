@@ -1,14 +1,27 @@
 {:deps         true
  :nrepl {:host "0.0.0.0"
-         :port 5566}
- :http {:port 9631
+         :port 5100}
+ :http {:port 5101
         :host "0.0.0.0"}
- :builds {:app {:target :node-library
-                :exports-var mult.main/exports
-                :output-to "out/main.js"
-                :devtools
-                {:repl-init-ns mult.main
-                 :repl-pprint true
-                 :autobuild false
-                 :devtools-url "http://localhost:9631"
-                 :after-load mult.main/reload}}}}
+ :builds {:extension {:target :node-library
+                      :exports-var mult.extension/exports
+                      :output-to "resources/out/extension.js"
+                      :devtools {:repl-init-ns mult.extension
+                                 :repl-pprint true
+                                 :autobuild true
+                                 :devtools-url "http://localhost:5101"
+                                 :after-load mult.extension/reload}}
+          :tabapp {:target :browser
+                   :output-dir "resources/out"
+                   :asset-path "/out"
+                   :module-loader true
+                   :modules {:main {:entries [mult.tabapp]}}
+                   :compiler-options {:infer-externs    :auto
+                                      :closure-warnings {:global-this :off}
+                                      :closure-defines  {"mult.tabapp._some_val_"         true}}
+                   :devtools {:repl-init-ns mult.tabapp
+                              :repl-pprint true
+                              :autobuild true
+                              :devtools-url "http://localhost:5101"
+                              :http-root  "resources"
+                              :http-port  5102}}}}

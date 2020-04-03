@@ -9,12 +9,16 @@
     - https://github.com/Saikyun/cljs-vscode-extension-hello-world
   - sample websocket
     - https://github.com/microsoft/vscode-extension-samples/blob/master/lsp-log-streaming-sample/client/src/extension.ts
+  - webview
+    - https://code.visualstudio.com/api/extension-guides/webview
 
 - shadow-cljs
   - https://shadow-cljs.github.io/docs/UsersGuide.html#target-node-library
   - https://shadow-cljs.github.io/docs/UsersGuide.html#_calva_vs_code
   - https://shadow-cljs.github.io/docs/UsersGuide.html#cljs-repl-anatomy
   - https://shadow-cljs.github.io/docs/UsersGuide.html#missing-js-runtime
+  - required js libs in node won't be processed
+    - https://shadow-cljs.github.io/docs/UsersGuide.html#js-provider
 
 - cljs repl
   - https://clojurescript.org/reference/repl
@@ -52,3 +56,18 @@
   - https://nodejs.org/api/net.html#net_class_net_socket
   - https://nodejs.org/api/net.html#net_socket_connect_options_connectlistener
   - https://nodejs.org/api/net.html#net_net_createconnection_options_connectlistener
+
+- paredit
+  - https://www.emacswiki.org/emacs/ParEdit
+  - http://mumble.net/~campbell/emacs/paredit.html
+  - https://github.com/MarcoPolo/atom-paredit/blob/master/cljs/paredit/core.cljs
+  - https://github.com/BetterThanTomorrow/calva/tree/master/src/paredit
+  - https://github.com/clj-commons/rewrite-cljs/blob/master/src/rewrite_clj/paredit.cljs
+  - https://github.com/laurentpetit/paredit.clj
+    - https://github.com/ccw-ide/ccw/tree/master/paredit.clj
+  - https://github.com/rksm/paredit.js
+
+- github
+  - linguist
+    - https://github.com/github/linguist/issues/137
+    - https://github.com/github/linguist#overrides
