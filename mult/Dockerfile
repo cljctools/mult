@@ -58,4 +58,4 @@ WORKDIR /ctx/app
 COPY deps.edn .
 RUN clojure -A:core:dev:optimized:local -Stree
 
-EXPOSE  5566 
+EXPOSE  5566 9631

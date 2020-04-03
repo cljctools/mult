@@ -32,6 +32,7 @@ dock() {
                 --name mult \
                 -it \
                 -p 5566:5566 \
+                -p 9631:9631 \
                 -v "$(pwd)":/ctx/app \
                  mult \
                  bash

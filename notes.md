@@ -5,9 +5,50 @@
     - https://code.visualstudio.com/api/extension-guides/command#registering-a-command
   - launch.json
     - https://code.visualstudio.com/api/working-with-extensions/testing-extension#debugging-the-tests
+  - sample extentions in cljs
+    - https://github.com/Saikyun/cljs-vscode-extension-hello-world
+  - sample websocket
+    - https://github.com/microsoft/vscode-extension-samples/blob/master/lsp-log-streaming-sample/client/src/extension.ts
 
 - shadow-cljs
   - https://shadow-cljs.github.io/docs/UsersGuide.html#target-node-library
+  - https://shadow-cljs.github.io/docs/UsersGuide.html#_calva_vs_code
+  - https://shadow-cljs.github.io/docs/UsersGuide.html#cljs-repl-anatomy
+  - https://shadow-cljs.github.io/docs/UsersGuide.html#missing-js-runtime
 
-- existing
-  - https://github.com/Saikyun/cljs-vscode-extension-hello-world
+- cljs repl
+  - https://clojurescript.org/reference/repl
+  - cljs repls evaluations envs 
+    - https://github.com/clojure/clojurescript/tree/master/src/main/clojure/cljs/repl
+    - browser 
+      - https://github.com/clojure/clojurescript/blob/master/src/main/clojure/cljs/repl/browser.clj#L389
+    - node 
+      - https://github.com/clojure/clojurescript/blob/master/src/main/clojure/cljs/repl/node.clj#L206
+    - repl eval
+      - https://github.com/clojure/clojurescript/blob/master/src/main/clojure/cljs/repl.cljc#L1162
+  - browser connect & xpc-connection 
+    - https://github.com/clojure/clojurescript/blob/master/src/main/cljs/clojure/browser/repl.cljs#L226
+    - https://github.com/clojure/clojurescript/blob/master/src/main/cljs/clojure/browser/net.cljs#L117
+
+- nrepl
+  - https://github.com/nrepl/nrepl
+    - https://nrepl.org/nrepl/0.7.0/usage/clients.html#_talking_to_an_nrepl_endpoint_programmatically
+  - https://github.com/nrepl/piggieback
+  - https://github.com/nrepl/weasel
+  - examples of connecting from not-java
+    - https://nrepl.org/nrepl/0.7.0/usage/clients.html
+      - https://github.com/BetterThanTomorrow/calva/tree/master/src/nrepl
+      - https://github.com/rksm/node-nrepl-client/blob/master/src/nrepl-client.js
+  - https://docs.cider.mx/cider-nrepl/internals.html#_clojurescript_support
+  - api
+    - nrepl.server/start-server
+      - https://github.com/nrepl/nrepl/blob/master/src/clojure/nrepl/server.clj#L109
+    - nrepl.core/message
+      - https://github.com/nrepl/nrepl/blob/master/src/clojure/nrepl/core.clj#L80
+    - nrepl.transport/bencode (is a transport-fn)
+      - https://github.com/nrepl/nrepl/blob/master/src/clojure/nrepl/transport.clj#L93
+
+- nodejs
+  - https://nodejs.org/api/net.html#net_class_net_socket
+  - https://nodejs.org/api/net.html#net_socket_connect_options_connectlistener
+  - https://nodejs.org/api/net.html#net_net_createconnection_options_connectlistener
