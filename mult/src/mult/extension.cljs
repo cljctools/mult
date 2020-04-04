@@ -10,42 +10,11 @@
    ["net" :as net]
    ["bencode" :as bencode]
    [cljs.reader :refer [read-string]]
-   [bencode-cljc.core :refer [serialize deserialize]]))
+   [bencode-cljc.core :refer [serialize deserialize]]
+   [mult.protocols :refer [Proc]]
+   [mult.impl :refer [procs-impl]]))
 
-(def vscode (js/require "vscode"))
 
-(declare proc-main proc-ops)
-
-(def channels (let [system| (chan 10)
-                    system|pub (pub system| :ch/topic (fn [_] 10))
-                    cmd| (chan 10)
-                    ops| (chan 10)]
-                {:system| system|
-                 :system|pub system|pub
-                 :cmd| cmd|
-                 :ops| ops|}))
-
-(def state (atom {:mult/activated? false
-                  :tabs {:current nil}}))
-
-(defn activate
-  [context]
-  (when-not (@state :mult/activated?)
-    (proc-main channels vscode context)
-    (put! (channels :system|) {:ch/topic :proc-main :proc/op :init})
-    (swap! state assoc :mult/activated? true))
-  (put! (channels :ops|) {:op :activate}))
-
-(defn deactivate []
-  (put! (channels :ops|) {:op :deactivate}))
-
-(defn reload
-  []
-  (.log js/console "Reloading...")
-  (js-delete js/require.cache (js/require.resolve "./main")))
-
-(def exports #js {:activate activate
-                  :deactivate deactivate})
 
 ; for repl only
 (declare  context )
@@ -67,12 +36,6 @@
                                (proc-ops (select-keys channels [:cmd|  :ops| :system|pub]) vscode context)
                                (recur)))))))
         (println "proc-main exiting"))))
-
-
-(defprotocol Connection
-  (-connect [_])
-  (-disconnect [_]))
-
 
 (defn show-information-message
   [vscode msg]
