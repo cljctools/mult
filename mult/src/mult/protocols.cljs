@@ -50,7 +50,8 @@
   (-step [_ id step-key comment data])
   (-info [_ id comment data])
   (-warning [_ id comment data])
-  (-error [_ id comment data]))
+  (-error [_ id comment data])
+  (-explain [_ id result comment data]))
 
 (defprotocol System|
   (-proc-started [_ v])
@@ -63,11 +64,6 @@
   (-deactivate [_ v])
   (-tab-add [_ v])
   (-tab-send [_ v]))
-
-
-(defprotocol Common|
-  (-explain [_ id result comment data]))
-
 
 (defprotocol Tab
   (-dispose [_]))

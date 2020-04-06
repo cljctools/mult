@@ -68,12 +68,7 @@
       (-warning [_ id comment data]
         {:op (-op-warning _) :log/comment comment :log/data data})
       (-error [_ id comment data]
-        {:op (-error _) :log/comment comment :log/data data}))))
-
-(defn common|-interface
-  []
-  (let []
-    (reify Common|
+        {:op (-error _) :log/comment comment :log/data data})
       (-explain [_ id result comment data]
         (pprint comment)
         {:id id
@@ -123,23 +118,21 @@
   ([id proc-fn ctx]
    (let [proc| (chan 10)
          {:keys [channels]} ctx
-         {:keys [procs|]} channels
          proc-fn| (chan 1)
          lookup (atom {:id id
                        :proc| proc|
                        :proc-fn| proc-fn|
                        :ctx ctx})
          proc|i (proc|-interface)
-         procs|i (procs|-interface)
-         common|i (common|-interface)]
+         log|i (log|-interface)]
      (go (loop [state {:proc nil}]
            (swap! lookup merge state)
            (if-let [[v port] (alts! [])]
              (condp = port
                proc| (let [{:keys [op]} v
                            proc-exists? #(some? (get state :proc))
-                           explain-proc-exists #(-explain common|i [id op] false (format "process %s already exists" id) nil)
-                           explain-proc-not-exists #(-explain common|i [id op] false (format "process %s does not exist" id) nil)]
+                           explain-proc-exists #(-explain log|i [id op] false (format "process %s already exists" id) nil)
+                           explain-proc-not-exists #(-explain log|i [id op] false (format "process %s does not exist" id) nil)]
                        (condp = op
                          (-op-start proc|i) (let [{:keys [out|]} v]
                                               (when-let [warning (cond
@@ -149,7 +142,6 @@
                                               (let [p (apply proc-fn (assoc channels :proc| proc-fn|))
                                                     o (<! proc-fn|)]
                                                 (>! out| o)
-                                                (>! procs| (-started procs|i id))
                                                 (recur (update state assoc :proc p))))
                          (-op-stop proc|i) (let [{:keys [out|]} v]
                                              (when-let [warning (cond
@@ -160,7 +152,6 @@
                                                    o (do (>! proc-fn| (-stop proc|i c|))
                                                          c|)]
                                                (>! out| o)
-                                               (>! procs| (-stopped procs|i id))
                                                (close! proc-fn|)
                                                (close! proc|)
                                                (do nil)))))))))
@@ -236,88 +227,92 @@
    (let [{procs-map :procs
           up :up
           down :down} opts
-         proc| (chan 10)
+         procs| (chan 10)
+         procs|m (mult procs|)
+         procs|t (tap procs|m (chan 10))
          procs|i (procs|-interface)
-         common|i (common|-interface)
+         log|i (log|-interface)
          lookup (atom {:opts opts
-                       :proc| proc|
-                       :state nil
+                       :procs| procs|
+                       :procs|m procs|m
+                       :up? nil
                        :procs nil
                        :ctx ctx})]
      (go (loop [state {:ctx ctx
                        :up? false
                        :procs {}}]
            (swap! lookup merge state)
-           (if-let [[v port] (alts! [proc|])]
+           (if-let [[v port] (alts! [procs|t])]
              (condp = port
-               proc| (let [{:keys [op]} v
-                           procs (:procs state)
-                           map-missing? #(not (contains? procs-map k))
-                           cotext-missing? #(not (get state :ctx))
-                           proc-exists? #(contains? (get state :procs) k)
-                           explain-context-missing #(-explain common|i false (format "ctx is missing"))
-                           explain-map-missing #(-explain common|i false (format "process %s is not in the procs-map" %) %)
-                           explain-proc-exists #(-explain common|i false (format "process %s already exists" %) %)
-                           explain-proc-not-exists #(-explain common|i false (format "process %s does not exist" %) %)]
-                       (condp = op
-                         (-op-start procs|i) (let [{:keys [proc/id out|]} v]
-                                               (when-let [warning (cond
-                                                                    (cotext-missing?) (explain-context-missing id)
-                                                                    (map-missing? id) (explain-map-missing id)
-                                                                    (proc-exists? id) (explain-proc-exists id))]
-                                                 (>! out| warning)
-                                                 (recur state))
-                                               (let [{:keys [proc-fn ctx-fn]} (get procs-map id)
-                                                     system| (get-in state [:ctx :channels :system|])
-                                                     ctx (-> ctx
-                                                             (ctx-fn)
-                                                             (update-in [:channels] assoc :procs| proc|))
-                                                     p (proc-impl id proc-fn ctx)]
-                                                 (-start p out|)
-                                                 (recur (update-in state [:procs] assoc k {:proc p :status :created}))))
-                         (-op-started proc|i) (let [{:keys [proc/id]} v]
-                                                (offer! system| (-proc-started system|i id v))
-                                                (recur (update-in state [:procs id] assoc :status :started)))
-                         (-op-stop procs|i) (let [{:keys [proc/id out|]} v]
-                                              (when-let [warning (cond
-                                                                   (not (proc-exists? k)) (explain-proc-not-exists id))]
-                                                (>! out| warning)
-                                                (recur state))
-                                              (let [p (get @procs k)]
-                                                (-stop p out|)
-                                                (recur (update-in state [:procs k] assoc :status :stopping))))
-                         (-op-stopped proc|i) (let [{:keys [proc/id]} v]
-                                                (offer! system| (-proc-stopped system|i k v))
-                                                (recur (update-in state [:procs] dissoc  id)))
-                         (-op-error proc|i) (let [{:keys [proc/id]} v]
-                                              (offer! system| (-proc-stopped system|i k v))
-                                              (recur (update-in state [:procs] dissoc id)))
-                         (-op-restart procs|i) (let [{:keys [proc/id out|]} v]
+               procs|t (let [{:keys [op]} v
+                             procs (:procs state)
+                             map-missing? #(not (contains? procs-map k))
+                             cotext-missing? #(not (get state :ctx))
+                             proc-exists? #(contains? (get state :procs) k)
+                             explain-context-missing #(-explain log|i false (format "ctx is missing"))
+                             explain-map-missing #(-explain log|i false (format "process %s is not in the procs-map" %) %)
+                             explain-proc-exists #(-explain log|i false (format "process %s already exists" %) %)
+                             explain-proc-not-exists #(-explain log|i false (format "process %s does not exist" %) %)]
+                         (condp = op
+                           (-op-start procs|i) (let [{:keys [proc/id out|]} v]
                                                  (when-let [warning (cond
-                                                                      (map-missing? id) (explain-map-missing id))]
+                                                                      (cotext-missing?) (explain-context-missing id)
+                                                                      (map-missing? id) (explain-map-missing id)
+                                                                      (proc-exists? id) (explain-proc-exists id))]
                                                    (>! out| warning)
                                                    (recur state))
-                                                 (let [c| (chan 1)]
-                                                   (put! proc| (-stop procs|i id c|))
-                                                   (take! c| (fn [v]
-                                                               (put! proc| (-start procs|i id out|))))))
-                         (-op-up procs|i) (let [{:keys [proc/id out| ctx]} v
-                                                o (<! (up th (:channels ctx) (:ctx ctx) th))]
-                                            (>! out| o)
-                                            (>! system| (-procs-up system|i k v))
-                                            (recur (update state merge {:up? true
-                                                                        :context ctx})))
-                         (-op-down procs|i) (let [{:keys [out|]}
-                                                  o (<! (down th (:channels ctx) (:ctx ctx) th))]
-                                              (>! system| (-procs-down system|i k v))
+                                                 (let [{:keys [proc-fn ctx-fn]} (get procs-map id)
+                                                       system| (get-in state [:ctx :channels :system|])
+                                                       p (proc-impl id proc-fn (ctx-fn ctx))]
+                                                   (take! (-start p) (fn [o]
+                                                                       (put! out| o)
+                                                                       (put! procs| (-started procs|i id))))
+                                                   (recur (update-in state [:procs] assoc k {:proc p :status :starting}))))
+                           (-op-started procs|i) (let [{:keys [proc/id]} v]
+                                                   (offer! system| (-proc-started system|i id v))
+                                                   (recur (update-in state [:procs id] assoc :status :started)))
+                           (-op-stop procs|i) (let [{:keys [proc/id out|]} v]
+                                                (when-let [warning (cond
+                                                                     (not (proc-exists? k)) (explain-proc-not-exists id))]
+                                                  (>! out| warning)
+                                                  (recur state))
+                                                (let [p (get @procs k)]
+                                                  (take! (-stop p) (fn [o]
+                                                                     (put! out| o)
+                                                                     (put! procs| (-stopped procs|i id))))
+                                                  (recur (update-in state [:procs k] assoc :status :stopping))))
+                           (-op-stopped procs|i) (let [{:keys [proc/id]} v]
+                                                   (offer! system| (-proc-stopped system|i k v))
+                                                   (recur (update-in state [:procs] dissoc  id)))
+                           (-op-error procs|i) (let [{:keys [proc/id]} v]
+                                                 (offer! system| (-proc-stopped system|i k v))
+                                                 (recur (update-in state [:procs] dissoc id)))
+                           (-op-restart procs|i) (let [{:keys [proc/id out|]} v]
+                                                   (when-let [warning (cond
+                                                                        (map-missing? id) (explain-map-missing id))]
+                                                     (>! out| warning)
+                                                     (recur state))
+                                                   (let [c| (chan 1)]
+                                                     (put! procs| (-stop procs|i id c|))
+                                                     (take! c| (fn [v]
+                                                                 (put! procs| (-start procs|i id out|))))))
+                           (-op-up procs|i) (let [{:keys [proc/id out| ctx]} v
+                                                  o (<! (up th (:channels ctx) (:ctx ctx) th))]
                                               (>! out| o)
-                                              (recur (update state merge {:up? false})))
-                         (-op-downup procs|i) (let [{:keys [out|]}]
-                                                (let [c| (chan 1)]
-                                                  (put! proc| (-down procs|i c|))
-                                                  (take! c| (fn [v]
-                                                              (put! proc| (-up procs|i out|)))))))
-                       (recur state))))))
+                                              (>! system| (-procs-up system|i k v))
+                                              (recur (update state merge {:up? true
+                                                                          :context ctx})))
+                           (-op-down procs|i) (let [{:keys [out|]}
+                                                    o (<! (down th (:channels ctx) (:ctx ctx) th))]
+                                                (>! system| (-procs-down system|i k v))
+                                                (>! out| o)
+                                                (recur (update state merge {:up? false})))
+                           (-op-downup procs|i) (let [{:keys [out|]}]
+                                                  (let [c| (chan 1)]
+                                                    (put! procs| (-down procs|i c|))
+                                                    (take! c| (fn [v]
+                                                                (put! procs| (-up procs|i out|)))))))
+                         (recur state))))))
      (procs-interface channels lookup))))
 
 
@@ -326,11 +321,11 @@
 
 (defn proc-log-impl
   [{:keys [proc| log|m]} ctx]
-  (let [log|* (chan 100)]
-    (tap log|m log|*)
+  (let [log|t (chan 100)]
+    (tap log|m log|t)
     (go (loop [state {:log []}]
           (reset! logs state)
-          (if-let [[v port] (alts! [log|*])]
+          (if-let [[v port] (alts! [log|t])]
             (condp = port
-              log|* (let []
+              log|t (let []
                       (recur (update-in state [:log] conj v)))))))))
