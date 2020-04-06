@@ -1,4 +1,4 @@
-(ns mult.tabapp
+(ns mult.impl.tabapp
   (:require
    [clojure.core.async :as a :refer [<! >!  chan go alt! take! put! offer! poll! alts! pub sub
                                      timeout close! to-chan go-loop sliding-buffer dropping-buffer

@@ -12,89 +12,79 @@
    [cljs.reader :refer [read-string]]
    [bencode-cljc.core :refer [serialize deserialize]]
    [mult.protocols :refer [Proc]]
-   [mult.impl :refer [procs-impl]]))
+   [mult.proc.impl :refer [procs-impl proc-log]]
+   [mult.impl :refer [show-information-message register-commands]]))
 
+(def vscode (js/require "vscode"))
 
+(def channels (let [system| (chan (sliding-buffer 10))
+                    system|pub (pub system| :ch/topic (fn [_] (sliding-buffer 10)))
+                    cmd| (chan 10)
+                    cmd|m (mult cmd|)
+                    ops| (chan 10)
+                    ops|m (mult ops|)
+                    log| (chan 100)
+                    log|m (mult log|)]
+                {:system| system|
+                 :system|pub system|pub
+                 :cmd| cmd|
+                 :cmd|m cmd|m
+                 :ops| ops|
+                 :ops|m ops|m
+                 :log| log|
+                 :log|m log|m}))
 
-; for repl only
-(declare  context )
+(def procs (procs-impl
+            {:procs {:proc-ops {:proc-fn #'proc-ops
+                                :ctx-fn #(-> % (select-keys [:channels  :vscode :vscode-context])
+                                             (update :channels #(select-keys % [:cmd| :ops|])))}
+                     :proc-log {:proc-fn #'proc-log
+                                :ctx-fn #(-> % (select-keys [:channels  :vscode :vscode-context])
+                                             (update :channels #(select-keys % [:cmd| :ops|])))}}
+             :up (fn [ctx procs]
+                   (go
+                     (->> [(-start procs  :proc-ops)]
+                          (a/map vector)
+                          (<!))
+                     (<! (-start procs  :proc-log procs))))
+             :down (fn [ctx procs]
+                     (go
+                       (<! (-stop procs  :proc-log))))}))
 
-(defn proc-main
-  [{:keys [system|pub]} vscode context]
-  (def context context)
-  (let [sys| (chan 1)]
-    (sub system|pub :system sys|)
-    (sub system|pub :proc-main sys|)
-    (go (loop []
-          (if-let [[v port] (alts! [sys|])]
-            (condp = port
-              sys| (let [{:keys [proc/op]} v]
-                     (println (format "; proc-main proc/op %s" op))
-                     (condp = op
-                       :exit (do nil)
-                       :init (let []
-                               (proc-ops (select-keys channels [:cmd|  :ops| :system|pub]) vscode context)
-                               (recur)))))))
-        (println "proc-main exiting"))))
+#_(def procs (procs-impl procs-map {:channels channels
+                                    :vscode vscode
+                                    :context context}))
 
-(defn show-information-message
-  [vscode msg]
-  (.. vscode.window (showInformationMessage msg)))
+(defn activate
+  [context]
+  (when-not (not (-up? procs))
+    #_(-up procs {:channels channels
+                  :vscode vscode
+                  :vscode-context context}))
+  (put! (channels :ops|) {:op :activate}))
 
-(defn register-command
-  [vscode context out| {:keys [cmd/id]}]
-  (let [disposable (.. vscode.commands
-                       (registerCommand
-                        id
-                        (fn [& args]
-                          (put! out| {:cmd/id id
-                                      :cmd/args args}))))]
-    (.. context.subscriptions (push disposable))))
+(defn deactivate []
+  (go
+    (let [c| (chan 1)]
+      (>! (channels :ops|) {:op :deactivate :c| c|})
+      (<! c|)
+      (when (-up? procs)
+        (-down procs)))))
 
-(defn register-default-commands
-  [vscode context out|]
-  (let [ids ["mult.activate"
-             "mult.ping"
-             "mult.deactivate"
-             "mult.counter"]]
-    (doseq [id ids]
-      (register-command vscode context out| {:cmd/id id}))))
+(defn reload
+  []
+  (.log js/console "Reloading...")
+  (js-delete js/require.cache (js/require.resolve "./main")))
 
-;repl only
-(declare  panel)
+(def exports #js {:activate activate
+                  :deactivate deactivate})
 
-(defn tabapp-html
-  [vscode context panel]
-  (def panel panel)
-  (let [script-uri (as-> nil o
-                     (.join path context.extensionPath "resources/out/main.js")
-                     (vscode.Uri.file o)
-                     (.asWebviewUri panel.webview o)
-                     (.toString o))
-        html (as-> nil o
-               (.join path context.extensionPath "resources/index.html")
-               (.readFileSync fs o)
-               (.toString o)
-               (string/replace o "/out/main.js" script-uri))]
-    html))
-
-(defn make-tab
-  [vscode context id ops|]
-  (let [panel (vscode.window.createWebviewPanel
-               id
-               "mult tab"
-               vscode.ViewColumn.Two
-               #js {:enableScripts true
-                    :retainContextWhenHidden true})
-        html (tabapp-html vscode context panel)]
-    (.onDidDispose panel (fn []
-                           (put! ops| {:op :tab/on-dispose :tab/id id})))
-    (.onDidReceiveMessage  panel.webview (fn [data]
-                                           (let [msg (read-string data)]
-                                             (put! ops| {:op :tab/on-message :tab/msg msg}))))
-    (set! panel.webview.html html)
-    panel))
-
+(defn default-commands
+  []
+  ["mult.activate"
+   "mult.ping"
+   "mult.deactivate"
+   "mult.counter"])
 
 (defn proc-ops
   [{:keys [cmd| ops| system|pub]} vscode context]
@@ -125,7 +115,7 @@
                      (println (format "; proc-ops %s" op))
                      (condp = op
                        :activate (let []
-                                   (register-default-commands  vscode context cmd|))
+                                   (register-commands (default-commands) vscode context cmd|))
                        :deactivate (let []
                                      (put! (channels :system|) {:ch/topic :system :proc/op :exit}))
                        :tab/add (let [id (random-uuid)
@@ -142,97 +132,3 @@
                      (recur)))))
         (println "proc-ops exiting"))))
 
-(defn hello-fn []
-  (.. vscode.window (showInformationMessage
-                     (format "Hello World!!! %s" (type (chan 1)))
-                     #_(str "Hello World!" (type (chan 1)))))
-  #_(go
-      (<! (timeout 3000))
-      (put! (channels :ch/test|) {:op :show-info-msg})))
-
-(comment
-
-  (js/console.log 3)
-  (js/console.log format)
-  (go
-    (<! (timeout 2000))
-    (js/console.log (type format))
-    (js/console.log (format "Hello World! %s" 123))
-
-    (<! (timeout 1000))
-    (js/console.log "done"))
-  (hello-fn)
-  ;;
-  )
-
-(comment
-
-  (offer! (channels :ch/editor-ops|)  {:op :show-information-message
-                                     :inforamtion-message "message via repl via channel"})
-
-  ;;
-  )
-
-(comment
-
-  (def data$ (atom nil))
-
-  (defn on-data
-    [buff]
-    (println "; net/Socket data")
-    (let [benstr (.toString buff)
-          o (deserialize benstr)]
-      (when (contains? o "value")
-        (println o)
-        (reset! data$ o))))
-
-  (def ws (let [ws (net/Socket.)]
-            (.connect ws #js {:port 5533 #_5511
-                              :editor "localeditor"})
-            (doto ws
-              (.on "connect" (fn []
-                               (println "; net/Socket connect")))
-              (.on "ready" (fn []
-                             (println "; net/Socket ready")))
-              (.on "timeout" (fn []
-                               (println "; net/Socket timeout")))
-              (.on "close" (fn [hadError]
-                             (println "; net/Socket close")
-                             (println (format "hadError %s"  hadError))))
-              (.on "data" (fn [buff] (on-data buff)))
-              (.on "error" (fn [e]
-                             (println "; net/Socket error")
-                             (println e))))
-            ws))
-
-  (.write ws (str {:op "eval" :code "(+ 2 3)"}))
-  (.write ws (str "error"))
-  (dotimes [i 2]
-    (.write ws (str {:op "eval" :code "(+ 2 3)"})))
-  (dotimes [i 2]
-    (.write ws (str "error")))
-
-
-  (bencode/encode (str {:op "eval" :code "(+ 2 3)"}))
-  (bencode/decode (bencode/encode (str {:op "eval" :code "(+ 2 3)"})))
-
-  (.write ws (bencode/encode (str {:op "eval" :code "(+ 2 3)"})))
-
-
-  (deserialize (serialize {:op "eval" :code "(+ 2 3)"}))
-
-  ; clj only
-  (binding [*ns* mult.vscode]
-    [3 (type hello-fn)])
-
-  (.write ws (serialize {:op "eval" :code "(+ 2 4)"}))
-
-  (.write ws (serialize {:op "eval" :code "(do
-                                           (in-ns 'abc.core)
-                                           [(type foo) (foo)]
-                                           )"}))
-
-
-
-  ;;
-  )

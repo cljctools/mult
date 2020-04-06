@@ -1,4 +1,4 @@
-(ns mult.impl
+(ns mult.proc.impl
   (:require
    [clojure.core.async :as a :refer [<! >!  chan go alt! take! put! offer! poll! alts! pub sub
                                      timeout close! to-chan go-loop sliding-buffer dropping-buffer
@@ -12,18 +12,7 @@
    ["bencode" :as bencode]
    [cljs.reader :refer [read-string]]
    [bencode-cljc.core :refer [serialize deserialize]]
-   [mult.protocols :refer [Procs Proc System| Ops| Procs| Common| PLog Log|]]))
-
-(defn pret [x]
-  (binding [*out* *out* #_*err*]
-    (pprint x))
-  x)
-
-(defn explain [result comment & data]
-  (pprint comment)
-  {:result result
-   :comment comment
-   :data data})
+   [mult.proc.protocol :refer [Procs Proc System| Ops| Procs| PLog Log|]]))
 
 
 (defn system|-interface
@@ -39,20 +28,6 @@
       (-procs-down [_]
         {:ch/topic :procs/down}))))
 
-(defn ops|-interface
-  []
-  (let []
-    (reify Ops|
-      (-op-tab-add [_] :tab/add)
-      (-op-tab-on-dispose [_] :tab/on-dispose)
-      (-tab-add [_ v])
-      (-tab-on-dispose [_ id]
-        {:op :tab/on-dispose :tab/id id})
-      (-tab-send [_ v]
-        {:op :tab/send
-         :tab/id :current
-         :tab/msg {:op :tabapp/inc}}))))
-
 (defn log|-interface
   []
   (let []
@@ -61,20 +36,16 @@
       (-op-info [_] :log/info)
       (-op-warning [_] :log/warning)
       (-op-error [_] :log/error)
-      (-step [_ id step-key comment data]
-        {:op (-op-step _) :step/k step-key :log/comment comment :log/data data})
+      (-step [_ id  comment data]
+        {:op (-op-step _) :log/comment comment :log/data data})
       (-info [_ id comment data]
-        {:op (-op-info _) :log/comment comment :log/data data})
+        {:op (-op-info _) :id id :log/comment comment :log/data data})
       (-warning [_ id comment data]
-        {:op (-op-warning _) :log/comment comment :log/data data})
+        {:op (-op-warning _) :id id :log/comment comment :log/data data})
       (-error [_ id comment data]
-        {:op (-error _) :log/comment comment :log/data data})
+        {:op (-error _) :id id :log/comment comment :log/data data})
       (-explain [_ id result comment data]
-        (pprint comment)
-        {:id id
-         :result result
-         :comment comment
-         :data data}))))
+        {:id id :result result  :comment comment :data data}))))
 
 (defn proc|-interface
   []
@@ -319,13 +290,13 @@
 ; repl only
 (def ^:private logs (atom {}))
 
-(defn proc-log-impl
+(defn proc-log
   [{:keys [proc| log|m]} ctx]
-  (let [log|t (chan 100)]
-    (tap log|m log|t)
+  (let [log|t (tap log|m (chan 100))]
     (go (loop [state {:log []}]
           (reset! logs state)
           (if-let [[v port] (alts! [log|t])]
             (condp = port
               log|t (let []
+                      (pprint v)
                       (recur (update-in state [:log] conj v)))))))))

@@ -15,11 +15,11 @@
                    :output-dir "resources/out"
                    :asset-path "/out"
                    :module-loader true
-                   :modules {:main {:entries [mult.tabapp]}}
+                   :modules {:tabapp {:entries [mult.impl.tabapp]}}
                    :compiler-options {:infer-externs    :auto
                                       :closure-warnings {:global-this :off}
-                                      :closure-defines  {"mult.tabapp._some_val_"         true}}
-                   :devtools {:repl-init-ns mult.tabapp
+                                      :closure-defines  {"mult.impl.tabapp._some_val_"         true}}
+                   :devtools {:repl-init-ns mult.impl.tabapp
                               :repl-pprint true
                               :autobuild false
                               :devtools-url "http://localhost:5101"

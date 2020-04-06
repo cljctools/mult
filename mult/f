@@ -1,7 +1,11 @@
 #!/bin/bash
 
+purge(){
+    rm -rf .shadow-cljs node_modules .cpcache 
+}
+
 clean(){
-    rm -rf .shadow-cljs node_modules .cpcache out
+    rm -rf resources/out
 }
 
 shadow(){
