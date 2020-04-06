@@ -1,20 +1,34 @@
-(ns mult.protocols.proc)
+(ns mult.protocols.proc2)
 
-(defprotocol Proc
-  (-start [_] [_ out|])
-  (-stop [_] [_ out|])
+
+
+(defprotocol Start
+  (-start [_] [_ out|]))
+(defprotocol Stop
+  (-stop [_] [_ out|]))
+(defprotocol Running?
   (-running? [_]))
 
-(defprotocol Proc|
-  (-op-start-key [_])
-  (-op-stop-key [_])
-  (-op-started-key [_])
-  (-op-stopped-key [_])
+(defprotocol OpStartKey
+  (-op-start-key [_]))
+(defprotocol OpStopKey
+  (-op-stop-key [_]))
+(defprotocol OpStartedKey
+  (-op-started-key [_]))
+(defprotocol OpStartedKey
+  (-op-stopped-key [_]))
 
-  (-op-start [_ out|])
-  (-op-stop [_ out|])
-  (-op-started [_])
-  (-op-stopped [_]))
+(defprotocol OpStartVal
+  (-op-start-val [_]))
+(defprotocol OpStopVal
+  (-op-stop-val [_]))
+(defprotocol OpStartedVal
+  (-op-started-val [_]))
+(defprotocol OpStoppedVal
+  (-op-stopped-val [_]))
+(defprotocol OpStoppedVal
+  (-op-stopped-val [_]))
+
 
 (defprotocol Procs
   (-start-proc [_ proc-id])

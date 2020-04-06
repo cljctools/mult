@@ -1,4 +1,4 @@
-(ns mult.proc.impl
+(ns mult.impl.proc
   (:require
    [clojure.core.async :as a :refer [<! >!  chan go alt! take! put! offer! poll! alts! pub sub
                                      timeout close! to-chan go-loop sliding-buffer dropping-buffer
@@ -6,14 +6,7 @@
    [goog.string :refer [format]]
    [clojure.string :as string]
    [clojure.pprint :refer [pprint]]
-   ["fs" :as fs]
-   ["path" :as path]
-   ["net" :as net]
-   ["bencode" :as bencode]
-   [cljs.reader :refer [read-string]]
-   [bencode-cljc.core :refer [serialize deserialize]]
-   [mult.proc.protocol :refer [Procs Proc System| Ops| Procs| PLog Log|]]))
-
+   [mult.protocols.proc :refer [Procs Proc System| Procs| Log|]]))
 
 (defn system|-interface
   []
@@ -53,28 +46,28 @@
     Proc|
     (-op-start [_] :proc/start)
     (-op-stop [_] :proc/stop)
-    (-start [_ out|]
-      {:op (-op-start _) :out| out|})
-    (-stop [_ out|]
-      {:op (-op-stop _) :out| out|})))
+    (-op-started [_] :proc/started)
+    (-op-stopped [_] :proc/stopped)
+    (-start [_ out|] {:op (-op-start _) :out| out|})
+    (-stop [_ out|] {:op (-op-stop _) :out| out|})
+    (-started [_] {:op (-op-started _)  })
+    (-stopped [_] {:op (-op-stopped _)})))
 
 (defn proc-interface
   [{:keys [proc|]} lookup]
   (let [proc|i (proc|-interface)]
     (reify
       Proc
-      (-start
-        ([_]
-         (-start _ (chan 1)))
-        ([_ out|]
-         (put! proc| (-start proc|i out|))
-         out|))
-      (-stop
-        ([_]
-         (-stop _ (chan 1)))
-        ([_ out|]
-         (put! proc| (-stop proc|i out|))
-         out|))
+      (-start [_]
+        (-start _ (chan 1)))
+      (-start [_ out|]
+        (put! proc| (-start proc|i out|))
+        out|)
+      (-stop [_]
+        (-stop _ (chan 1)))
+      (-stop [_ out|]
+        (put! proc| (-stop proc|i out|))
+        out|)
       (-running? [_]
         (get @lookup :proc))
       ILookup
@@ -88,7 +81,6 @@
    (proc-impl (random-uuid) proc-fn ctx))
   ([id proc-fn ctx]
    (let [proc| (chan 10)
-         {:keys [channels]} ctx
          proc-fn| (chan 1)
          lookup (atom {:id id
                        :proc| proc|
@@ -110,7 +102,7 @@
                                                                    (proc-exists?) (explain-proc-exists))]
                                                 (>! out| warning)
                                                 (recur state))
-                                              (let [p (apply proc-fn (assoc channels :proc| proc-fn|))
+                                              (let [p (apply proc-fn (update-in ctx :channels assoc :proc|  proc-fn|))
                                                     o (<! proc-fn|)]
                                                 (>! out| o)
                                                 (recur (update state assoc :proc p))))
@@ -273,16 +265,16 @@
                                               (>! system| (-procs-up system|i k v))
                                               (recur (update state merge {:up? true
                                                                           :context ctx})))
-                           (-op-down procs|i) (let [{:keys [out|]}
+                           (-op-down procs|i) (let [{:keys [out|]} v
                                                     o (<! (down th (:channels ctx) (:ctx ctx) th))]
                                                 (>! system| (-procs-down system|i k v))
                                                 (>! out| o)
                                                 (recur (update state merge {:up? false})))
-                           (-op-downup procs|i) (let [{:keys [out|]}]
+                           (-op-downup procs|i) (let [{:keys [out|]} v]
                                                   (let [c| (chan 1)]
                                                     (put! procs| (-down procs|i c|))
                                                     (take! c| (fn [v]
-                                                                (put! procs| (-up procs|i out|)))))))
+                                                                (put! procs| (-up procs|i (:ctx state) out|)))))))
                          (recur state))))))
      (procs-interface channels lookup))))
 

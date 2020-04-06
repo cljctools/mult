@@ -71,3 +71,10 @@
   - linguist
     - https://github.com/github/linguist/issues/137
     - https://github.com/github/linguist#overrides
+
+- protocols
+  - https://www.infoq.com/interviews/hickey-clojure-protocols/
+    - "...it's not like you're putting it on string; you're saying there is a fn whose behavior I'd like to be different when it's passed strings... "
+  - https://github.com/clojure/clojurescript/blob/c057c92bd20bb4bea61970fb87247582ae2f5423/src/main/cljs/cljs/core.cljs
+  - https://github.com/clojure/spec.alpha/blob/master/src/main/clojure/clojure/spec/alpha.clj
+  - https://github.com/clojure/core.async/blob/1b8b972372e570d47959887c00a8726472236e74/src/main/clojure/clojure/core/async/impl/protocols.clj

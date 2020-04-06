@@ -5,17 +5,12 @@
                                      pipeline pipeline-async]]
    [goog.string :refer [format]]
    [clojure.string :as string]
-   ["fs" :as fs]
-   ["path" :as path]
-   ["net" :as net]
-   ["bencode" :as bencode]
    [cljs.reader :refer [read-string]]
-   [bencode-cljc.core :refer [serialize deserialize]]
-   [mult.protocols :refer [Proc]]
-   [mult.proc.impl :refer [procs-impl proc-log]]
-   [mult.impl :refer [show-information-message register-commands]]))
-
-(def vscode (js/require "vscode"))
+   [mult.protocols.core]
+   [mult.protocols.editor]
+   [mult.protocols.proc]
+   [mult.impl.proc :refer [procs-impl proc-log]]
+   [mult.impl.editor :refer [proc-editor]]))
 
 (def channels (let [system| (chan (sliding-buffer 10))
                     system|pub (pub system| :ch/topic (fn [_] (sliding-buffer 10)))
@@ -24,7 +19,10 @@
                     ops| (chan 10)
                     ops|m (mult ops|)
                     log| (chan 100)
-                    log|m (mult log|)]
+                    log|m (mult log|)
+                    editor| (chan 10)
+                    editor|m (mult editor|)
+                    editor|p (pub (tap editor|m (chan 10)) :topic (fn [_] 10))]
                 {:system| system|
                  :system|pub system|pub
                  :cmd| cmd|
@@ -32,15 +30,23 @@
                  :ops| ops|
                  :ops|m ops|m
                  :log| log|
-                 :log|m log|m}))
+                 :log|m log|m
+                 :editor| editor|
+                 :editor|m editor|m
+                 :editor|p editor|p}))
+
+(declare proc-ops)
 
 (def procs (procs-impl
             {:procs {:proc-ops {:proc-fn #'proc-ops
-                                :ctx-fn #(-> % (select-keys [:channels  :vscode :vscode-context])
-                                             (update :channels #(select-keys % [:cmd| :ops|])))}
+                                :ctx-fn identity
+                                #_(fn [ctx]
+                                    (-> % (select-keys [:channels  :editor-ctx])
+                                        (update :channels #(select-keys % [:cmd| :ops|]))))}
                      :proc-log {:proc-fn #'proc-log
-                                :ctx-fn #(-> % (select-keys [:channels  :vscode :vscode-context])
-                                             (update :channels #(select-keys % [:cmd| :ops|])))}}
+                                :ctx-fn identity}
+                     :proc-editor {:proc-fn #'proc-editor
+                                   :ctx-fn identity}}
              :up (fn [ctx procs]
                    (go
                      (->> [(-start procs  :proc-ops)]
@@ -51,16 +57,11 @@
                      (go
                        (<! (-stop procs  :proc-log))))}))
 
-#_(def procs (procs-impl procs-map {:channels channels
-                                    :vscode vscode
-                                    :context context}))
-
 (defn activate
   [context]
   (when-not (not (-up? procs))
     #_(-up procs {:channels channels
-                  :vscode vscode
-                  :vscode-context context}))
+                  :editor-ctx context}))
   (put! (channels :ops|) {:op :activate}))
 
 (defn deactivate []
@@ -87,48 +88,37 @@
    "mult.counter"])
 
 (defn proc-ops
-  [{:keys [cmd| ops| system|pub]} vscode context]
-  (let [sys| (chan 1)]
-    (sub system|pub :system sys|)
-    (go (loop []
-          (if-let [[v port] (alts! [cmd| ops| sys|])]
+  [{channels :channels}]
+  (let [{:keys [proc| log| editor| editor|p]} channels
+        editor|i (editor|-interface)
+        proc|i (proc|-interface)
+        log|i (log|-interface)
+        editor|s-op (sub editor|p (-topic-extension-op editor|i) (chan 10))
+        editor|s-cmd (sub editor|p (-topic-editor-cmd editor|i) (chan 10))
+        unsubscribe #(do (unsub editor|p (-topic-editor-cmd editor|i) editor|s-op)
+                         (unsub editor|p (-topic-editor-cmd editor|i) editor|s-cmd)
+                         (close! editor|s-op)
+                         (close! editor|s-cmd))]
+    (>! proc| (-started proc|i))
+    (go (loop [state {:tabs {:current nil}}]
+          (if-let [[v port] (alts! [proc| editor|s-op editor|s-cmd])]
             (condp = port
-              sys| (condp = (:proc/op v)
-                     :exit (do nil))
-              cmd| (let [{:keys [cmd/id cmd/args]} v]
-                     (println (format "; cmd/id %s" id))
-                     (condp = id
-                       "mult.activate" (do
-                                         (show-information-message vscode "mult.activate")
-                                         (>! ops| {:op :tab/add}))
-                       "mult.ping" (do
-                                     (show-information-message vscode "mult.ping via channels")
-                                     (println "in 3sec will show another msg")
-                                     (<! (timeout 3000))
-                                     (show-information-message vscode "mult.ping via channels later"))
-                       "mult.counter" (do
-                                        (put! ops| {:op :tab/send
-                                                    :tab/id :current
-                                                    :tab/msg {:op :tabapp/inc}})))
-                     (recur))
-              ops| (let [{:keys [op]} v]
-                     (println (format "; proc-ops %s" op))
-                     (condp = op
-                       :activate (let []
-                                   (register-commands (default-commands) vscode context cmd|))
-                       :deactivate (let []
-                                     (put! (channels :system|) {:ch/topic :system :proc/op :exit}))
-                       :tab/add (let [id (random-uuid)
-                                      tab (make-tab vscode context id ops|)]
-                                  (swap! state update-in [:tabs] assoc id tab)
-                                  (swap! state update-in [:tabs] assoc :current tab))
-                       :tab/on-dispose (let [{:keys [tab/id]} v]
-                                         (swap! state update-in [:tabs] dissoc id))
-                       :tab/on-message (let [{:keys [tab/msg]} v]
-                                         (println msg))
-                       :tab/send (let [{:keys [tab/id tab/msg]} v
-                                       tab (get-in @state [:tabs id])]
-                                   (.postMessage (.-webview tab) (str msg))))
-                     (recur)))))
-        (println "proc-ops exiting"))))
-
+              proc| (condp = (:op v)
+                      (-op-stop proc|i) (let [{:keys [out|]} v]
+                                          (unsubscribe)
+                                          (>! out| (-stopped proc|i))
+                                          (put! log| (-info log|i nil "proc-ops exiting" nil))))
+              editor|s-op (let [op (:op v)]
+                            (condp = op
+                              (-op-activate editor|i) (do (>! editor| (-register-commands editor|i (default-commands))))
+                              (-op-deactivate editor|i) (do (>! editor| (-show-info-msg editor|i "deactiavting"))))
+                            (recur state))
+              editor|s-cmd (let [cmd (:cmd/id v)]
+                             (condp = cmd
+                               "mult.activate" (do (>! editor| (-show-info-msg editor|i "mult.activate")))
+                               "mult.ping" (do
+                                             (>! editor| (-show-info-msg editor|i "mult.ping via channels"))
+                                             (<! (timeout 3000))
+                                             (>! editor| (-show-info-msg editor|i "mult.ping via channels later")))
+                               "mult.counter"  (do (>! editor| (-show-info-msg editor|i "mult.counter"))))
+                             (recur state))))))))

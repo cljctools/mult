@@ -11,8 +11,7 @@
    ["bencode" :as bencode]
    [cljs.reader :refer [read-string]]
    [bencode-cljc.core :refer [serialize deserialize]]
-   [mult.protocols :refer [Proc]]
-   [mult.impl :refer [procs-impl]]))
+   [mult.protocols.proc :refer [Proc]]))
 
 (defn hello-fn []
   (.. vscode.window (showInformationMessage

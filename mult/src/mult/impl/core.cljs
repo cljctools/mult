@@ -12,16 +12,16 @@
    ["bencode" :as bencode]
    [cljs.reader :refer [read-string]]
    [bencode-cljc.core :refer [serialize deserialize]]
-   [mult.protocol :refer [Ops| Tab Connection]]))
+   [mult.protocols.core :refer [Ops| Tab Connection]]))
 
 (defn ops|-interface
   []
   (let []
     (reify Ops|
       (-op-tab-add [_] :tab/add)
-      (-op-tab-on-dispose [_] :tab/on-dispose)
+      (-op-tab-disposed [_] :tab/on-dispose)
       (-tab-add [_ v])
-      (-tab-on-dispose [_ id]
+      (-tab-disposed [_ id]
         {:op :tab/on-dispose :tab/id id})
       (-tab-send [_ v]
         {:op :tab/send

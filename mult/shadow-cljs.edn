@@ -8,7 +8,7 @@
                       :output-to "resources/out/extension.js"
                       :devtools {:repl-init-ns mult.extension
                                  :repl-pprint true
-                                 :autobuild false
+                                 :autobuild true
                                  :devtools-url "http://localhost:5101"
                                  :after-load mult.extension/reload}}
           :tabapp {:target :browser
