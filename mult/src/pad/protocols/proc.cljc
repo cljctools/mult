@@ -1,4 +1,4 @@
-(ns mult.protocols.proc)
+(ns pad.protocols.proc)
 
 (defprotocol Proc
   (-start [_] [_ out|])

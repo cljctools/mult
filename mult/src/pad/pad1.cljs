@@ -1,4 +1,4 @@
-(ns mult.impl.pad
+(ns pad.pad1
   (:require
    [clojure.core.async :as a :refer [<! >!  chan go alt! take! put! offer! poll! alts! pub sub
                                      timeout close! to-chan go-loop sliding-buffer dropping-buffer
@@ -11,7 +11,7 @@
    ["bencode" :as bencode]
    [cljs.reader :refer [read-string]]
    [bencode-cljc.core :refer [serialize deserialize]]
-   [mult.protocols.proc :refer [Proc]]))
+   [pad.protocols.proc :refer [Proc]]))
 
 (defn hello-fn []
   (.. vscode.window (showInformationMessage
@@ -93,7 +93,7 @@
   (deserialize (serialize {:op "eval" :code "(+ 2 3)"}))
 
   ; clj only
-  (binding [*ns* mult.vscode]
+  (binding [*ns* pad.vscode]
     [3 (type hello-fn)])
 
   (.write ws (serialize {:op "eval" :code "(+ 2 4)"}))

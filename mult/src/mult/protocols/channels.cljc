@@ -1,18 +1,32 @@
 (ns mult.protocols.channels)
 
-(defprotocol Log|
-  (-op-step [_])
-  (-op-info [_])
-  (-op-warning [_])
-  (-op-error [_])
-  (-step [_ id comment data])
-  (-info [_ id comment data])
-  (-warning [_ id comment data])
-  (-error [_ id comment data])
-  (-explain [_ id result comment data]))
+(defprotocol Op
+  (-op [_ v] "Returns the operation name (a keyword) of the value"))
 
-(defprotocol System|
-  (-proc-started [_ id v])
-  (-proc-stopped [_ id v])
-  (-procs-up [_ ])
-  (-procs-down [_]))
+(defprotocol Log|
+  (-op-log [_])
+  (-log [_  comment] [_ comment data]  [_ id comment data]))
+
+(defprotocol Main|
+  (-op-init [_])
+  (-op-activate [_])
+  (-op-deactivate [_])
+  (-op-start-proc [_])
+  (-op-stop-proc [_])
+  (-op-restart-proc [_])
+  (-op-proc-started [_])
+  (-op-proc-stopped [_])
+
+  (-init [_])
+  (-activate [_ editor-context])
+  (-deactivate [_])
+  (-start-proc [_ proc-fn])
+  (-stop-proc [_ proc-id])
+  (-restart-proc [_ proc-id])
+  (-proc-started [_ proc-id proc|])
+  (-proc-stopped [_ proc-id]))
+
+(defprotocol Cmd|
+  (-op-cmd [_])
+
+  (-cmd [_ id args]))

@@ -10,11 +10,11 @@
    ["fs" :as fs]
    ["path" :as path]
 
-   [mult.protocols.proc| :as p.proc|]
    [mult.protocols.editor| :as p.editor|]
+   [mult.protocols.ops| :as p.ops|]
+   [mult.protocols.tab :as p.tab]
    [mult.protocols.channels :as p.channels]
-   [mult.impl.channels :as channels]
-   ))
+   [mult.impl.channels :as channels]))
 
 (def vscode (js/require "vscode"))
 
@@ -52,7 +52,7 @@
                (string/replace o "/out/main.js" script-uri))]
     html))
 
-(defn make-tab
+(defn make-panel
   [vscode context id handlers]
   (let [panel (vscode.window.createWebviewPanel
                id
@@ -63,59 +63,62 @@
         html (tabapp-html vscode context panel)]
     (.onDidDispose panel (fn []
                            ((:on-dispose handlers) id)))
-    (.onDidReceiveMessage  panel.webview (fn [data]
-                                           (let [msg (read-string data)]
-                                             ((:on-message handlers) id msg))))
+    (.onDidReceiveMessage  panel.webview (fn [msg]
+                                           (let [data (read-string msg)]
+                                             ((:on-message handlers) id data))))
     (set! panel.webview.html html)
     panel))
 
-(defn forward-to-tabapp
-  [tab v]
-  (let []
-    (.postMessage (.-webview tab) (str v))))
-
 (defn proc-editor
-  [{channels :channels
-    context :editor-context}]
-  (let [{:keys [proc| log| editor| editor|p]} channels
+  [channels ctx]
+  (let [pid [:proc-editor (random-uuid)]
+        {:keys [main| log| editor|m ops| cmd|]} channels
+        {:keys [editor-context]} ctx
+        proc| (chan 1)
+        editor|t (tap editor|m (chan 10))
         editor|i (channels/editor|i)
-        proc|i (channels/proc|i)
+        main|i (channels/main|i)
+        ops|i (channels/ops|i)
+        cmd|i (channels/cmd|i)
         log|i (channels/log|i)
-        editor|s (sub editor|p (p.editor|/-topic-editor-op editor|i) (chan 10))
-        unsubscribe #(do
-                       (unsub editor|p (p.editor|/-topic-editor-op editor|i) editor|s)
-                       (close! editor|s))]
-    (>! proc| (p.proc|/-started proc|i))
-    (go (loop [state {:tabs {:current nil}}]
-          (if-let [[v port] (alts! [proc| editor|s])]
-            (condp = port
-              proc| (condp = (:op v)
-                      (p.proc|/-op-stop proc|i) (let [{:keys [out|]} v]
-                                                  (unsubscribe)
-                                                  (>! out| (p.proc|/-stopped proc|i))
-                                                  (put! log| (p.channels/-info log|i nil "proc-editor exiting" nil))))
-              editor|s (let [op (:op v)]
-                         (condp = op
-                           (p.editor|/-op-register-commands editor|i) (let [{:keys [commands]} v
-                                                                            cmd-fn (fn [id args]
-                                                                                     (put! editor| (p.editor|/-cmd editor|i id args)))]
-                                                                        (register-commands commands vscode context cmd-fn))
-                           (p.editor|/-op-show-info-msg editor|i) (let [{:keys [msg]} v]
-                                                                    (show-information-message vscode msg))
-                           (p.editor|/-op-open-repl-tab editor|i) (let [{:keys [tab/id] :or {id (random-uuid)}} v
-                                                                        tab (make-tab vscode context id
-                                                                                      {:on-message
-                                                                                       (fn [id msg]
-                                                                                         (put! editor| (p.editor|/-tab-on-message editor|i id msg)))
-                                                                                       :on-dispose
-                                                                                       (fn [id]
-                                                                                         (put! editor| (p.editor|/-tab-disposed editor|i id)))})]
-                                                                    (recur (-> state
-                                                                               (update-in [:tabs] assoc id tab)
-                                                                               (update-in [:tabs] assoc :current tab))))
-                           (p.editor|/-op-tab-append editor|i) (forward-to-tabapp (get-in state [:tabs (:tab/id v)]) v)
-                           (p.editor|/-op-tab-clear editor|i) (forward-to-tabapp (get-in state [:tabs (:tab/id v)]) v))
-                         (recur state))))))))
+        log (fn [& args] (put! log| (apply p.channels/-log log|i args)))
+        release! #(do
+                    (untap editor|m  editor|t)
+                    (close! editor|t)
+                    (close! proc|)
+                    (put! main| (p.channels/-proc-stopped main|i pid)))]
+    (put! main| (p.channels/-proc-started main|i pid proc|))
+    (go (loop []
+          (try
+            (if-let [[v port] (alts! [editor|t proc|])]
+              (condp = port
+                proc| (release!)
+                editor|t (let [op (p.channels/-op editor|i v)]
+                           (condp = op
+                             (p.editor|/-op-register-commands editor|i) (let [{:keys [commands]} v
+                                                                              cmd-fn (fn [id args]
+                                                                                       (put! cmd| (p.channels/-cmd cmd|i id args)))]
+                                                                          (register-commands commands vscode editor-context cmd-fn))
+                             (p.editor|/-op-show-info-msg editor|i) (let [{:keys [msg]} v]
+                                                                      (show-information-message vscode msg))
+                             (p.editor|/-op-create-repl-tab editor|i) (let [{:keys [tab/id] :or {id (random-uuid)}} v
+                                                                            panel (make-panel vscode editor-context id
+                                                                                              {:on-message
+                                                                                               (fn [id data]
+                                                                                                 (put! ops| data))
+                                                                                               :on-dispose
+                                                                                               (fn [id]
+                                                                                                 (put! ops| (p.ops|/-tab-disposed ops|i id)))})
+                                                                            tab (with-meta {:id id}
+                                                                                  {`p.tab/put! (fn [v] (.postMessage (.-webview panel) (pr-str v)))
+                                                                                   `p.tab/dispose (fn [] (println "dispose not implemented yet"))})]
+                                                                        (>! ops| (p.ops|/-repl-tab-created ops|i tab))
+                                                                        (recur)))
+                           (recur))))
+            (catch js/Error e (do (log "; proc-editor error, will exit" e)))
+            (finally
+              (release!))))
+        (println "; proc-editor go-block exits"))))
 
 #_(let [{:keys [op]} v]
     (println (format "; proc-ops %s" op))

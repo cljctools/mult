@@ -1,4 +1,4 @@
-(ns mult.protocols.procs)
+(ns pad.protocols.procs)
 
 (defprotocol Procs
   (-start [_ proc-id])
