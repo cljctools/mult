@@ -105,7 +105,7 @@
                                                                             panel (make-panel vscode editor-context id
                                                                                               {:on-message
                                                                                                (fn [id data]
-                                                                                                 (put! ops| data))
+                                                                                                 (put! ops| (assoc data :tab/id id)))
                                                                                                :on-dispose
                                                                                                (fn [id]
                                                                                                  (put! ops| (p.ops|/-tab-disposed ops|i id)))})
