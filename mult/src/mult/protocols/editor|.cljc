@@ -1,4 +1,4 @@
-(ns mult.protocols.editor)
+(ns mult.protocols.editor|)
 
 (defprotocol Editor|
   (-topic-editor-op [_])
@@ -23,9 +23,7 @@
   (-open-repl-tab [_ tab-id])
   (-cmd [_ id args])
   (-tab-clear [_ id])
-  (-tab-append [_])
+  (-tab-append [_ id data])
   (-tab-disposed [_ id])
   (-tab-on-message [_ id msg]))
 
-(defprotocol Paredit
-  (-abc [_]))

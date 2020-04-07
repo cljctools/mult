@@ -14,19 +14,6 @@
    [bencode-cljc.core :refer [serialize deserialize]]
    [mult.protocols.core :refer [Ops| Tab Connection]]))
 
-(defn ops|-interface
-  []
-  (let []
-    (reify Ops|
-      (-op-tab-add [_] :tab/add)
-      (-op-tab-disposed [_] :tab/on-dispose)
-      (-tab-add [_ v])
-      (-tab-disposed [_ id]
-        {:op :tab/on-dispose :tab/id id})
-      (-tab-send [_ v]
-        {:op :tab/send
-         :tab/id :current
-         :tab/msg {:op :tabapp/inc}}))))
 
 (defn pret [x]
   (binding [*out* *out* #_*err*]

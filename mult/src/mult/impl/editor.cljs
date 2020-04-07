@@ -1,17 +1,20 @@
 (ns mult.impl.editor
   (:require
-   [clojure.core.async :as a :refer [<! >!  chan go alt! take! put! offer! poll! alts! pub sub
-                                     timeout close! to-chan go-loop sliding-buffer dropping-buffer
+   [clojure.core.async :as a :refer [chan go go-loop <! >!  take! put! offer! poll! alt! alts! close!
+                                     pub sub unsub mult tap untap mix admix unmix
+                                     timeout to-chan  sliding-buffer dropping-buffer
                                      pipeline pipeline-async]]
    [goog.string :refer [format]]
    [clojure.string :as string]
    [cljs.reader :refer [read-string]]
    ["fs" :as fs]
    ["path" :as path]
-   [mult.protocols.core]
-   [mult.protocols.proc]
-   [mult.protocols.editor :refer [Editor|]]
-   [mult.impl.proc :refer [proc|-interface]]))
+
+   [mult.protocols.proc| :as p.proc|]
+   [mult.protocols.editor| :as p.editor|]
+   [mult.protocols.channels :as p.channels]
+   [mult.impl.channels :as channels]
+   ))
 
 (def vscode (js/require "vscode"))
 
@@ -67,83 +70,51 @@
     panel))
 
 (defn forward-to-tabapp
-  [v]
-  (let [{:keys [tab/id]} v
-        tab (get-in state [:tabs id])]
-    (.postMessage (.-webview tab) (str v))))
-
-(defn editor|-interface
-  []
+  [tab v]
   (let []
-    (reify
-      Editor|
-      (-topic-editor-op [_] :editor/op)
-      (-topic-extension-op [_] :extention/op)
-      (-topic-editor-cmd [_] :editor/cmd)
-      (-topic-tab [_] :tab/op)
-
-      (-op-activate [_] :extention/activate)
-      (-op-deactivate [_] :extention/deactivate)
-      (-op-show-info-msg [_] :editor/show-info-msg)
-      (-op-register-commands [_] :editor/register-commands)
-      (-op-open-repl-tab [_] :editor/open-repl-tab)
-      (-op-cmd [_] :editor/cmd)
-      (-op-tab-clear [_] :tab/clear)
-      (-op-tab-append [_] :tab/append)
-      (-op-tab-disposed [_] :tab/disposed)
-
-      (-activate [_ ctx] {:op (-op-activate _) :ctx ctx :topic (-topic-extension-op _)})
-      (-deactivate [_] {:op (-op-deactivate _) :topic (-topic-extension-op _)})
-      (-show-info-msg [_ msg] {:op (-op-show-info-msg _) :msg msg :topic (-topic-editor-op _)})
-      (-register-commands [_ commands] {:op (-op-register-commands _) :commands commands :topic (-topic-editor-op _)})
-      (-open-repl-tab [_ tab-id] {:op (-op-open-repl-tab _) :tab/id tab-id :topic (-topic-editor-op _)})
-      (-cmd [_ id args] {:op (-op-cmd _) :cmd/id id :cmd/args args :topic (-topic-editor-op _)})
-      (-tab-clear [_ id] {:op (-op-tab-clear _) :tab/id id  :topic (-topic-tab _)})
-      (-tab-append [_ id data] {:op (-op-tab-append _) :tab/id id :data data :topic (-topic-tab _)})
-      (-tab-disposed [_ id] {:op (-op-tab-disposed _) :tab/id id :topic (-topic-tab _)})
-      (-tab-on-message [_ id msg] (merge msg {:tab/id id :topic (-topic-tab _)})))))
-
-!@#$%^&*(){}|:<>?
-p.proc|
-(p.proc|/-op-stop proc|i a b c)
-(p.proc-ch/-op-stop proc-ch-iface a b c)
-
+    (.postMessage (.-webview tab) (str v))))
 
 (defn proc-editor
   [{channels :channels
     context :editor-context}]
-  (let [{:keys [proc-chan log-chan editor-chan editor-pub]} channels
-        editor-chan-iface (editor-chan-interface)
-        proc-chan-iface (proc-chan-interface)
-        log-chan-iface (log-chan-interface)
-        editor-chan-sub (sub editor|p (-topic-editor-op editor|i) (chan 10))
+  (let [{:keys [proc| log| editor| editor|p]} channels
+        editor|i (channels/editor|i)
+        proc|i (channels/proc|i)
+        log|i (channels/log|i)
+        editor|s (sub editor|p (p.editor|/-topic-editor-op editor|i) (chan 10))
         unsubscribe #(do
-                       (unsub editor|p (-topic-editor-op editor|i) editor|s)
+                       (unsub editor|p (p.editor|/-topic-editor-op editor|i) editor|s)
                        (close! editor|s))]
-    (>! proc| (-started proc|i))
+    (>! proc| (p.proc|/-started proc|i))
     (go (loop [state {:tabs {:current nil}}]
           (if-let [[v port] (alts! [proc| editor|s])]
             (condp = port
-              proc-chan (condp = (:op v)
-                          (-op-stop proc|i) (let [{:keys [out|]} v]
-                                              (unsubscribe)
-                                              (>! out| (-stopped proc|i))
-                                              (put! log| (-info log|i nil "proc-editor exiting" nil))))
+              proc| (condp = (:op v)
+                      (p.proc|/-op-stop proc|i) (let [{:keys [out|]} v]
+                                                  (unsubscribe)
+                                                  (>! out| (p.proc|/-stopped proc|i))
+                                                  (put! log| (p.channels/-info log|i nil "proc-editor exiting" nil))))
               editor|s (let [op (:op v)]
                          (condp = op
-                           (-op-register-commands editor|i) (let [{:keys [commands]} v
-                                                                  cmd-fn (fn [id args] (put! editor| (-cmd editor|i id args)))]
-                                                              (register-commands vscode context cmd-fn))
-                           (-op-show-info-msg editor|i) (let [{:keys [msg]} v]
-                                                          (show-information-message vscode msg))
-                           (-op-open-repl-tab editor|i) (let [{:keys [tab/id] :or {id (random-uuid)}} v
-                                                              tab (make-tab context id {:on-message (fn [id msg] (-tab-on-message editor|i id msg))
-                                                                                        :on-dispose (fn [id] (-tab-disposed editor|i id))})]
-                                                          (recur (-> state
-                                                                     (update-in [:tabs] assoc id tab)
-                                                                     (update-in [:tabs] assoc :current tab))))
-                           (-op-tab-append editor|i) (forward-to-tabapp v)
-                           (-op-tab-clear editor|i) (forward-to-tabapp v))
+                           (p.editor|/-op-register-commands editor|i) (let [{:keys [commands]} v
+                                                                            cmd-fn (fn [id args]
+                                                                                     (put! editor| (p.editor|/-cmd editor|i id args)))]
+                                                                        (register-commands commands vscode context cmd-fn))
+                           (p.editor|/-op-show-info-msg editor|i) (let [{:keys [msg]} v]
+                                                                    (show-information-message vscode msg))
+                           (p.editor|/-op-open-repl-tab editor|i) (let [{:keys [tab/id] :or {id (random-uuid)}} v
+                                                                        tab (make-tab vscode context id
+                                                                                      {:on-message
+                                                                                       (fn [id msg]
+                                                                                         (put! editor| (p.editor|/-tab-on-message editor|i id msg)))
+                                                                                       :on-dispose
+                                                                                       (fn [id]
+                                                                                         (put! editor| (p.editor|/-tab-disposed editor|i id)))})]
+                                                                    (recur (-> state
+                                                                               (update-in [:tabs] assoc id tab)
+                                                                               (update-in [:tabs] assoc :current tab))))
+                           (p.editor|/-op-tab-append editor|i) (forward-to-tabapp (get-in state [:tabs (:tab/id v)]) v)
+                           (p.editor|/-op-tab-clear editor|i) (forward-to-tabapp (get-in state [:tabs (:tab/id v)]) v))
                          (recur state))))))))
 
 #_(let [{:keys [op]} v]
