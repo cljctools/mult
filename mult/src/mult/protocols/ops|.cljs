@@ -3,10 +3,14 @@
 (defprotocol Ops|
   (-op-activate [_])
   (-op-deactivate [_])
-  (-op-repl-tab-created [_])
+  (-op-tab-created [_])
   (-op-tab-disposed [_])
+  (-op-eval-result [_])
+  (-op-read-conf-result [_])
 
   (-activate [_])
   (-deactivate [_])
-  (-repl-tab-created [_ tab])
-  (-tab-disposed [_ id]))
+  (-tab-created [_ tab])
+  (-tab-disposed [_ id])
+  (-eval-result [_ result])
+  (-read-conf-result [_ result args]))

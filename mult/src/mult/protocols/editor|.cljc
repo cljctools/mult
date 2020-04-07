@@ -3,9 +3,10 @@
 (defprotocol Editor|
   (-op-show-info-msg [_])
   (-op-register-commands [_])
-  (-op-create-repl-tab [_])
+  (-op-create-tab [_])
+  (-op-read-conf [_])
 
   (-show-info-msg [_ msg])
   (-register-commands [_ commands])
-  (-create-repl-tab [_ tab-id]))
-
+  (-create-tab [_ tab-id])
+  (-read-conf [_ filepath out|]))

@@ -10,7 +10,9 @@
    [mult.protocols.editor| :as p.editor|]
    [mult.protocols.channels :as p.channels]
    [mult.protocols.ops| :as p.ops|]
-   [mult.protocols.tab| :as p.tab|]))
+   [mult.protocols.main| :as p.main|]
+   [mult.protocols.tab| :as p.tab|]
+   [mult.protocols.conn| :as p.conn|]))
 
 (def ^:const TOPIC :topic)
 (def ^:const OP :op)
@@ -21,7 +23,7 @@
     (reify
       p.channels/Op
       (-op [_ v] (get v OP))
-      p.channels/Main|
+      p.main|/Main|
       (-op-init [_] :main/init)
       (-op-activate [_] :main/activate)
       (-op-deactivate [_] :main/deactivate)
@@ -31,14 +33,14 @@
       (-op-proc-started [_] :main/proc-started)
       (-op-proc-stopped [_] :main/proc-stopped)
 
-      (-init [_] {OP (p.channels/-op-init _)})
-      (-activate [_ editor-context] {OP (p.channels/-op-activate _) :editor-context editor-context})
-      (-deactivate [_] {OP (p.channels/-op-deactivate _)})
-      (-start-proc [_ proc-fn] {OP (p.channels/-op-start-proc _) :proc-fn proc-fn})
-      (-stop-proc [_ proc-id] {OP (p.channels/-op-stop-proc _) :proc-id proc-id})
-      (-restart-proc [_ proc-id] {OP (p.channels/-op-restart-proc _) :proc-id proc-id})
-      (-proc-started [_ proc-id proc|] {OP (p.channels/-op-proc-started _) :proc-id proc-id :proc| proc|})
-      (-proc-stopped [_ proc-id] {OP (p.channels/-op-proc-stopped _) :proc-id proc-id}))))
+      (-init [_] {OP (p.main|/-op-init _)})
+      (-activate [_ editor-context] {OP (p.main|/-op-activate _) :editor-context editor-context})
+      (-deactivate [_] {OP (p.main|/-op-deactivate _)})
+      (-start-proc [_ proc-fn] {OP (p.main|/-op-start-proc _) :proc-fn proc-fn})
+      (-stop-proc [_ proc-id] {OP (p.main|/-op-stop-proc _) :proc-id proc-id})
+      (-restart-proc [_ proc-id] {OP (p.main|/-op-restart-proc _) :proc-id proc-id})
+      (-proc-started [_ proc-id proc|] {OP (p.main|/-op-proc-started _) :proc-id proc-id :proc| proc|})
+      (-proc-stopped [_ proc-id] {OP (p.main|/-op-proc-stopped _) :proc-id proc-id}))))
 
 (defn log|i
   []
@@ -61,13 +63,17 @@
       p.ops|/Ops|
       (-op-activate [_] :ops/activate)
       (-op-deactivate [_] :ops/deactivate)
-      (-op-repl-tab-created [_] :ops/repl-tab-created)
+      (-op-tab-created [_] :ops/tab-created)
       (-op-tab-disposed [_] :ops/tab-disposed)
+      (-op-eval-result [_] :ops/eval-result)
+      (-op-read-conf-result [_] :ops/read-file-result)
 
       (-activate [_] {OP (p.ops|/-op-activate _)})
       (-deactivate [_] {OP (p.ops|/-op-deactivate _)})
-      (-repl-tab-created [_ tab] {OP (p.ops|/-op-repl-tab-created _) :tab tab})
-      (-tab-disposed [_ id] {OP (p.ops|/-op-tab-disposed _) :tab/id id}))))
+      (-tab-created [_ tab] {OP (p.ops|/-op-tab-created _) :tab tab})
+      (-tab-disposed [_ id] {OP (p.ops|/-op-tab-disposed _) :tab/id id})
+      (-eval-result [_ result] {OP (p.ops|/-op-eval-result _) :result result})
+      (-read-conf-result [_ conf args] {OP (p.ops|/-op-read-conf-result _) :conf conf :args args}))))
 
 (defn cmd|i
   []
@@ -88,11 +94,13 @@
       p.editor|/Editor|
       (-op-show-info-msg [_] :editor/show-info-msg)
       (-op-register-commands [_] :editor/register-commands)
-      (-op-create-repl-tab [_] :editor/create-repl-tab)
+      (-op-create-tab [_] :editor/create-tab)
+      (-op-read-conf [_] :editor/read-file)
 
       (-show-info-msg [_ msg] {OP (p.editor|/-op-show-info-msg _) :msg msg})
       (-register-commands [_ commands] {OP (p.editor|/-op-register-commands _) :commands commands})
-      (-create-repl-tab [_ tab-id] {OP (p.editor|/-op-create-repl-tab _) :tab/id tab-id}))))
+      (-create-tab [_ tab-id] {OP (p.editor|/-op-create-tab _) :tab/id tab-id})
+      (-read-conf [_  filepath out|] {OP (p.editor|/-op-read-conf _) :filepath filepath :out| out|} ))))
 
 (defn tab|i
   []
@@ -103,7 +111,18 @@
       p.tab|/Tab|
       (-op-clear [_] :tab/clear)
       (-op-append [_] :tab/append)
+      (-op-conf [_] :tab/conf)
 
       (-clear [_] {OP (p.tab|/-op-clear _)})
-      (-append [_ data] {OP (p.tab|/-op-append _) :data data}))))
+      (-append [_ data] {OP (p.tab|/-op-append _) :data data})
+      (-conf [_ conf] {OP (p.tab|/-op-conf _) :conf conf}))))
 
+(defn conn|i
+  []
+  (let []
+    (reify
+      p.channels/Op
+      (-op [_ v] (get v OP))
+      p.conn|/Conn|
+      (-op-eval [_] :conn/eval)
+      (-eval [_ code] {OP (p.conn|/-op-eval _) :code code}))))

@@ -13,16 +13,18 @@
    [mult.protocols.tab| :as p.tab|]
    [mult.impl.channels :as channels]))
 
-(declare proc-main proc-ops render-ui acquireVsCodeApi)
+(declare proc-main proc-ops render-ui vscode)
 
-(def vscode  (js/acquireVsCodeApi))
+(when (exists? js/acquireVsCodeApi)
+  (defonce vscode (js/acquireVsCodeApi)))
 
 (def channels (let [tab| (chan 10)
                     ops| (chan 10)]
                 {:tab|  tab|
                  :ops| ops|}))
 
-(def state (r/atom {:data []}))
+(def state (r/atom {:data []
+                    :conf nil}))
 
 (defn ^:export main
   []
@@ -34,6 +36,7 @@
     (do
       (.addEventListener js/window "message"
                          (fn [ev]
+                           (println ev.data)
                            (put! tab| (read-string ev.data))))
       (proc-ops channels ctx)
       (render-ui channels (select-keys ctx [:state])))
@@ -52,23 +55,31 @@
     (go (loop []
           (try
             (when-let [v (<! tab|)]
-              (condp = (p.tab|/-op tab|i v)
+              (println v)
+              (println (p.tab|/-op-conf tab|i))
+              (condp = (p.channels/-op tab|i v)
                 (p.tab|/-op-append tab|i) (let [{:keys [data]} v]
-
-                                            (swap! (ratoms :state) update :data conj data)))
+                                            (swap! state update :data conj data))
+                (p.tab|/-op-conf tab|i) (let [{:keys [conf]} v]
+                                            (swap! state assoc :conf conf)))
               (recur))
             (catch js/Error e (do (println "; proc-ops error, will exit") (println e)))))
         (println "proc-ops go-block exiting"))))
 
 (defn rc-repl-tab
   [{:keys [ops|]} ratoms]
-  (r/with-let [data (r/cursor (ratoms :state) [:data])]
+  (r/with-let [conf (r/cursor (ratoms :state) [:conf])
+               data (r/cursor (ratoms :state) [:data])]
     [:<>
      [:div {} "rc-repl-tab"]
      [:button {:on-click (fn [e]
                            (println "button clicked")
                            #_(put! ops| ???))} "button"]
-     [:div {} (with-out-str (pprint data))]]))
+     [:div ":conf"]
+     [:div {} (with-out-str (pprint @conf))]
+     [:br]
+     [:div ":data"]
+     [:div {} (with-out-str (pprint @data))]]))
 
 (defn render-ui
   [channels ratoms]

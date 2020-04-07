@@ -10,10 +10,12 @@
    [clojure.pprint :refer [pprint]]
    
    [mult.protocols.channels :as p.channels]
+   [mult.protocols.main| :as p.main|]
    [mult.protocols.editor| :as p.editor|]
    [mult.protocols.ops| :as p.ops|]
    [mult.protocols.tab| :as p.tab|]
    [mult.protocols.tab :as p.tab]
+   [mult.protocols.conn :as p.conn]
    [mult.impl.editor :as editor]
    [mult.impl.channels :as channels]))
 
@@ -62,44 +64,44 @@
           (try
             (if-let [v (<! main|t)]
               (condp = (p.channels/-op main|i v)
-                (p.channels/-op-init main|i) (let [{:keys [channels ctx]} state]
-                                               (do
-                                                 (proc-log channels ctx)
-                                                 (proc-ops channels ctx)))
-                (p.channels/-op-proc-started main|i) (let [{:keys [proc-id proc|]} v]
-                                                       #_(log (format "; process started: %s" proc-id))
-                                                       (recur (-> state
-                                                                  (update-in [:procs] assoc proc-id proc|))))
-                (p.channels/-op-proc-stopped main|i) (let [{:keys [proc-id]} v]
-                                                       #_(log (format "; process stopped: %s" proc-id))
-                                                       (recur (-> state
-                                                                  (update-in [:procs] dissoc proc-id))))
-                #_(p.channels/-op-start-proc main|i) #_(let [{:keys [proc-fn]} v
-                                                             {:keys [channels ctx]} state]
-                                                         (log (format "; process starting: %s" proc-id))
-                                                         (proc-fn channels ctx))
-                (p.channels/-op-stop-proc main|i) (let [{:keys [proc-id]} v
-                                                        chans (-> (get state :procs)
-                                                                  (keep (fn [[k v]] (when (= (first k) proc-id) v))))]
-                                                    (if (empty? chans)
-                                                      (log (format "; could not stop process, no such proc-id: %s" proc-id))
-                                                      (doseq [c| chans]
-                                                        #_(log (format "; process stopping: %s" proc-id))
-                                                        (put! c| v))))
-                (p.channels/-op-restart-proc main|i) (let [{:keys [proc-id]} v]
-                                                       (>! main| (p.channels/-stop-proc main|i proc-id))
-                                                       (>! main| (p.channels/-start-proc main|i proc-id)))
-                (p.channels/-op-activate main|i) (let [{:keys [editor-context]} v
-                                                       state' (update-in state [:ctx] assoc :editor-context  editor-context)]
-                                                   (when-not (:activated? state)
-                                                     (do (editor/proc-editor (:channels state') (:ctx state')))
-                                                     (>! ops| (p.ops|/-activate ops|i))
-                                                     (recur state')))
-                (p.channels/-op-deactivate main|i) (let []
-                                                     (when (:activated? state)
-                                                       (>! ops| (p.ops|/-deactivate ops|i))
-                                                       (>! main| (p.channels/-stop-proc main|i :proc-editor))
-                                                       (recur (assoc state :activated? false)))))
+                (p.main|/-op-init main|i) (let [{:keys [channels ctx]} state]
+                                            (do
+                                              (proc-log channels ctx)
+                                              (proc-ops channels ctx)))
+                (p.main|/-op-proc-started main|i) (let [{:keys [proc-id proc|]} v]
+                                                    #_(log (format "; process started: %s" proc-id))
+                                                    (recur (-> state
+                                                               (update-in [:procs] assoc proc-id proc|))))
+                (p.main|/-op-proc-stopped main|i) (let [{:keys [proc-id]} v]
+                                                    #_(log (format "; process stopped: %s" proc-id))
+                                                    (recur (-> state
+                                                               (update-in [:procs] dissoc proc-id))))
+                #_(p.main|/-op-start-proc main|i) #_(let [{:keys [proc-fn]} v
+                                                          {:keys [channels ctx]} state]
+                                                      (log (format "; process starting: %s" proc-id))
+                                                      (proc-fn channels ctx))
+                (p.main|/-op-stop-proc main|i) (let [{:keys [proc-id]} v
+                                                     chans (-> (get state :procs)
+                                                               (keep (fn [[k v]] (when (= (first k) proc-id) v))))]
+                                                 (if (empty? chans)
+                                                   (log (format "; could not stop process, no such proc-id: %s" proc-id))
+                                                   (doseq [c| chans]
+                                                     #_(log (format "; process stopping: %s" proc-id))
+                                                     (put! c| v))))
+                (p.main|/-op-restart-proc main|i) (let [{:keys [proc-id]} v]
+                                                    (>! main| (p.main|/-stop-proc main|i proc-id))
+                                                    (>! main| (p.main|/-start-proc main|i proc-id)))
+                (p.main|/-op-activate main|i) (let [{:keys [editor-context]} v
+                                                    state' (update-in state [:ctx] assoc :editor-context  editor-context)]
+                                                (when-not (:activated? state)
+                                                  (do (editor/proc-editor (:channels state') (:ctx state')))
+                                                  (>! ops| (p.ops|/-activate ops|i))
+                                                  (recur state')))
+                (p.main|/-op-deactivate main|i) (let []
+                                                  (when (:activated? state)
+                                                    (>! ops| (p.ops|/-deactivate ops|i))
+                                                    (>! main| (p.main|/-stop-proc main|i :proc-editor))
+                                                    (recur (assoc state :activated? false)))))
               (recur state))
             (catch js/Error e (do (println "; proc-main error, will resume")
                                   (println e))))
@@ -108,9 +110,8 @@
 
 (defn default-commands
   []
-  ["mult.activate"
+  ["mult.open"
    "mult.ping"
-   "mult.deactivate"
    "mult.eval"])
 
 (defn proc-ops
@@ -126,6 +127,7 @@
         tab|i (channels/tab|i)
         log|i (channels/log|i)
         cmd|i (channels/cmd|i)
+        conn|i (channels/conn|i)
         log (fn [& args] (put! log| (apply p.channels/-log log|i args)))
         release! #(do
                     (untap ops|m ops|t)
@@ -133,9 +135,10 @@
                     (close! ops|t)
                     (close! cmd|t)
                     (close! proc|)
-                    (put! main| (p.channels/-proc-stopped main|i pid)))]
-    (put! main| (p.channels/-proc-started main|i pid proc|))
-    (go (loop [state {:tabs {}}]
+                    (put! main| (p.main|/-proc-stopped main|i pid)))]
+    (put! main| (p.main|/-proc-started main|i pid proc|))
+    (go (loop [state {:tabs {}
+                      :mult.edn nil}]
           (try
             (if-let [[v port] (alts! [cmd|t ops|t proc|])]
               (condp = port
@@ -145,13 +148,20 @@
                           (p.ops|/-op-activate ops|i) (do (>! editor| (p.editor|/-register-commands editor|i (default-commands)))
                                                           (>! editor| (p.editor|/-show-info-msg editor|i "actiavting")))
                           (p.ops|/-op-deactivate ops|i) (do (>! editor| (p.editor|/-show-info-msg editor|i "deactiavting")))
-
-                          (p.ops|/-op-repl-tab-created ops|i) (let [{:keys [tab]} v]
-                                                                (recur (update state :tabs assoc (:id tab) tab))))
+                          (p.ops|/-op-tab-created ops|i) (let [{:keys [tab]} v]
+                                                           (p.tab/-put! tab (p.tab|/-conf tab|i (get state :mult.edn)))
+                                                           (recur (update state :tabs assoc (:id tab) tab)))
+                          (p.ops|/-op-tab-disposed ops|i) (let [{:keys [tab/id]} v]
+                                                            (do nil)))
                         (recur state))
                 cmd|t (let [cmd (:cmd/id v)]
                         (condp = cmd
-                          "mult.activate" (do (>! editor| (p.editor|/-show-info-msg editor|i "mult.activate")))
+                          "mult.open" (let [out| (chan 1)
+                                            _ (>! editor| (p.editor|/-read-conf editor|i ".vscode/mult.edn" out|))
+                                            {:keys [conf]} (<! out|)]
+                                        (>! editor| (p.editor|/-show-info-msg editor|i "mult.open"))
+                                        (>! editor| (p.editor|/-create-tab editor|i (random-uuid)))
+                                        (recur (assoc state :mult.edn conf)))
                           "mult.ping" (do
                                         (>! editor| (p.editor|/-show-info-msg editor|i "mult.ping via channels"))
                                         (<! (timeout 3000))
@@ -176,9 +186,9 @@
         proc| (chan 1)
         main|t (tap main|m (chan 10))
         log|t (tap log|m (chan 10))
-        main|i (channels/main|i)
         editor|t (tap editor|m (chan 10))
         cmd|t (tap cmd|m (chan 100))
+        main|i (channels/main|i)
         append #(-> %1
                     (update-in [:log] conj %2)
                     (update-in [:log] (partial take-last 50)))
@@ -192,8 +202,8 @@
                     (close! editor|t)
                     (close! cmd|t)
                     (close! proc|)
-                    (put! main| (p.channels/-proc-stopped main|i pid)))]
-    (put! main| (p.channels/-proc-started main|i pid proc|))
+                    (put! main| (p.main|/-proc-stopped main|i pid)))]
+    (put! main| (p.main|/-proc-started main|i pid proc|))
     (go (loop [state {:log []}]
           (reset! proc-log-state state)
           (try
@@ -219,15 +229,15 @@
         (println "; proc-log go-block exits"))))
 
 (defonce _ (let [main|i (channels/main|i)]
-             (put! (channels :main|) (p.channels/-init main|i))
+             (put! (channels :main|) (p.main|/-init main|i))
              (proc-main channels {})))
 
 (def activate (let [main|i (channels/main|i)]
                 (fn [context]
-                  (put! (channels :main|) (p.channels/-activate main|i context)))))
+                  (put! (channels :main|) (p.main|/-activate main|i context)))))
 (def deactivate (let [main|i (channels/main|i)]
                   (fn []
-                    (put! (channels :main|) (p.channels/-deactivate main|i)))))
+                    (put! (channels :main|) (p.main|/-deactivate main|i)))))
 (def exports #js {:activate activate
                   :deactivate deactivate})
 

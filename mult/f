@@ -19,8 +19,7 @@ server(){
 
 dev(){
     npm i
-    # shadow -A:core:dev watch :extension :tabapp
-    shadow -A:core:dev watch :extension
+    shadow -A:core:dev watch :extension :tabapp
 }
 
 compile(){

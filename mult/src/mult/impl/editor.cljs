@@ -14,6 +14,7 @@
    [mult.protocols.ops| :as p.ops|]
    [mult.protocols.tab :as p.tab]
    [mult.protocols.channels :as p.channels]
+   [mult.protocols.main| :as p.main|]
    [mult.impl.channels :as channels]))
 
 (def vscode (js/require "vscode"))
@@ -41,7 +42,7 @@
   [vscode context panel]
   (def panel panel)
   (let [script-uri (as-> nil o
-                     (.join path context.extensionPath "resources/out/main.js")
+                     (.join path context.extensionPath "resources/out/tabapp.js")
                      (vscode.Uri.file o)
                      (.asWebviewUri panel.webview o)
                      (.toString o))
@@ -49,8 +50,17 @@
                (.join path context.extensionPath "resources/index.html")
                (.readFileSync fs o)
                (.toString o)
-               (string/replace o "/out/main.js" script-uri))]
+               (string/replace o "/out/tabapp.js" script-uri))]
     html))
+
+(defn read-workspace-file
+  [filepath callback]
+  (let []
+    (as-> nil o
+      (.join path vscode.workspace.rootPath filepath)
+      (vscode.Uri.file o)
+      (.readFile vscode.workspace.fs o)
+      (.then o callback))))
 
 (defn make-panel
   [vscode context id handlers]
@@ -69,6 +79,28 @@
     (set! panel.webview.html html)
     panel))
 
+(comment
+
+  vscode.workspace.rootPath
+
+  vscode.workspace.workspaceFile
+  vscode.workspace.workspaceFolders
+
+  (as-> nil o
+    (.join path vscode.workspace.rootPath ".vscode")
+    (vscode.Uri.file o)
+    (.readDirectory vscode.workspace.fs o)
+    (.then o (fn [d] (println d))))
+
+  (as-> nil o
+    (.join path vscode.workspace.rootPath ".vscode/mult.edn")
+    (vscode.Uri.file o)
+    (.readFile vscode.workspace.fs o)
+    (.then o (fn [d] (println d))))
+
+  ;;
+  )
+
 (defn proc-editor
   [channels ctx]
   (let [pid [:proc-editor (random-uuid)]
@@ -86,8 +118,8 @@
                     (untap editor|m  editor|t)
                     (close! editor|t)
                     (close! proc|)
-                    (put! main| (p.channels/-proc-stopped main|i pid)))]
-    (put! main| (p.channels/-proc-started main|i pid proc|))
+                    (put! main| (p.main|/-proc-stopped main|i pid)))]
+    (put! main| (p.main|/-proc-started main|i pid proc|))
     (go (loop []
           (try
             (if-let [[v port] (alts! [editor|t proc|])]
@@ -101,19 +133,25 @@
                                                                           (register-commands commands vscode editor-context cmd-fn))
                              (p.editor|/-op-show-info-msg editor|i) (let [{:keys [msg]} v]
                                                                       (show-information-message vscode msg))
-                             (p.editor|/-op-create-repl-tab editor|i) (let [{:keys [tab/id] :or {id (random-uuid)}} v
-                                                                            panel (make-panel vscode editor-context id
-                                                                                              {:on-message
-                                                                                               (fn [id data]
-                                                                                                 (put! ops| (assoc data :tab/id id)))
-                                                                                               :on-dispose
-                                                                                               (fn [id]
-                                                                                                 (put! ops| (p.ops|/-tab-disposed ops|i id)))})
-                                                                            tab (with-meta {:id id}
-                                                                                  {`p.tab/put! (fn [v] (.postMessage (.-webview panel) (pr-str v)))
-                                                                                   `p.tab/dispose (fn [] (println "dispose not implemented yet"))})]
-                                                                        (>! ops| (p.ops|/-repl-tab-created ops|i tab))
-                                                                        (recur)))
+                             (p.editor|/-op-create-tab editor|i) (let [{:keys [tab/id] :or {id (random-uuid)}} v
+                                                                       panel (make-panel vscode editor-context id
+                                                                                         {:on-message
+                                                                                          (fn [id data]
+                                                                                            (put! ops| (assoc data :tab/id id)))
+                                                                                          :on-dispose
+                                                                                          (fn [id]
+                                                                                            (println "; tab onDispose " id)
+                                                                                            (put! ops| (p.ops|/-tab-disposed ops|i id)))})
+                                                                       tab (with-meta {:id id}
+                                                                             {`p.tab/-put! (fn [_ v]
+                                                                                             (.postMessage (.-webview panel) (pr-str v)))
+                                                                              `p.tab/-dispose (fn [_] (println "dispose not implemented yet"))})]
+                                                                   (>! ops| (p.ops|/-tab-created ops|i tab))
+                                                                   (recur))
+
+                             (p.editor|/-op-read-conf editor|i) (let [{:keys [filepath out|]} v
+                                                                      cb #(put! out| (p.ops|/-read-conf-result ops|i (-> % (.toString) (read-string)) v))]
+                                                                  (read-workspace-file filepath cb)))
                            (recur))))
             (catch js/Error e (do (log "; proc-editor error, will exit" e)))
             (finally

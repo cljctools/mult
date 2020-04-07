@@ -21,7 +21,7 @@
                                       :closure-defines  {"mult.impl.tabapp._some_val_"         true}}
                    :devtools {:repl-init-ns mult.impl.tabapp
                               :repl-pprint true
-                              :autobuild false
+                              :autobuild true
                               :devtools-url "http://localhost:5101"
                               :http-root  "resources"
                               :http-port  5102}}}}
