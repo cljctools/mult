@@ -127,7 +127,7 @@
   (.end c)
 
   (do
-    (def c (.connect nrepl-cleint #js {:port 8899
+    (def c (.connect nrepl-cleint #js {:port 7788
                                        :host "localhost"}))
     (doto c
       (.on "connect" (fn []
@@ -147,7 +147,7 @@
 
   
   (def code "shadow.cljs.devtools.api/compile")
-  (.eval c "conj" (fn [err result]
+  (.eval c "{:a 1}" (fn [err result]
                   (println ".eval data")
                   (println (or err result))))
   (.lsSessions c (fn [err data]

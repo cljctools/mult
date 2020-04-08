@@ -163,6 +163,7 @@
                           "mult.open" (let [out| (chan 1)
                                             _ (>! editor| (p.editor|/-read-conf editor|i ".vscode/mult.edn" out|))
                                             {:keys [conf]} (<! out|)]
+                                        (close! out|)
                                         (>! editor| (p.editor|/-show-info-msg editor|i "mult.open"))
                                         (>! editor| (p.editor|/-create-tab editor|i (random-uuid)))
                                         (recur (assoc state :mult.edn conf)))

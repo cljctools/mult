@@ -40,6 +40,7 @@
   - https://github.com/nrepl/nrepl
     - https://nrepl.org/nrepl/ops.html
     - https://nrepl.org/nrepl/0.7.0/usage/clients.html#_talking_to_an_nrepl_endpoint_programmatically
+    - https://github.com/nrepl/nrepl/blob/master/src/spec/nrepl/spec.clj
   - https://github.com/nrepl/piggieback
   - https://github.com/nrepl/weasel
   - examples of connecting from not-java
