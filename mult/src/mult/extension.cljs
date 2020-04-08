@@ -10,7 +10,7 @@
    [clojure.pprint :refer [pprint]]
 
    [pad.nrepl1]
-   
+
    [mult.protocols.channels :as p.channels]
    [mult.protocols.main| :as p.main|]
    [mult.protocols.editor| :as p.editor|]
@@ -20,7 +20,8 @@
    [mult.protocols.conn :as p.conn]
    [mult.impl.editor :as editor]
    [mult.impl.channels :as channels]
-   [mult.impl.conn :as conn]))
+   [mult.impl.conn :as conn]
+   [mult.impl.lrepl :as lrepl]))
 
 (def channels (let [main| (chan 10)
                     main|m (mult main|)

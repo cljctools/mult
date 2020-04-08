@@ -2,6 +2,5 @@
 
 (defprotocol Conn
   (-connect [_])
-  (-disconnect [_])
-  (-eval [_ code]))
+  (-disconnect [_]))
 

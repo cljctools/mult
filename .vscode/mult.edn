@@ -1,11 +1,32 @@
-{:connections {:server {:conn/host "localhost"
-                        :conn/port 7788
-                        :conn/type :deps}
-               :ui {:conn/host "localhost"
-                    :conn/port 8899
-                    :conn/type :shadow-cljs}}
- :tabs {:system {:tab/connections {:server {:conn.regex/file-uri [".+.clj"]}
-                                   :conn2 {:conn/namespaces [".+.cljs"]}}
-                 :tab/position 2
-                 :tab/cljc-runtime-priority :recent}}
+{:connections {:server {:host "localhost"
+                        :port 7788}
+               :ui {:host "localhost"
+                    :port 8899}
+               :mult {:host "localhost"
+                      :port 5100}}
+ :repls {:ui {:identity {:type :shadow-cljs
+                         :runtime :cljs
+                         :build :app}
+              :conn :ui}
+         :test {:identity {:type :shadow-cljs
+                           :runtime :cljs
+                           :build :test}
+                :conn :ui}
+         :devserver  {:identity {:type :shadow-cljs
+                                 :runtime :clj}
+                      :conn :ui}
+         :server {:identity {:type :nrepl-server
+                             :runtime :clj}
+                  :conn :server}
+         :mult {:identity {:type :shadow-cljs
+                           :runtime :cljs
+                           :build :extension}
+                :conn :mult}}
+ :tabs {:system {:repls {:ui {}
+                         :test {}
+                         :devserver {}
+                         :server {}
+                         :mult {}}
+                 :mult {:mult {}}}}
  :tabs/default #{:system}}
+  

@@ -26,3 +26,27 @@
         - they don't result from keycombo-popups
         - autodetection (if any) is secondary to: config, specifying connections as strings
         - connections are just connections and can be added/removed to/from repl tab(s)
+
+
+
+- mult.edn 
+  - is either in .vscode/mult.edn or in ~/mult.edn
+  - has :connections :repls :tabs
+- connection
+  - physical socket (as of now nrepl) connections
+  - knows how to connect, send,receive
+  - from system perspective, a channel
+- repl
+  - logical repls: one actual connection may have multiple repls (e.g. shadow-cljs)
+  - knows how to switch the connection to itself
+  - knows nrepl or other operations: eval etc
+- connection and repl
+  - connections are established via a click or if :connect/auto? true
+  - when first eval happens, repl tries using the specified connection : conn channel is the arg to repl
+  - no init-ns in config: once mult opens, it works as should: gets the current file and corresponding lrepl and switch to that ns in that lrepl
+- tab
+  - an app that knows ho to append data
+  - shows logical repls as a line in the top, active repl is underlined
+  - repls which connections are off are grey,  otherwise color is green or smth
+  - has a settings button (top-right) that shows a list of all connections (from mult.edn) with connect/disconnect buttons
+
