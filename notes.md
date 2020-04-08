@@ -1,5 +1,7 @@
 
 - vscode
+  - api 
+    - https://code.visualstudio.com/api/references/vscode-api#TextEditor
   - https://github.com/microsoft/vscode-extension-samples/tree/master/helloworld-sample
   - api
     - https://code.visualstudio.com/api/extension-guides/command#registering-a-command
@@ -36,6 +38,7 @@
 
 - nrepl
   - https://github.com/nrepl/nrepl
+    - https://nrepl.org/nrepl/ops.html
     - https://nrepl.org/nrepl/0.7.0/usage/clients.html#_talking_to_an_nrepl_endpoint_programmatically
   - https://github.com/nrepl/piggieback
   - https://github.com/nrepl/weasel

@@ -5,6 +5,7 @@
                                      timeout to-chan  sliding-buffer dropping-buffer
                                      pipeline pipeline-async]]
    [goog.string :refer [format]]
+   [goog.object]
    [clojure.string :as string]
    [cljs.reader :refer [read-string]]
    ["fs" :as fs]
@@ -79,6 +80,28 @@
     (set! panel.webview.html html)
     panel))
 
+; https://stackoverflow.com/a/41029103/10589291
+
+(defn js-lookup
+  [obj]
+  (-> (fn [result key]
+        (let [v (goog.object/get obj key)]
+          (if (= "function" (goog/typeOf v))
+            result
+            (assoc result key v))))
+      (reduce {} (.getKeys goog/object obj))))
+
+(defn js-lookup-nested
+  [obj]
+  (if (goog.isObject obj)
+    (-> (fn [result key]
+          (let [v (goog.object/get obj key)]
+            (if (= "function" (goog/typeOf v))
+              result
+              (assoc result key (js-lookup-nested v)))))
+        (reduce {} (.getKeys goog/object obj)))
+    obj))
+
 (comment
 
   vscode.workspace.rootPath
@@ -98,6 +121,24 @@
     (.readFile vscode.workspace.fs o)
     (.then o (fn [d] (println d))))
 
+  ; https://code.visualstudio.com/api/references/vscode-api#TextDocument
+  ; https://code.visualstudio.com/api/references/vscode-api#Selection
+  ; https://code.visualstudio.com/api/references/vscode-api#Range
+  
+  (if  vscode.window.activeTextEditor
+    vscode.window.activeTextEditor.document.uri
+    :no-active-editor)
+
+  (println vscode.window.activeTextEditor.selection)
+
+  (js-lookup-nested vscode.window.activeTextEditor.selection)
+
+  (do
+    (def start vscode.window.activeTextEditor.selection.start)
+    (def end vscode.window.activeTextEditor.selection.end)
+    (def range (vscode.Range. start end))
+    (def text (.getText vscode.window.activeTextEditor.document range)))
+  
   ;;
   )
 

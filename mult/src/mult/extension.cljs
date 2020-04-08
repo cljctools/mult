@@ -8,6 +8,8 @@
    [clojure.string :as string]
    [cljs.reader :refer [read-string]]
    [clojure.pprint :refer [pprint]]
+
+   [pad.nrepl1]
    
    [mult.protocols.channels :as p.channels]
    [mult.protocols.main| :as p.main|]
@@ -17,7 +19,8 @@
    [mult.protocols.tab :as p.tab]
    [mult.protocols.conn :as p.conn]
    [mult.impl.editor :as editor]
-   [mult.impl.channels :as channels]))
+   [mult.impl.channels :as channels]
+   [mult.impl.conn :as conn]))
 
 (def channels (let [main| (chan 10)
                     main|m (mult main|)
