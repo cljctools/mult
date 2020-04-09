@@ -17,35 +17,26 @@
    [mult.protocols.conn :as p.conn]))
 
 
-(defn create
+(defn net-socket
   [opts]
-  (let []
-    )
-  )
+  (let [{:keys [status| data|]} opts
+        ws (net/Socket. (clj->js opts))]
+    (doto ws
+      (.on "connect" (fn []
+                       
+                       ))
+      (.on "ready" (fn []
+                     (println "; net/Socket ready")))
+      (.on "timeout" (fn []
+                       (println "; net/Socket timeout")))
+      (.on "close" (fn [hadError]
+                     (println "; net/Socket close")
+                     (println (format "hadError %s"  hadError))))
+      (.on "data" (fn [buff] ))
+      (.on "error" (fn [e]
+                     (println "; net/Socket error")
+                     (println e))))))
 
-
-(defn- create-nrepl
-  [opts]
-  (let [{:keys [port host out|]} opts
-        socket (.connect nrepl-cleint #js {:port port
-                                           :host host})
-        
-        
-        ]
-    (reify
-      p.conn/Conn
-      (-disconnect [_] (.end socket))
-      p.conn/NRepl
-      (-clone-session [_ opts])
-      (-close-session [_ session-id opts])
-      (-describe [_  opts])
-      (-eval [_ code session-id opts])
-      (-interrupt [_ session-id opts])
-      (-load-file [_ file opts])
-      (-ls-sessions [_])
-      (-sideloader-provide [_ content name session-id type opts])
-      (-sideloader-start [_ session-id opts])
-      (-stdin [_ stdin-content opts]))))
 
 (comment
 
