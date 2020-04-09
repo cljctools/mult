@@ -49,4 +49,10 @@
   - shows logical repls as a line in the top, active repl is underlined
   - repls which connections are off are grey,  otherwise color is green or smth
   - has a settings button (top-right) that shows a list of all connections (from mult.edn) with connect/disconnect buttons
+  - divs
+    - slim header shows lrepl
+    - next printitng div that has scroll
+    - input div (console):
+      - should be a file with editing working as in any file (e.g. a tmp,per serssion file)
+      - so that when typing into it you are actually editing code in an editor file
 

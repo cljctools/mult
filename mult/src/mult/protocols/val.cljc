@@ -79,7 +79,7 @@
 
 (defprotocol Disconnected
   (-op-disconnected [_])
-  (-disconnected [_] [_ a]))
+  (-disconnected [_] [_ a] [_ a b]))
 
 (defprotocol Ready
   (-op-ready [_])
@@ -91,42 +91,15 @@
 
 (defprotocol Closed
   (-op-closed [_])
-  (-closed [_] [_ a]))
+  (-closed [_] [_ a] [_ a b]))
 
 (defprotocol Data
   (-op-data [_])
-  (-data [_] [_ a]))
+  (-data [_] [_ a] [_ a b]))
 
 (defprotocol Error
   (-op-error[_])
-  (-error [_] [_ a]))
-
-(defprotocol Log
-  (-op-log [_])
-  (-log [_  comment] [_ comment data]  [_ id comment data]))
-
-(defprotocol Cmd
-  (-op-cmd [_])
-  (-cmd [_ id args]))
-
-(defprotocol Ops
-  (-op-read-conf-result [_])
-  (-read-conf-result [_ result args])
-  (-op-tab-created [_])
-  (-op-tab-disposed [_])
-  (-tab-created [_ tab])
-  (-tab-disposed [_ id]))
-
-(defprotocol Editor
-  (-op-show-info-msg [_])
-  (-op-register-commands [_])
-  (-op-create-tab [_])
-  (-op-read-conf [_])
-  (-show-info-msg [_ msg])
-  (-register-commands [_ commands])
-  (-create-tab [_ tab-id])
-  (-read-conf [_ filepath out|]))
-
+  (-error [_] [_ a] [_ a b]))
 
 (defprotocol Clear
   (-op-clear [_])
@@ -139,3 +112,30 @@
 (defprotocol Conf
   (-op-conf [_])
   (-conf [_ conf]))
+
+
+(defprotocol Log|
+  (-op-log [_])
+  (-log [_  comment] [_ comment data]  [_ id comment data]))
+
+(defprotocol Cmd|
+  (-op-cmd [_])
+  (-cmd [_ id args]))
+
+(defprotocol Ops|
+  (-op-read-conf-result [_])
+  (-read-conf-result [_ result args])
+  (-op-tab-created [_])
+  (-op-tab-disposed [_])
+  (-tab-created [_ tab])
+  (-tab-disposed [_ id]))
+
+(defprotocol Editor|
+  (-op-show-info-msg [_])
+  (-op-register-commands [_])
+  (-op-create-tab [_])
+  (-op-read-conf [_])
+  (-show-info-msg [_ msg])
+  (-register-commands [_ commands])
+  (-create-tab [_ tab-id])
+  (-read-conf [_ filepath out|]))

@@ -1,9 +1,5 @@
 (ns mult.impl.channels
   (:require
-   [clojure.core.async :as a :refer [chan go go-loop <! >!  take! put! offer! poll! alt! alts! close!
-                                     pub sub unsub mult tap untap mix admix unmix
-                                     timeout to-chan  sliding-buffer dropping-buffer
-                                     pipeline pipeline-async]]
    [goog.string :refer [format]]
    [clojure.string :as string]
    [cljs.reader :refer [read-string]]
@@ -50,7 +46,7 @@
     (reify
       p.val/Op
       (-op [_ v] (get v OP))
-      p.val/Log
+      p.val/Log|
       (-op-log [_] :log)
       (-log [_ comment] {OP (p.val/-op-log _) :comment comment})
       (-log [_ comment data] {OP (p.val/-op-log _) :comment comment :data data})
@@ -68,7 +64,13 @@
       p.val/Deactivate
       (-op-deactivate [_] :ops/deactivate)
       (-deactivate [_] {OP (p.val/-op-deactivate _)})
-      p.val/Ops
+      p.val/Connect
+      (-op-connect [_] :ops/connect)
+      (-connect [_ opts]  {OP (p.val/-op-connect _) :opts opts})
+      p.val/Disconnect
+      (-op-disconnect [_] :ops/disconnect)
+      (-disconnect [_ opts] {OP (p.val/-op-disconnect _) :opts opts})
+      p.val/Ops|
       (-op-tab-created [_] :ops/tab-created)
       (-op-tab-disposed [_] :ops/tab-disposed)
       (-op-read-conf-result [_] :ops/read-file-result)
@@ -82,7 +84,7 @@
     (reify
       p.val/Op
       (-op [_ v] (get v OP))
-      p.val/Cmd
+      p.val/Cmd|
       (-op-cmd [_] :cmd/cmd)
       (-cmd [_ id args] {OP (p.val/-op-cmd _) :cmd/id id}))))
 
@@ -92,7 +94,7 @@
     (reify
       p.val/Op
       (-op [_ v] (get v OP))
-      p.val/Editor
+      p.val/Editor|
       (-op-show-info-msg [_] :editor/show-info-msg)
       (-op-register-commands [_] :editor/register-commands)
       (-op-create-tab [_] :editor/create-tab)
@@ -118,3 +120,28 @@
       p.val/Conf
       (-op-conf [_] :tab/conf)
       (-conf [_ conf] {OP (p.val/-op-conf _) :conf conf}))))
+
+(defn netsock|i
+  []
+  (let []
+    (reify
+      p.val/Op
+      (-op [_ v] (get v OP))
+      p.val/Connected
+      (-op-connected [_] :netsock/connected)
+      (-connected [_ opts] {OP (p.val/-op-connected _) :ops opts})
+      p.val/Ready
+      (-op-ready [_] :netsock/ready)
+      (-ready [_ opts] {OP (p.val/-op-ready _) :ops ops})
+      p.val/Timeout
+      (-op-timeout [_] :netsock/timeout)
+      (-timeout [_ opts] {OP (p.val/-op-timeout _) :ops ops})
+      p.val/Disconnected
+      (-op-disconnected [_] :netsock/disconnected)
+      (-disconnected [_ hadError opts] {OP (p.val/-op-disconnected _) :ops ops :hadError hadError})
+      p.val/Error
+      (-op-error [_] :netsock/error)
+      (-error [_ err opts] {OP (p.val/-op-error _) :ops ops :err err})
+      p.val/Data
+      (-op-data [_] :netsock/data)
+      (-data [_ data opts] {OP (p.val/-op-data _) :data data :opts opts}))))

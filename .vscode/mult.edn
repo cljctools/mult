@@ -1,29 +1,29 @@
 {:connections {:server {:host "localhost"
                         :port 7788
-                        :identity {:type :nrepl}}
+                        :kind {:type :nrepl}}
                :ui {:host "localhost"
                     :port 8899
-                    :identity {:type :nrepl}}
+                    :kind {:type :nrepl}}
                :mult {:host "localhost"
                       :port 5100
-                      :identity {:type :nrepl}}}
- :repls {:ui {:identity {:type :shadow-cljs
-                         :runtime :cljs
-                         :build :app}
+                      :kind {:type :nrepl}}}
+ :repls {:ui {:kind {:type :shadow-cljs
+                     :runtime :cljs
+                     :build :app}
               :conn :ui}
-         :test {:identity {:type :shadow-cljs
-                           :runtime :cljs
-                           :build :test}
+         :test {:kind {:type :shadow-cljs
+                       :runtime :cljs
+                       :build :test}
                 :conn :ui}
-         :devserver  {:identity {:type :shadow-cljs
-                                 :runtime :clj}
-                      :conn :ui}
-         :server {:identity {:type :nrepl-server
+         :devserver  {:kind {:type :shadow-cljs
                              :runtime :clj}
+                      :conn :ui}
+         :server {:kind {:type :nrepl-server
+                         :runtime :clj}
                   :conn :server}
-         :mult {:identity {:type :shadow-cljs
-                           :runtime :cljs
-                           :build :extension}
+         :mult {:kind {:type :shadow-cljs
+                       :runtime :cljs
+                       :build :extension}
                 :conn :mult}}
  :tabs {:system {:repls {:ui {}
                          :test {}

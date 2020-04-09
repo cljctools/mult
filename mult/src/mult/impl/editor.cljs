@@ -13,7 +13,9 @@
 
    [mult.protocols.val :as p.val]
    [mult.protocols.tab :as p.tab]
-   [mult.impl.channels :as channels]))
+   [mult.protocols.editor :as p.editor]
+   [mult.impl.channels :as channels]
+   [mult.impl.paredit :as paredit]))
 
 (def vscode (js/require "vscode"))
 
@@ -37,18 +39,18 @@
       (register-command vscode context id callback))))
 
 (defn tabapp-html
-  [vscode context panel]
+  [vscode context panel script-path html-path script-replace]
   (def panel panel)
   (let [script-uri (as-> nil o
-                     (.join path context.extensionPath "resources/out/tabapp.js")
+                     (.join path context.extensionPath script-path)
                      (vscode.Uri.file o)
                      (.asWebviewUri panel.webview o)
                      (.toString o))
         html (as-> nil o
-               (.join path context.extensionPath "resources/index.html")
+               (.join path context.extensionPath html-path)
                (.readFileSync fs o)
                (.toString o)
-               (string/replace o "/out/tabapp.js" script-uri))]
+               (string/replace o script-replace script-uri))]
     html))
 
 (defn read-workspace-file
@@ -67,14 +69,13 @@
                "mult tab"
                vscode.ViewColumn.Two
                #js {:enableScripts true
-                    :retainContextWhenHidden true})
-        html (tabapp-html vscode context panel)]
+                    :retainContextWhenHidden true})]
     (.onDidDispose panel (fn []
                            ((:on-dispose handlers) id)))
     (.onDidReceiveMessage  panel.webview (fn [msg]
                                            (let [data (read-string msg)]
                                              ((:on-message handlers) id data))))
-    (set! panel.webview.html html)
+    
     panel))
 
 ; https://stackoverflow.com/a/41029103/10589291
@@ -139,11 +140,11 @@
   ;;
   )
 
-(defn proc-editor
+(defn editor
   [channels ctx]
   (let [pid [:proc-editor (random-uuid)]
         {:keys [main| log| editor|m ops| cmd|]} channels
-        {:keys [editor-context]} ctx
+        {context :editor-context} ctx
         proc| (chan 1)
         editor|t (tap editor|m (chan 10))
         editor|i (channels/editor|i)
@@ -156,7 +157,9 @@
                     (untap editor|m  editor|t)
                     (close! editor|t)
                     (close! proc|)
-                    (put! main| (p.val/-stopped main|i pid)))]
+                    (put! main| (p.val/-stopped main|i pid)))
+        lookup (atom {:context context
+                      :vscode vscode})]
     (put! main| (p.val/-started main|i pid proc|))
     (go (loop []
           (try
@@ -164,34 +167,47 @@
               (condp = port
                 proc| (release!)
                 editor|t (let [op (p.val/-op editor|i v)]
-                           (condp = op
-                             (p.val/-op-register-commands editor|i) (let [{:keys [commands]} v
-                                                                              cmd-fn (fn [id args]
-                                                                                       (put! cmd| (p.val/-cmd cmd|i id args)))]
-                                                                          (register-commands commands vscode editor-context cmd-fn))
-                             (p.val/-op-show-info-msg editor|i) (let [{:keys [msg]} v]
-                                                                      (show-information-message vscode msg))
-                             (p.val/-op-create-tab editor|i) (let [{:keys [tab/id] :or {id (random-uuid)}} v
-                                                                       panel (make-panel vscode editor-context id
-                                                                                         {:on-message
-                                                                                          (fn [id data]
-                                                                                            (put! ops| (assoc data :tab/id id)))
-                                                                                          :on-dispose
-                                                                                          (fn [id]
-                                                                                            (println "; tab onDispose " id)
-                                                                                            (put! ops| (p.val/-tab-disposed ops|i id)))})
-                                                                       tab (with-meta {:id id}
-                                                                             {`p.tab/-put! (fn [_ v]
-                                                                                             (.postMessage (.-webview panel) (pr-str v)))
-                                                                              `p.tab/-dispose (fn [_] (println "dispose not implemented yet"))})]
-                                                                   (>! ops| (p.val/-tab-created ops|i tab))
-                                                                   (recur))
-
-                             (p.val/-op-read-conf editor|i) (let [{:keys [filepath out|]} v
-                                                                      cb #(put! out| (p.val/-read-conf-result ops|i (-> % (.toString) (read-string)) v))]
-                                                                  (read-workspace-file filepath cb)))
+                           (cond)
                            (recur))))
             (catch js/Error e (do (log "; proc-editor error, will exit" e)))
             (finally
               (release!))))
-        (println "; proc-editor go-block exits"))))
+        (println "; proc-editor go-block exits"))
+    (reify
+      p.editor/Editor
+      (-release! [_] (release!))
+      (-show-info-msg [_ msg] (show-information-message vscode msg))
+      (-register-commands [_ commands]
+        (let [cmd-fn (fn [id args]
+                       (put! cmd| (p.val/-cmd cmd|i id args)))]
+          (register-commands commands vscode context cmd-fn)))
+      (-create-tab [_ id]
+        (let [id (or id (random-uuid))
+              panel (make-panel vscode context id
+                                {:on-message
+                                 (fn [id data] (put! ops| (assoc data :tab/id id)))
+                                 :on-dispose (fn [id] (put! ops| (p.val/-tab-disposed ops|i id)))})
+              html (tabapp-html vscode context panel
+                                "resources/out/tabapp.js"
+                                "resources/index.html"
+                                "/out/tabapp.js")]
+          (set! panel.webview.html html)
+          (with-meta {:id id}
+            {`p.tab/-put! (fn [_ v] (.postMessage (.-webview panel) (pr-str v)))
+             `p.tab/-dispose (fn [_] (println "dispose not implemented yet"))})))
+      (-read-workspace-file [_ filepath]
+        (let [c| (chan 1)]
+          (read-workspace-file filepath (fn [file] (put! c| (.toString file)) (close! c|)))
+          c|))
+      (-selection [_]
+        (when  vscode.window.activeTextEditor
+          (let [start vscode.window.activeTextEditor.selection.start
+                end vscode.window.activeTextEditor.selection.end
+                range (vscode.Range. start end)
+                text (.getText vscode.window.activeTextEditor.document range)]
+            text)))
+      ILookup
+      (-lookup [_ k]
+        (-lookup _ k nil))
+      (-lookup [_ k not-found]
+        (-lookup @lookup k not-found)))))

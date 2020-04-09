@@ -13,10 +13,14 @@
 
    [mult.protocols.val :as p.val]
    [mult.protocols.tab :as p.tab]
+   [mult.protocols.conn :as p.conn]
+   [mult.protocols.editor :as p.editor]
    [mult.impl.editor :as editor]
    [mult.impl.channels :as channels]
    [mult.impl.conn :as conn]
-   [mult.impl.lrepl :as lrepl]))
+   [mult.impl.lrepl :as lrepl]
+   [mult.impl.conf :as conf]
+   ))
 
 (def channels (let [main| (chan 10)
                     main|m (mult main|)
@@ -26,6 +30,9 @@
                     cmd|m (mult cmd|)
                     ops| (chan 10)
                     ops|m (mult ops|)
+                    conn-status| (chan (sliding-buffer 10))
+                    conn-status|m (mult conn-status|)
+                    conn-status|x (mix conn-status|)
                     editor| (chan 10)
                     editor|m (mult editor|)
                     #_editor|p #_(pub (tap editor|m (chan 10)) channels/TOPIC (fn [_] 10))]
@@ -36,9 +43,13 @@
                  :cmd| cmd|
                  :cmd|m cmd|m
                  :ops| ops|
+                 :conn-status| conn-status|
+                 :conn-status|m conn-status|m
+                 :conn-status|x conn-status|x
                  :ops|m ops|m
                  :editor| editor|
-                 :editor|m editor|m}))
+                 :editor|m editor|m
+                 }))
 
 (declare proc-main proc-ops proc-log)
 
@@ -66,7 +77,7 @@
                 (p.val/-op-init main|i) (let [{:keys [channels ctx]} state]
                                             (do
                                               (proc-log channels ctx)
-                                              (proc-ops channels ctx)))
+                                              ))
                 (p.val/-op-started main|i) (let [{:keys [proc-id proc|]} v]
                                                     #_(log (format "; process started: %s" proc-id))
                                                     (recur (-> state
@@ -93,7 +104,7 @@
                 (p.val/-op-activate main|i) (let [{:keys [editor-context]} v
                                                     state' (update-in state [:ctx] assoc :editor-context  editor-context)]
                                                 (when-not (:activated? state)
-                                                  (do (editor/proc-editor (:channels state') (:ctx state')))
+                                                  (do (proc-ops (:channels state') (:ctx state')))
                                                   (>! ops| (p.val/-activate ops|i))
                                                   (recur state')))
                 (p.val/-op-deactivate main|i) (let []
@@ -113,58 +124,99 @@
    "mult.ping"
    "mult.eval"])
 
+; repl only
+(def ^:private proc-ops-state (atom {}))
+
 (defn proc-ops
   [channels ctx]
   (let [pid [:proc-ops (random-uuid)]
-        {:keys [main| log| editor| ops|m cmd|m]} channels
+        {:keys [main| log| ops|m cmd|m conn| conn-status|m conn-status|x]} channels
         proc| (chan 1)
         ops|t (tap ops|m (chan 10))
         cmd|t (tap cmd|m (chan 100))
-        editor|i (channels/editor|i)
+        conn-status|t (tap conn-status|m (chan (sliding-buffer 10)))
         main|i (channels/main|i)
         ops|i (channels/ops|i)
         tab|i (channels/tab|i)
         log|i (channels/log|i)
         cmd|i (channels/cmd|i)
+        conn|i (channels/netsock|i)
+        editor (editor/editor channels ctx)
         log (fn [& args] (put! log| (apply p.val/-log log|i args)))
+        adconn (fn [state id conn] (update state :conns assoc id conn))
+        rmconn (fn [state id] (update state :conns dissoc id))
         release! #(do
                     (untap ops|m ops|t)
                     (untap cmd|m cmd|t)
+                    (untap conn-status|m conn-status|t)
                     (close! ops|t)
                     (close! cmd|t)
+                    (close! conn-status|t)
                     (close! proc|)
                     (put! main| (p.val/-stopped main|i pid)))]
     (put! main| (p.val/-started main|i pid proc|))
     (go (loop [state {:tabs {}
+                      :conns {}
                       :mult.edn nil}]
+          (reset! proc-ops-state state)
           (try
-            (if-let [[v port] (alts! [cmd|t ops|t proc|])]
+            (if-let [[v port] (alts! [cmd|t ops|t conn-status|t proc|])]
               (condp = port
                 proc| (release!)
+                conn-status|t (let [op (p.val/-op conn|i v)]
+                                (condp = op
+                                  (p.val/-op-connected conn|i) (let [{:keys [id]} v]
+                                                                 (log (format "%s connected" id)))
+                                  (p.val/-op-ready conn|i) (let [{:keys [id]} v]
+                                                             (log (format "%s ready" id)))
+                                  (p.val/-op-disconnected conn|i) (let [hadError (:hadError v)
+                                                                        {:keys [id]} v]
+                                                                    (log (format "%s disconnected, hadError %s" id hadError))
+                                                                    (recur (rmconn state id)))
+                                  (p.val/-op-timeout conn|i) (let [{:keys [id]} v]
+                                                               (log (format "%s timeout" id))
+                                                               (recur (rmconn state id)))
+                                  (p.val/-op-error conn|i) (let [err (:err v)
+                                                                 {:keys [id]} v]
+                                                             (log (format "%s error" id) err)
+                                                             (recur (rmconn state id))))
+                                (recur state))
                 ops|t (let [op (p.val/-op ops|i v)]
                         (condp = op
-                          (p.val/-op-activate ops|i) (do (>! editor| (p.val/-register-commands editor|i (default-commands)))
-                                                          (>! editor| (p.val/-show-info-msg editor|i "actiavting")))
-                          (p.val/-op-deactivate ops|i) (do (>! editor| (p.val/-show-info-msg editor|i "deactiavting")))
-                          (p.val/-op-tab-created ops|i) (let [{:keys [tab]} v]
-                                                           (p.tab/-put! tab (p.val/-conf tab|i (get state :mult.edn)))
-                                                           (recur (update state :tabs assoc (:id tab) tab)))
+                          (p.val/-op-activate ops|i) (do
+                                                       (p.editor/-register-commands editor (default-commands))
+                                                       (p.editor/-show-info-msg editor "actiavting"))
+                          (p.val/-op-deactivate ops|i) (p.editor/-show-info-msg editor "deactiavting")
                           (p.val/-op-tab-disposed ops|i) (let [{:keys [tab/id]} v]
-                                                            (do nil)))
+                                                           (log (format "tab  %s disposed" id)))
+                          (p.val/-op-connect ops|i) (let [{:keys [k host port kind]} v
+                                                          id (str host ":" port)
+                                                          conn (conn/netsocket {:id id
+                                                                                :host host
+                                                                                :port port
+                                                                                :topic-fn :id})]
+                                                      (admix conn-status|x (:status| conn))
+                                                      (p.conn/-connect conn)
+                                                      (recur (adconn state id conn)))
+                          (p.val/-op-disconnect ops|i) (let [{:keys [k host port kind id]} v
+                                                             conn (get-in state [:conns id])]
+                                                         (unmix conn-status|x (:status| conn))
+                                                         (p.conn/-disconnect conn)))
                         (recur state))
                 cmd|t (let [cmd (:cmd/id v)]
                         (condp = cmd
-                          "mult.open" (let [out| (chan 1)
-                                            _ (>! editor| (p.val/-read-conf editor|i ".vscode/mult.edn" out|))
-                                            {:keys [conf]} (<! out|)]
-                                        (close! out|)
-                                        (>! editor| (p.val/-show-info-msg editor|i "mult.open"))
-                                        (>! editor| (p.val/-create-tab editor|i (random-uuid)))
-                                        (recur (assoc state :mult.edn conf)))
+                          "mult.open" (let [conf (-> (<! (p.editor/-read-workspace-file editor ".vscode/mult.edn"))
+                                                     (read-string))
+                                            tab (p.editor/-create-tab editor (random-uuid))]
+                                        (p.tab/-put! tab (p.val/-conf tab|i conf))
+                                        (p.editor/-show-info-msg editor "mult.open")
+                                        (recur (-> state
+                                                   (assoc :mult.edn conf)
+                                                   (update  :tabs assoc (:id tab) tab))))
                           "mult.ping" (do
-                                        (>! editor| (p.val/-show-info-msg editor|i "mult.ping via channels"))
+                                        (p.editor/-show-info-msg editor "mult.ping via channels")
                                         (<! (timeout 3000))
-                                        (>! editor| (p.val/-show-info-msg editor|i "mult.ping via channels later")))
+                                        (p.editor/-show-info-msg editor "mult.ping via channels later"))
                           "mult.eval"  (let [tabs (:tabs state)]
                                          (doseq [tab (vals tabs)]
                                            (p.tab/-put! tab (p.val/-append tab|i {:value (rand-int 100)})))))
@@ -175,18 +227,20 @@
         (println "; proc-ops go-block exits"))))
 
 
+
 ; repl only
 (def ^:private proc-log-state (atom {}))
 
 (defn proc-log
   [channels ctx]
   (let [pid [:proc-log (random-uuid)]
-        {:keys [main| main|m log| log|m  editor|m cmd|m]} channels
+        {:keys [main| main|m log| log|m  editor|m cmd|m conn-status|m]} channels
         proc| (chan 1)
         main|t (tap main|m (chan 10))
         log|t (tap log|m (chan 10))
         editor|t (tap editor|m (chan 10))
         cmd|t (tap cmd|m (chan 100))
+        conn-status|t (tap conn-status|m (chan 100))
         main|i (channels/main|i)
         append #(-> %1
                     (update-in [:log] conj %2)
@@ -196,10 +250,12 @@
                     (untap log|m log|t)
                     (untap editor|m  editor|t)
                     (untap cmd|m  cmd|t)
+                    (untap conn-status|m conn-status|t)
                     (close! main|t)
                     (close! log|t)
                     (close! editor|t)
                     (close! cmd|t)
+                    (close! conn-status|t)
                     (close! proc|)
                     (put! main| (p.val/-stopped main|i pid)))]
     (put! main| (p.val/-started main|i pid proc|))
@@ -218,7 +274,9 @@
                                         editor|t (let []
                                                    v)
                                         cmd|t (let []
-                                                v))]
+                                                v)
+                                        conn-status|t (let []
+                                                        (select-keys v [:op :id :err :hadError])))]
                         (pprint printable)
                         (recur (append state v)))))
             (catch js/Error e (do (println "; proc-log error, will exit")
