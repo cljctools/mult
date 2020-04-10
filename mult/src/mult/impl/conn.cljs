@@ -74,9 +74,8 @@
     conn))
 
 (defn nrepl
-  [opts]
-  (let [proc| (chan 10)
-        {:keys [msg|p send|]} opts]
+  []
+  (let [proc| (chan 10)]
     (go-loop []
       (if-let [v (<! proc|)]
         (recur)))
@@ -84,7 +83,7 @@
       p.conn/NRepl
       (-close-session [_ session-id opts])
       (-describe [_  opts])
-      (-eval [_ code session-id opts]
+      (-eval [_ code session-id {:keys [msg|p send|]}]
         (go
           (let [id (str (random-uuid))
                 topic id
@@ -114,6 +113,31 @@
       (-interrupt [_ session-id opts])
       (-ls-sessions [_]))))
 
+
+(defn lrepl-plain
+  []
+  (let [nr (nrepl)]
+    (reify
+      p.conn/LRepl
+      (-eval [_ code session-id {:keys [msg|p send|] :as opts}]
+        (p.conn/-eval nr code session-id opts)))))
+
+(defn lrepl-shadow-clj
+  []
+  (let [nr (nrepl)]
+    (reify
+      p.conn/LRepl
+      (-eval [_ code session-id {:keys [msg|p send|] :as opts}]
+        (p.conn/-eval nr code session-id opts)))))
+
+(defn lrepl-shadow-cljs
+  [{:keys [build]}]
+  (let [nr (nrepl)]
+    (reify
+      p.conn/LRepl
+      (-eval [_ code session-id {:keys [msg|p send|] :as opts}]
+        (p.conn/-eval nr code session-id opts)))))
+
 (comment
 
   (as-> {:op :eval :id (str (random-uuid)) :code "(+ 1 2)"} x
@@ -121,7 +145,7 @@
     (.decode bencode x "utf8")
     (js->clj x :keywordize-keys true))
 
-  
+
   (do
     (def s (netsocket {:host "localhost" :port 7788
                        :topic-fn #(get-in % [:data :id])
@@ -140,17 +164,17 @@
           (println v)
           (recur c|)))
     (p.conn/-connect s))
-  
-  
-  
+
+
+
   (p.conn/-disconnect s)
-  
-  (def nr (nrepl (select-keys s [:msg|p :send|])))
-  (take! (p.conn/-eval nr "(+ 1 2)" nil {}) prn)
-  
+
+  (def nr (nrepl))
+  (take! (p.conn/-eval nr "(+ 1 2)" nil (select-keys s [:msg|p :send|])) prn)
+
   (take! (:status| s) prn)
-  (take! (tap (:msg|m s) (chan 1) ) prn)
-  
+  (take! (tap (:msg|m s) (chan 1)) prn)
+
   ;;
   )
 

@@ -1,27 +1,26 @@
-{:connections {:server {:host "localhost"
-                        :port 7788
-                        :kind {:type :nrepl}}
-               :ui {:host "localhost"
-                    :port 8899
-                    :kind {:type :nrepl}}
-               :mult {:host "localhost"
-                      :port 5100
-                      :kind {:type :nrepl}}}
- :repls {:ui {:kind {:type :shadow-cljs
+{:connections {["localhost" 7788] {:name :server
+                                   :iden {:type :nrepl}}
+               ["localhost" 8899] {:name :ui
+                                   :iden {:type :nrepl}}
+               ["localhost" 5100] {:name :mult
+                                   :iden {:type :nrepl}}}
+ :repls {:ui {:iden {:type :shadow-cljs
                      :runtime :cljs
                      :build :app}
-              :conn :ui}
-         :test {:kind {:type :shadow-cljs
+              :conn :ui
+              :include '(fn [file-uri]
+                          (re-math #".+.cljs" file-uri))}
+         :test {:iden {:type :shadow-cljs
                        :runtime :cljs
                        :build :test}
                 :conn :ui}
-         :devserver  {:kind {:type :shadow-cljs
+         :devserver  {:iden {:type :shadow-cljs
                              :runtime :clj}
                       :conn :ui}
-         :server {:kind {:type :nrepl-server
+         :server {:iden {:type :nrepl-server
                          :runtime :clj}
                   :conn :server}
-         :mult {:kind {:type :shadow-cljs
+         :mult {:iden {:type :shadow-cljs
                        :runtime :cljs
                        :build :extension}
                 :conn :mult}}
@@ -30,6 +29,8 @@
                          :devserver {}
                          :server {}
                          :mult {}}
-                 :mult {:mult {}}}}
+                 :cljc-prefer :recent}
+        :mult {:repls {:mult {}}
+               :cljc-prefer :cljs}}
  :tabs/default #{:system}}
   

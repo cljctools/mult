@@ -129,19 +129,19 @@
       (-op [_ v] (get v OP))
       p.val/Connected
       (-op-connected [_] :netsock/connected)
-      (-connected [_ opts] {OP (p.val/-op-connected _) :ops opts})
+      (-connected [_ opts] {OP (p.val/-op-connected _) :opts opts})
       p.val/Ready
       (-op-ready [_] :netsock/ready)
-      (-ready [_ opts] {OP (p.val/-op-ready _) :ops ops})
+      (-ready [_ opts] {OP (p.val/-op-ready _) :opts opts})
       p.val/Timeout
       (-op-timeout [_] :netsock/timeout)
-      (-timeout [_ opts] {OP (p.val/-op-timeout _) :ops ops})
+      (-timeout [_ opts] {OP (p.val/-op-timeout _) :opts opts})
       p.val/Disconnected
       (-op-disconnected [_] :netsock/disconnected)
-      (-disconnected [_ hadError opts] {OP (p.val/-op-disconnected _) :ops ops :hadError hadError})
+      (-disconnected [_ hadError opts] {OP (p.val/-op-disconnected _) :opts opts :hadError hadError})
       p.val/Error
       (-op-error [_] :netsock/error)
-      (-error [_ err opts] {OP (p.val/-op-error _) :ops ops :err err})
+      (-error [_ err opts] {OP (p.val/-op-error _) :opts opts :err err})
       p.val/Data
       (-op-data [_] :netsock/data)
       (-data [_ data opts] {OP (p.val/-op-data _) :data data :opts opts}))))

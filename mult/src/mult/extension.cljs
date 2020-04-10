@@ -18,9 +18,7 @@
    [mult.impl.editor :as editor]
    [mult.impl.channels :as channels]
    [mult.impl.conn :as conn]
-   [mult.impl.lrepl :as lrepl]
-   [mult.impl.conf :as conf]
-   ))
+   [mult.impl.conf :as conf]))
 
 (def channels (let [main| (chan 10)
                     main|m (mult main|)
@@ -189,24 +187,24 @@
                           (p.val/-op-deactivate ops|i) (p.editor/-show-info-msg editor "deactiavting")
                           (p.val/-op-tab-disposed ops|i) (let [{:keys [tab/id]} v]
                                                            (log (format "tab  %s disposed" id)))
-                          (p.val/-op-connect ops|i) (let [{:keys [k host port kind]} v
-                                                          id (str host ":" port)
+                          (p.val/-op-connect ops|i) (let [{:keys [id ]} v
                                                           conn (conn/netsocket {:id id
-                                                                                :host host
-                                                                                :port port
+                                                                                :host (first id)
+                                                                                :port (second id)
                                                                                 :topic-fn :id})]
                                                       (admix conn-status|x (:status| conn))
                                                       (p.conn/-connect conn)
                                                       (recur (adconn state id conn)))
-                          (p.val/-op-disconnect ops|i) (let [{:keys [k host port kind id]} v
-                                                             conn (get-in state [:conns id])]
+                          (p.val/-op-disconnect ops|i) (let [{:keys [k host port  id]} v
+                                                             conn (get-in state [:conns k])]
                                                          (unmix conn-status|x (:status| conn))
                                                          (p.conn/-disconnect conn)))
                         (recur state))
                 cmd|t (let [cmd (:cmd/id v)]
                         (condp = cmd
                           "mult.open" (let [conf (-> (<! (p.editor/-read-workspace-file editor ".vscode/mult.edn"))
-                                                     (read-string))
+                                                     (read-string)
+                                                     (conf/preprocess))
                                             tab (p.editor/-create-tab editor (random-uuid))]
                                         (p.tab/-put! tab (p.val/-conf tab|i conf))
                                         (p.editor/-show-info-msg editor "mult.open")

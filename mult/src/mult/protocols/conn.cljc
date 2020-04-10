@@ -18,3 +18,7 @@
   #_(-sideloader-provide [_ content name session-id type opts])
   #_(-sideloader-start [_ session-id opts])
   #_(-stdin [_ stdin-content opts]))
+
+
+(defprotocol LRepl
+  (-eval [_ opts code]))
