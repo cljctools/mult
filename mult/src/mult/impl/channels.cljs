@@ -3,7 +3,7 @@
    [goog.string :refer [format]]
    [clojure.string :as string]
    [cljs.reader :refer [read-string]]
-   [mult.protocols.val :as p.val]))
+   [mult.protocols :as p]))
 
 (def ^:const TOPIC :topic)
 (def ^:const OP :op)
@@ -12,136 +12,105 @@
   []
   (let []
     (reify
-      p.val/Op
+      p/Op
       (-op [_ v] (get v OP))
-      p.val/Init
+      p/Vals
       (-op-init [_] :main/init)
-      (-init [_] {OP (p.val/-op-init _)})
-      p.val/Activate
+      (-vl-init [_] {OP (p/-op-init _)})
       (-op-activate [_] :main/activate)
-      (-activate [_ editor-context] {OP (p.val/-op-activate _) :editor-context editor-context})
-      p.val/Deactivate
+      (-vl-activate [_ editor-context] {OP (p/-op-activate _) :editor-context editor-context})
       (-op-deactivate [_] :main/deactivate)
-      (-deactivate [_] {OP (p.val/-op-deactivate _)})
-      p.val/Start
-      (-op-start [_] :main/start-proc)
-      (-start [_ proc-fn] {OP (p.val/-op-start _) :proc-fn proc-fn})
-      p.val/Stop
-      (-op-stop [_] :main/stop-proc)
-      (-stop [_ proc-id] {OP (p.val/-op-stop _) :proc-id proc-id})
-      p.val/Restart
-      (-op-restart [_] :main/restart-proc)
-      (-restart [_ proc-id] {OP (p.val/-op-restart _) :proc-id proc-id})
-      p.val/Started
-      (-op-started [_] :main/proc-started)
-      (-started [_ proc-id proc|] {OP (p.val/-op-started _) :proc-id proc-id :proc| proc|})
-      p.val/Stopped
-      (-op-stopped [_] :main/proc-stopped)
-      (-stopped [_ proc-id] {OP (p.val/-op-stopped _) :proc-id proc-id}))))
-
+      (-vl-deactivate [_] {OP (p/-op-deactivate _)})
+      (-op-start-proc [_] :main/start-proc)
+      (-vl-start-proc [_ proc-fn] {OP (p/-op-start-proc _) :proc-fn proc-fn})
+      (-op-stop-proc [_] :main/stop-proc)
+      (-vl-stop-proc [_ proc-id] {OP (p/-op-stop-proc _) :proc-id proc-id})
+      (-op-restart-proc [_] :main/restart-proc)
+      (-vl-restart-proc [_ proc-id] {OP (p/-op-restart-proc _) :proc-id proc-id})
+      (-op-proc-started [_] :main/proc-started)
+      (-vl-proc-started [_ proc-id proc|] {OP (p/-op-proc-started _) :proc-id proc-id :proc| proc|})
+      (-op-proc-stopped [_] :main/proc-stopped)
+      (-vl-proc-stopped [_ proc-id] {OP (p/-op-proc-stopped _) :proc-id proc-id}))))
 
 (defn log|i
   []
   (let []
     (reify
-      p.val/Op
+      p/Op
       (-op [_ v] (get v OP))
-      p.val/Log|
+      p/Vals
+      (-op-exinfo [_] :exinfo)
+      (-vl-exinfo [_ ex] {OP (p/-op-exinfo _) :ex ex})
       (-op-log [_] :log)
-      (-log [_ comment] {OP (p.val/-op-log _) :comment comment})
-      (-log [_ comment data] {OP (p.val/-op-log _) :comment comment :data data})
-      (-log [_ id  comment data] {OP (p.val/-op-log _) :id id :comment comment :data data}))))
+      (-vl-log [_ comment] {OP (p/-op-log _) :comment comment})
+      (-vl-log [_ comment data] {OP (p/-op-log _) :comment comment :data data})
+      (-vl-log [_ id  comment data] {OP (p/-op-log _) :id id :comment comment :data data}))))
 
 (defn ops|i
   []
   (let []
     (reify
-      p.val/Op
+      p/Op
       (-op [_ v] (get v OP))
-      p.val/Activate
+      p/Vals
       (-op-activate [_] :ops/activate)
-      (-activate [_] {OP (p.val/-op-activate _)})
-      p.val/Deactivate
+      (-vl-activate [_] {OP (p/-op-activate _)})
       (-op-deactivate [_] :ops/deactivate)
-      (-deactivate [_] {OP (p.val/-op-deactivate _)})
-      p.val/Connect
+      (-vl-deactivate [_] {OP (p/-op-deactivate _)})
       (-op-connect [_] :ops/connect)
-      (-connect [_ opts]  {OP (p.val/-op-connect _) :opts opts})
-      p.val/Disconnect
+      (-vl-connect [_ opts]  {OP (p/-op-connect _) :opts opts})
       (-op-disconnect [_] :ops/disconnect)
-      (-disconnect [_ opts] {OP (p.val/-op-disconnect _) :opts opts})
-      p.val/Ops|
-      (-op-tab-created [_] :ops/tab-created)
+      (-vl-disconnect [_ opts] {OP (p/-op-disconnect _) :opts opts})
       (-op-tab-disposed [_] :ops/tab-disposed)
-      (-op-read-conf-result [_] :ops/read-file-result)
-      (-tab-created [_ tab] {OP (p.val/-op-tab-created _) :tab tab})
-      (-tab-disposed [_ id] {OP (p.val/-op-tab-disposed _) :tab/id id})
-      (-read-conf-result [_ conf args] {OP (p.val/-op-read-conf-result _) :conf conf :args args}))))
+      (-vl-tab-disposed [_ id] {OP (p/-op-tab-disposed _) :tab/id id}))))
 
 (defn cmd|i
   []
   (let []
     (reify
-      p.val/Op
+      p/Op
       (-op [_ v] (get v OP))
-      p.val/Cmd|
+      p/Vals
       (-op-cmd [_] :cmd/cmd)
-      (-cmd [_ id args] {OP (p.val/-op-cmd _) :cmd/id id}))))
+      (-vl-cmd [_ id args] {OP (p/-op-cmd _) :cmd/id id}))))
 
 (defn editor|i
   []
   (let []
     (reify
-      p.val/Op
-      (-op [_ v] (get v OP))
-      p.val/Editor|
-      (-op-show-info-msg [_] :editor/show-info-msg)
-      (-op-register-commands [_] :editor/register-commands)
-      (-op-create-tab [_] :editor/create-tab)
-      (-op-read-conf [_] :editor/read-file)
-
-      (-show-info-msg [_ msg] {OP (p.val/-op-show-info-msg _) :msg msg})
-      (-register-commands [_ commands] {OP (p.val/-op-register-commands _) :commands commands})
-      (-create-tab [_ tab-id] {OP (p.val/-op-create-tab _) :tab/id tab-id})
-      (-read-conf [_  filepath out|] {OP (p.val/-op-read-conf _) :filepath filepath :out| out|}))))
+      p/Op
+      (-op [_ v] (get v OP)))))
 
 (defn tab|i
   []
   (let []
     (reify
-      p.val/Op
+      p/Op
       (-op [_ v] (get v OP))
-      p.val/Clear
-      (-op-clear [_] :tab/clear)
-      (-clear [_] {OP (p.val/-op-clear _)})
-      p.val/Append
-      (-op-append [_] :tab/append)
-      (-append [_ data] {OP (p.val/-op-append _) :data data})
-      p.val/Conf
+      p/Vals
+      (-op-tab-clear [_] :tab/clear)
+      (-vl-tab-clear [_] {OP (p/-op-tab-clear _)})
+      (-op-tab-append [_] :tab/append)
+      (-vl-tab-append [_ data] {OP (p/-op-tab-append _) :data data})
       (-op-conf [_] :tab/conf)
-      (-conf [_ conf] {OP (p.val/-op-conf _) :conf conf}))))
+      (-vl-conf [_ conf] {OP (p/-op-conf _) :conf conf}))))
 
 (defn netsock|i
   []
   (let []
     (reify
-      p.val/Op
+      p/Op
       (-op [_ v] (get v OP))
-      p.val/Connected
+      p/Vals
       (-op-connected [_] :netsock/connected)
-      (-connected [_ opts] {OP (p.val/-op-connected _) :opts opts})
-      p.val/Ready
+      (-vl-connected [_ opts] {OP (p/-op-connected _) :opts opts})
       (-op-ready [_] :netsock/ready)
-      (-ready [_ opts] {OP (p.val/-op-ready _) :opts opts})
-      p.val/Timeout
+      (-vl-ready [_ opts] {OP (p/-op-ready _) :opts opts})
       (-op-timeout [_] :netsock/timeout)
-      (-timeout [_ opts] {OP (p.val/-op-timeout _) :opts opts})
-      p.val/Disconnected
+      (-vl-timeout [_ opts] {OP (p/-op-timeout _) :opts opts})
       (-op-disconnected [_] :netsock/disconnected)
-      (-disconnected [_ hadError opts] {OP (p.val/-op-disconnected _) :opts opts :hadError hadError})
-      p.val/Error
+      (-vl-disconnected [_ hadError opts] {OP (p/-op-disconnected _) :opts opts :hadError hadError})
       (-op-error [_] :netsock/error)
-      (-error [_ err opts] {OP (p.val/-op-error _) :opts opts :err err})
-      p.val/Data
+      (-vl-error [_ err opts] {OP (p/-op-error _) :opts opts :err err})
       (-op-data [_] :netsock/data)
-      (-data [_ data opts] {OP (p.val/-op-data _) :data data :opts opts}))))
+      (-vl-data [_ data opts] {OP (p/-op-data _) :data data :opts opts}))))

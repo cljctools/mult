@@ -1,4 +1,4 @@
-(ns mult.impl.conn
+(ns mult.impl.lrepl
   (:require
    [clojure.core.async :as a :refer [<! >!  chan go alt! take! put! offer! poll! alts! pub sub unsub
                                      timeout close! to-chan  mult tap untap mix admix unmix
@@ -13,9 +13,8 @@
    ["nrepl-client" :as nrepl-cleint]
    [cljs.reader :refer [read-string]]
    [bencode-cljc.core :refer [serialize deserialize]]
+   [mult.protocols :as p]
    [mult.impl.channels :as channels]
-   [mult.protocols.val :as p.val]
-   [mult.protocols.conn :as p.conn]
    [mult.impl.async :as mult.async]))
 
 
@@ -32,45 +31,50 @@
         msg|p (mult.async/pub (tap msg|m (chan (sliding-buffer 10))) topic-fn (fn [_] (sliding-buffer 10)))
         netsock|i (channels/netsock|i)
         socket (doto (net/Socket.)
-                 (.on "connect" (fn [] (put! status| (p.val/-connected netsock|i opts))))
-                 (.on "ready" (fn [] (put! status| (p.val/-ready netsock|i opts))))
-                 (.on "timeout" (fn [] (put! status| (p.val/-timeout netsock|i  opts))))
-                 (.on "close" (fn [hadError] (put! status| (p.val/-disconnected netsock|i hadError opts))))
-                 (.on "error" (fn [err] (put! status| (p.val/-error netsock|i err opts))))
+                 (.on "connect" (fn [] (put! status| (p/-vl-connected netsock|i opts))))
+                 (.on "ready" (fn [] (put! status| (p/-vl-ready netsock|i opts))))
+                 (.on "timeout" (fn [] (put! status| (p/-vl-timeout netsock|i  opts))))
+                 (.on "close" (fn [hadError] (put! status| (p/-vl-disconnected netsock|i hadError opts))))
+                 (.on "error" (fn [err] (put! status| (p/-vl-error netsock|i err opts))))
                  (.on "data" (fn [buf]
                                (try
                                  (when-let [d (xf-msg buf)]
                                    (when (:id d)
-                                     (put! msg| (p.val/-data netsock|i d opts))))
+                                     (put! msg| (p/-vl-data netsock|i d opts))))
                                  (catch js/Error e #_(println (ex-message e)))))))
-        conn (with-meta
-               (merge opts {:status| status|
+
+        lookup (merge opts {:status| status|
                             :send| send|
                             :msg| msg|
                             :msg|m msg|m
                             :msg|p msg|p})
-               {`p.conn/-connect (fn [_] (.connect socket (clj->js opts)))
-                `p.conn/-disconnect (fn [_] (.end socket))
-                `p.conn/-connected? (fn [_]
-                                      #_(not socket.pending)
-                                      (not socket.connecting))
-                `p.conn/-send (fn [_ v]
-                                (try
-                                  (let [d (xf-send v)]
-                                    (.write socket d))
-                                  (catch js/Error e #_(println (ex-message e)))))})
-        release! #(do
-                    (p.conn/-disconnect conn)
-                    (a/unsub-all msg|p)
-                    (a/untap-all msg|m)
-                    (close! send|)
-                    (close! msg|)
-                    (close! status|))]
+        conn (reify
+               p/Connect
+               (-connect [_] (.connect socket (clj->js opts)))
+               (-disconnect [_] (.end socket))
+               (-connected? [_] (not socket.connecting) #_(not socket.pending))
+               p/Send
+               (-send [_ v] (try
+                              (let [d (xf-send v)]
+                                (.write socket d))
+                              (catch js/Error e #_(println (ex-message e)))))
+               p/Release
+               (-release [_] (close! send|))
+               cljs.core/ILookup
+               (-lookup [_ k] (-lookup _ k nil))
+               (-lookup [_ k not-found] (-lookup lookup k not-found)))
+        release #(do
+                   (p/-disconnect conn)
+                   (a/unsub-all msg|p)
+                   (a/untap-all msg|m)
+                   (close! send|)
+                   (close! msg|)
+                   (close! status|))]
     (go-loop []
       (when-let [v (<! send|)]
-        (p.conn/-send conn v)
+        (p/-send conn v)
         (recur))
-      (release!))
+      (release))
     conn))
 
 (defn nrepl
@@ -80,9 +84,7 @@
       (if-let [v (<! proc|)]
         (recur)))
     (reify
-      p.conn/NRepl
-      (-close-session [_ session-id opts])
-      (-describe [_  opts])
+      p/Eval
       (-eval [_ code session-id {:keys [msg|p send|]}]
         (go
           (let [id (str (random-uuid))
@@ -90,7 +92,7 @@
                 c| (chan 10)
                 res| (chan 50)
                 msg|s (sub msg|p topic c|)
-                release! #(do
+                release #(do
                             (close! res|)
                             (close! c|)
                             (unsub msg|p topic c|)
@@ -100,16 +102,19 @@
             (loop [t| (timeout 10000)]
               (alt!
                 c| ([v] (when v
-                          (let [{:keys [data opts]} v])
-                          (>! res| data)
-                          (if (or (:status data) (:err data))
-                            (do (release!)
-                                {:req  req
-                                 :res (<! (a/into [] res|))})
-                            (recur t|))))
+                          (let [{:keys [data opts]} v]
+                            (>! res| data)
+                            (if (or (:status data) (:err data))
+                              (do (release)
+                                  {:req  req
+                                   :res (<! (a/into [] res|))})
+                              (recur t|)))))
                 t| (do
-                     (release!)
+                     (release)
                      (ex-info "Nrepl op timed out" [code session-id session-id])))))))
+      p/NRepl
+      (-close-session [_ session-id opts])
+      (-describe [_  opts])
       (-interrupt [_ session-id opts])
       (-ls-sessions [_]))))
 
@@ -118,25 +123,25 @@
   []
   (let [nr (nrepl)]
     (reify
-      p.conn/LRepl
+      p/Eval
       (-eval [_ code session-id {:keys [msg|p send|] :as opts}]
-        (p.conn/-eval nr code session-id opts)))))
+        (p/-eval nr code session-id opts)))))
 
 (defn lrepl-shadow-clj
   []
   (let [nr (nrepl)]
     (reify
-      p.conn/LRepl
+      p/Eval
       (-eval [_ code session-id {:keys [msg|p send|] :as opts}]
-        (p.conn/-eval nr code session-id opts)))))
+        (p/-eval nr code session-id opts)))))
 
 (defn lrepl-shadow-cljs
   [{:keys [build]}]
   (let [nr (nrepl)]
     (reify
-      p.conn/LRepl
+      p/Eval
       (-eval [_ code session-id {:keys [msg|p send|] :as opts}]
-        (p.conn/-eval nr code session-id opts)))))
+        (p/-eval nr code session-id opts)))))
 
 (comment
 

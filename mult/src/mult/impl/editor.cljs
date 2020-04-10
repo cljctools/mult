@@ -11,9 +11,7 @@
    ["fs" :as fs]
    ["path" :as path]
 
-   [mult.protocols.val :as p.val]
-   [mult.protocols.tab :as p.tab]
-   [mult.protocols.editor :as p.editor]
+   [mult.protocols :as p]
    [mult.impl.channels :as channels]
    [mult.impl.paredit :as paredit]))
 
@@ -152,49 +150,56 @@
         ops|i (channels/ops|i)
         cmd|i (channels/cmd|i)
         log|i (channels/log|i)
-        log (fn [& args] (put! log| (apply p.val/-log log|i args)))
-        release! #(do
-                    (untap editor|m  editor|t)
-                    (close! editor|t)
-                    (close! proc|)
-                    (put! main| (p.val/-stopped main|i pid)))
+        log (fn [& args] (put! log| (apply p/-vl-log log|i args)))
+        release #(do
+                   (untap editor|m  editor|t)
+                   (close! editor|t)
+                   (close! proc|)
+                   (put! main| (p/-vl-proc-stopped main|i pid)))
         lookup (atom {:context context
                       :vscode vscode})]
-    (put! main| (p.val/-started main|i pid proc|))
+    (put! main| (p/-vl-proc-started main|i pid proc|))
     (go (loop []
           (try
             (if-let [[v port] (alts! [editor|t proc|])]
               (condp = port
-                proc| (release!)
-                editor|t (let [op (p.val/-op editor|i v)]
+                proc| (release)
+                editor|t (let [op (p/-op editor|i v)]
                            (cond)
                            (recur))))
             (catch js/Error e (do (log "; proc-editor error, will exit" e)))
             (finally
-              (release!))))
+              (release))))
         (println "; proc-editor go-block exits"))
     (reify
-      p.editor/Editor
-      (-release! [_] (release!))
+      p/Release
+      (-release [_] (release))
+      p/Editor
       (-show-info-msg [_ msg] (show-information-message vscode msg))
       (-register-commands [_ commands]
         (let [cmd-fn (fn [id args]
-                       (put! cmd| (p.val/-cmd cmd|i id args)))]
+                       (put! cmd| (p/-vl-cmd cmd|i id args)))]
           (register-commands commands vscode context cmd-fn)))
       (-create-tab [_ id]
         (let [id (or id (random-uuid))
               panel (make-panel vscode context id
                                 {:on-message
                                  (fn [id data] (put! ops| (assoc data :tab/id id)))
-                                 :on-dispose (fn [id] (put! ops| (p.val/-tab-disposed ops|i id)))})
+                                 :on-dispose (fn [id] (put! ops| (p/-vl-tab-disposed ops|i id)))})
               html (tabapp-html vscode context panel
                                 "resources/out/tabapp.js"
                                 "resources/index.html"
-                                "/out/tabapp.js")]
+                                "/out/tabapp.js")
+              lookup {:id id}]
           (set! panel.webview.html html)
-          (with-meta {:id id}
-            {`p.tab/-put! (fn [_ v] (.postMessage (.-webview panel) (pr-str v)))
-             `p.tab/-dispose (fn [_] (println "dispose not implemented yet"))})))
+          (reify
+            p/Send
+            (-send [_ v] (.postMessage (.-webview panel) (pr-str v)))
+            p/Release
+            (-release [_] (println "release for tab not implemented"))
+            cljs.core/ILookup
+            (-lookup [_ k] (-lookup _ k nil))
+            (-lookup [_ k not-found] (-lookup lookup k not-found)))))
       (-read-workspace-file [_ filepath]
         (let [c| (chan 1)]
           (read-workspace-file filepath (fn [file] (put! c| (.toString file)) (close! c|)))
@@ -207,7 +212,5 @@
                 text (.getText vscode.window.activeTextEditor.document range)]
             text)))
       ILookup
-      (-lookup [_ k]
-        (-lookup _ k nil))
-      (-lookup [_ k not-found]
-        (-lookup @lookup k not-found)))))
+      (-lookup [_ k] (-lookup _ k nil))
+      (-lookup [_ k not-found] (-lookup @lookup k not-found)))))

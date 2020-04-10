@@ -1,4 +1,4 @@
-(ns mult.impl.channels
+(ns pad.impl.channels
   (:require
    [clojure.core.async :as a :refer [chan go go-loop <! >!  take! put! offer! poll! alt! alts! close!
                                      pub sub unsub mult tap untap mix admix unmix
@@ -7,10 +7,10 @@
    [goog.string :refer [format]]
    [clojure.string :as string]
    [cljs.reader :refer [read-string]]
-   [mult.protocols.proc| :as p.proc|]
-   [mult.protocols.procs| :as p.procs|]
-   [mult.protocols.editor| :as p.editor|]
-   [mult.protocols.channels :as p.channels]
+   [pad.protocols.proc| :as p.proc|]
+   [pad.protocols.procs| :as p.procs|]
+   [pad.protocols.editor| :as p.editor|]
+   [pad.protocols.channels :as p.channels]
    ))
 
 (def ^:const TOPIC :topic)

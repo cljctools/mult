@@ -8,7 +8,7 @@
    [clojure.pprint :refer [pprint]]
    [reagent.core :as r]
    [reagent.dom :as rdom]
-   [mult.protocols.val :as p.val]
+   [mult.protocols :as p]
    [mult.impl.channels :as channels]))
 
 (declare proc-main proc-ops render-ui vscode)
@@ -53,13 +53,11 @@
     (go (loop []
           (try
             (when-let [v (<! tab|)]
-              (println v)
-              (println (p.val/-op-conf tab|i))
-              (condp = (p.val/-op tab|i v)
-                (p.val/-op-append tab|i) (let [{:keys [data]} v]
-                                            (swap! state update :data conj data))
-                (p.val/-op-conf tab|i) (let [{:keys [conf]} v]
-                                            (swap! state assoc :conf conf)))
+              (condp = (p/-op tab|i v)
+                (p/-op-tab-append tab|i) (let [{:keys [data]} v]
+                                           (swap! state update :data conj data))
+                (p/-op-conf tab|i) (let [{:keys [conf]} v]
+                                     (swap! state assoc :conf conf)))
               (recur))
             (catch js/Error e (do (println "; proc-ops error, will exit") (println e)))))
         (println "proc-ops go-block exiting"))))
