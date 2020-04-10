@@ -3,7 +3,9 @@
    [goog.string :refer [format]]
    [clojure.string :as string]
    [clojure.pprint :refer [pprint]]
-   [cljs.reader :refer [read-string]]))
+   [cljs.reader :refer [read-string]]
+   [clojure.walk :as walk]
+   [mult.impl.stub :as stub]))
 
 (defn preprocess
   [conf]
@@ -21,11 +23,15 @@
   [conf k]
   (get-in conf [:repls k :iden]))
 
+(defn dataize
+  [conf]
+  (walk/postwalk #(when (not (fn? %)) %)  conf))
 
 (comment
+
+  (re-matches  (re-pattern ".+.clj") "asd.clj")
   
-  (def f (eval ))
-  
-  
+  (dataize stub/mult-edn)
+  (fn? (fn []) )
   ;;
   )

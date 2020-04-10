@@ -9,13 +9,15 @@
    [cljs.reader :refer [read-string]]
    [clojure.pprint :refer [pprint]]
 
-   [pad.nrepl1]
+   [pad.cljsjs1]
+   [pad.selfhost1]
 
    [mult.protocols :as p]
    [mult.impl.editor :as editor]
    [mult.impl.channels :as channels]
    [mult.impl.lrepl :as lrepl]
-   [mult.impl.conf :as conf]))
+   [mult.impl.conf :as conf]
+   [mult.impl.stub :as stub]))
 
 (def channels (let [main| (chan 10)
                     main|m (mult main|)
@@ -49,11 +51,15 @@
 (declare proc-main proc-ops proc-log)
 
 
+(defn main [])
+
 ; repl only
-(def ^:private proc-main-state (atom {}))
+(def proc-main-state (atom {}))
 
 (defn proc-main
   [channels ctx]
+  #_(do
+      (prn (pad.cljsjs1/test1)))
   (let [pid [:proc-main]
         {:keys [main| main|m log| ops|]} channels
         main|t (tap main|m (chan 10))
@@ -140,14 +146,15 @@
         adconn (fn [state id conn] (update state :conns assoc id conn))
         rmconn (fn [state id] (update state :conns dissoc id))
         release #(do
-                    (untap ops|m ops|t)
-                    (untap cmd|m cmd|t)
-                    (untap conn-status|m conn-status|t)
-                    (close! ops|t)
-                    (close! cmd|t)
-                    (close! conn-status|t)
-                    (close! proc|)
-                    (put! main| (p/-vl-proc-stopped main|i pid)))]
+                   (untap ops|m ops|t)
+                   (untap cmd|m cmd|t)
+                   (untap conn-status|m conn-status|t)
+                   (close! ops|t)
+                   (close! cmd|t)
+                   (close! conn-status|t)
+                   (close! proc|)
+                   (put! main| (p/-vl-proc-stopped main|i pid))
+                   (p/-release editor))]
     (put! main| (p/-vl-proc-started main|i pid proc|))
     (go (loop [state {:tabs {}
                       :conns {}
@@ -201,8 +208,10 @@
                           "mult.open" (let [conf (-> (<! (p/-read-workspace-file editor ".vscode/mult.edn"))
                                                      (read-string)
                                                      (conf/preprocess))
+                                            conf (-> stub/mult-edn
+                                                     (conf/preprocess))
                                             tab (p/-create-tab editor (random-uuid))]
-                                        (p/-send tab (p/-vl-conf tab|i conf))
+                                        (p/-send tab (p/-vl-conf tab|i (conf/dataize conf)))
                                         (p/-show-info-msg editor "mult.open")
                                         (recur (-> state
                                                    (assoc :mult.edn conf)
@@ -289,8 +298,15 @@
 (def deactivate (let [main|i (channels/main|i)]
                   (fn []
                     (put! (channels :main|) (p/-vl-deactivate main|i)))))
+
 (def exports #js {:activate activate
                   :deactivate deactivate})
+
+(when (exists? js/module)
+  (set! js/module.exports exports))
+
+
+
 
 #_(defn reload
     []

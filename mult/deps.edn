@@ -3,17 +3,31 @@
  :mvn/repos {"central" {:url "https://repo1.maven.org/maven2/"}
              "clojars" {:url "https://clojars.org/repo/"}}
  :aliases {:core {:extra-deps {org.clojure/clojure         {:mvn/version "1.10.1"}
-                               org.clojure/clojurescript {:mvn/version "1.10.597"}
+                              ;;  org.clojure/clojurescript {:mvn/version "1.10.597"}
+                               org.clojure/clojurescript {:local/root "../../clojurescript"}
                                org.clojure/spec.alpha {:mvn/version "0.2.187"}
-                               org.clojure/core.async {:mvn/version "1.0.567"}
+                              ;;  org.clojure/core.async {:mvn/version "1.0.567"}
+                               andare {:mvn/version "1.1.587"}
                                org.jamesleonis/bencode-cljc {:git/url "https://github.com/jamesleonis/bencode-cljc"
                                                              :sha "cdf6953d92631e5145d165ab7882cd8b5841ccd8"}
-                               reagent {:mvn/version "0.10.0"}}}
-           :dev {:extra-deps {thheller/shadow-cljs {:mvn/version "2.8.94"
+                               reagent {:mvn/version "0.10.0"}
+
+                              ;;  com.google.javascript/closure-compiler-unshaded {:mvn/version "v20190618"}
+                              ;;  org.clojure/google-closure-library {:mvn/version "0.0-20190213-2033d5d9"}
+                               }}
+           :dev {:extra-deps {
+                              thheller/shadow-cljs {:mvn/version "2.8.94"
                                                     :exclusions [nrepl
                                                                  cider/piggieback
                                                                  org.clojure/clojure
-                                                                 org.clojure/clojurescript]}
+                                                                 org.clojure/clojurescript
+                                                                 org.clojure/core.async
+                                                                ;;  com.google.javascript/closure-compiler-unshaded
+                                                                ;;  org.clojure/google-closure-library
+                                                                 ]}
+                              
+                              ;; com.bhauman/figwheel-main {:mvn/version "0.2.3"}
+                              ;; com.bhauman/rebel-readline-cljs {:mvn/version "0.1.4"}
                               nrepl/nrepl {:mvn/version "0.6.0"}
                               cider/cider-nrepl {:mvn/version "0.24.0"}
                               cider/piggieback {:mvn/version "0.4.2"}}}}}

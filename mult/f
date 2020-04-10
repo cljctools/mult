@@ -1,11 +1,7 @@
 #!/bin/bash
 
-purge(){
-    rm -rf .shadow-cljs node_modules .cpcache 
-}
-
 clean(){
-    rm -rf resources/out
+    rm -rf resources/out out  .shadow-cljs .cpcache 
 }
 
 shadow(){
@@ -19,13 +15,15 @@ server(){
 
 dev(){
     npm i
-    shadow -A:core:dev watch :extension :tabapp
-    # shadow -A:core:dev watch :extension 
+    # shadow -A:core:dev watch :extension :tabapp
+    shadow -A:core:dev watch :extension :bootstrap
 }
 
 compile(){
     npm i
-    shadow -A:core:dev compile :extension :tabapp
+    # shadow -A:core:dev compile :extension :tabapp
+    shadow -A:core:dev compile :extension :bootstrap
+
 }
 
 dock() {
@@ -44,5 +42,16 @@ dock() {
                  bash
 }
 
+
+cljs_compile(){
+    clj -A:core:dev -m cljs.main -co build.edn -c mult.extension
+}
+
+fwm(){
+    clojure -A:core:dev \
+    -m nrepl.cmdline  \
+    --middleware "[cider.nrepl/cider-middleware cider.piggieback/wrap-cljs-repl]" \
+    --bind "0.0.0.0" --port 5100
+}
 
 "$@"

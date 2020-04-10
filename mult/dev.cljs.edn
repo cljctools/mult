@@ -1,0 +1,8 @@
+^{:watch-dirs ["src"]
+  :css-dirs []}
+{:main mult.extension
+ :output-to "resources/out/extension.js"
+ :output-dir "resources/out/dev"
+ :optimizations :simple
+ :asset-path "out"
+ :target :nodejs}

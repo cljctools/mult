@@ -58,17 +58,15 @@
   (-vl-data [_] [_ data opts]))
 
 (defprotocol Connect
-  :extend-via-metadata true
   (-connect [_])
   (-disconnect [_])
   (-connected? [_]))
 
 (defprotocol Send
-  :extend-via-metadata true
   (-send [_ v]))
 
 (defprotocol Eval
-  (-eval [_ code opts] [_ code session-id opts]))
+  (-eval [_ code opts] [_ code session-id opts] [_ code nspace session-id opts]))
 
 (defprotocol Release
   :extend-via-metadata true
@@ -91,5 +89,6 @@
   (-register-commands [_ commands])
   (-create-tab [_ tabid])
   (-read-workspace-file [_ filepath])
-  (-show-info-msg [_ msg]))
+  (-show-info-msg [_ msg])
+  (-active-file-ns [_] "nil if it's not clj file"))
 

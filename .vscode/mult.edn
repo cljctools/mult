@@ -9,26 +9,32 @@
                      :build :app}
               :conn :ui
               :include '(fn [file-uri]
-                          (re-math #".+.cljs" file-uri))}
+                          '(cljs.core/re-matches #".+.cljs" file-uri))}
          :test {:iden {:type :shadow-cljs
                        :runtime :cljs
                        :build :test}
+                :include '(fn [file-uri]
+                            '(cljs.core/re-matches #".+.cljs" file-uri))
                 :conn :ui}
          :devserver  {:iden {:type :shadow-cljs
                              :runtime :clj}
+                      :include '(fn [file-uri]
+                                  '(cljs.core/re-matches #".+.cljs" file-uri))
                       :conn :ui}
          :server {:iden {:type :nrepl-server
                          :runtime :clj}
+                  :include '(fn [file-uri]
+                              '(cljs.core/re-matches #".+.cljs" file-uri))
                   :conn :server}
          :mult {:iden {:type :shadow-cljs
                        :runtime :cljs
                        :build :extension}
+                :include '(fn [file-uri]
+                            '(cljs.core/re-matches #".+.cljs" file-uri))
                 :conn :mult}}
  :tabs {:system {:repls {:ui {}
-                         :test {}
                          :devserver {}
-                         :server {}
-                         :mult {}}
+                         :server {}}
                  :cljc-prefer :recent}
         :mult {:repls {:mult {}}
                :cljc-prefer :cljs}}

@@ -8,14 +8,20 @@
    [goog.object]
    [clojure.string :as string]
    [cljs.reader :refer [read-string]]
-   ["fs" :as fs]
-   ["path" :as path]
+   #_["fs" :as fs]
+   #_["path" :as path]
 
    [mult.protocols :as p]
    [mult.impl.channels :as channels]
-   [mult.impl.paredit :as paredit]))
+   [mult.impl.paredit :as paredit]
+   [cljs.nodejs :as node]))
 
-(def vscode (js/require "vscode"))
+(def fs (node/require "fs"))
+(def path (node/require "path"))
+(declare vscode)
+(try
+  (def vscode (node/require "vscode"))
+  (catch js/Error e))
 
 (defn show-information-message
   [vscode msg]

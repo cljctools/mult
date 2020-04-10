@@ -6,16 +6,24 @@
    [goog.string :refer [format]]
    [clojure.string :as string]
    [clojure.pprint :refer [pprint]]
-   ["fs" :as fs]
-   ["path" :as path]
-   ["net" :as net]
-   ["bencode" :as bencode]
-   ["nrepl-client" :as nrepl-cleint]
+   #_["fs" :as fs]
+   #_["path" :as path]
+   #_["net" :as net]
+   #_["bencode" :as bencode]
+   #_["nrepl-client" :as nrepl-client]
    [cljs.reader :refer [read-string]]
    [bencode-cljc.core :refer [serialize deserialize]]
    [mult.protocols :as p]
    [mult.impl.channels :as channels]
-   [mult.impl.async :as mult.async]))
+   [mult.impl.async :as mult.async]
+   [cljs.nodejs :as node]
+   ))
+
+(def path (node/require "fs"))
+(def fs (node/require "path"))
+(def net (node/require "net"))
+(def bencode (node/require "bencode"))
+(def nrepl-client (node/require "nrepl-client"))
 
 
 (defn netsocket
@@ -30,7 +38,7 @@
         msg|m (mult msg|)
         msg|p (mult.async/pub (tap msg|m (chan (sliding-buffer 10))) topic-fn (fn [_] (sliding-buffer 10)))
         netsock|i (channels/netsock|i)
-        socket (doto (net/Socket.)
+        socket (doto (net.Socket.)
                  (.on "connect" (fn [] (put! status| (p/-vl-connected netsock|i opts))))
                  (.on "ready" (fn [] (put! status| (p/-vl-ready netsock|i opts))))
                  (.on "timeout" (fn [] (put! status| (p/-vl-timeout netsock|i  opts))))
@@ -187,7 +195,7 @@
 (comment
 
   (do
-    (def c (.connect nrepl-cleint #js {:port 8899
+    (def c (.connect nrepl-client #js {:port 8899
                                        :host "localhost"}))
     (doto c
       (.on "connect" (fn []
