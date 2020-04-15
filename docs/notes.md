@@ -150,3 +150,6 @@
     - git push --force-with-lease
       - https://stackoverflow.com/questions/52823692/git-push-force-with-lease-vs-force
   - https://stackoverflow.com/questions/9069061/what-is-the-difference-between-git-merge-and-git-merge-no-ff
+  - https://stackoverflow.com/questions/173919/is-there-a-theirs-version-of-git-merge-s-ours
+  - git push <remote> src-branch:<remote-dst-branch>
+  - git merge --no-ff --squash remote/branch

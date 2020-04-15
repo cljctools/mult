@@ -1,0 +1,41 @@
+{:connections {["localhost" 7788] {:name :server
+                                   :iden {:type :nrepl}}
+               ["localhost" 8899] {:name :ui
+                                   :iden {:type :nrepl}}
+               ["localhost" 5100] {:name :mult
+                                   :iden {:type :nrepl}}}
+ :repls {:ui {:iden {:type :shadow-cljs
+                     :runtime :cljs
+                     :build :app}
+              :conn :ui
+              :include-file? (fn [file-uri]
+                               (re-matches (re-pattern ".+.cljs") file-uri))}
+         :test {:iden {:type :shadow-cljs
+                       :runtime :cljs
+                       :build :test}
+                :include-file? (fn [file-uri]
+                                 (re-matches (re-pattern ".+.cljs") file-uri))
+                :conn :ui}
+         :devserver  {:iden {:type :shadow-cljs
+                             :runtime :clj}
+                      :include-file? (fn [file-uri]
+                                       (re-matches (re-pattern ".+.cljs") file-uri))
+                      :conn :ui}
+         :server {:iden {:type :nrepl-server
+                         :runtime :clj}
+                  :include-file? (fn [file-uri]
+                                   (re-matches (re-pattern ".+.cljs") file-uri))
+                  :conn :server}
+         :mult {:iden {:type :shadow-cljs
+                       :runtime :cljs
+                       :build :extension}
+                :include-file? (fn [file-uri]
+                                 (re-matches (re-pattern ".+.cljs") file-uri))
+                :conn :mult}}
+ :tabs {:system {:repls {:ui {}
+                         :devserver {}
+                         :server {}}
+                 :cljc-prefer :recent}
+        :mult {:repls {:mult {}}
+               :cljc-prefer :cljs}}
+ :tabs/default #{:system}}

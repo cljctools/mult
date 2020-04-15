@@ -15,15 +15,17 @@ server(){
 
 dev(){
     npm i
-    # shadow -A:core:dev watch :extension :tabapp
-    shadow -A:core:dev watch :extension :bootstrap
+    shadow -A:core:dev watch :extension :bootstrap :tabapp 
+    # shadow -A:core:dev watch :extension :bootstrap 
+}
+
+tree(){
+    clojure -A:core:dev:optimized -Stree
 }
 
 compile(){
     npm i
-    # shadow -A:core:dev compile :extension :tabapp
-    shadow -A:core:dev compile :extension :bootstrap
-
+    shadow -A:core:dev compile :extension :bootstrap :tabapp
 }
 
 dock() {
@@ -38,6 +40,7 @@ dock() {
                 -p 5101:5101 \
                 -p 5102:5102 \
                 -v "$(pwd)":/ctx/app \
+                -v "$(cd ../../ && pwd)":/ctx/code \
                  mult \
                  bash
 }

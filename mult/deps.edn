@@ -6,28 +6,26 @@
                                org.clojure/clojurescript {:mvn/version "1.10.597"}
                               ;  org.clojure/clojurescript {:local/root "../../clojurescript"}
                                org.clojure/spec.alpha {:mvn/version "0.2.187"}
-                              ;;  org.clojure/core.async {:mvn/version "1.0.567"}
+                              ;;  org.clojure/core.async {:mvn/version "1.1.587"}
                                andare {:mvn/version "1.1.587"}
                                org.jamesleonis/bencode-cljc {:git/url "https://github.com/jamesleonis/bencode-cljc"
                                                              :sha "cdf6953d92631e5145d165ab7882cd8b5841ccd8"}
-                               reagent {:mvn/version "0.10.0"}
-
-                              ;;  com.google.javascript/closure-compiler-unshaded {:mvn/version "v20190618"}
-                              ;;  org.clojure/google-closure-library {:mvn/version "0.0-20190213-2033d5d9"}
-                               }}
-           :dev {:extra-deps {
-                              thheller/shadow-cljs {:mvn/version "2.8.94"
+                               reagent {:mvn/version "0.10.0"}}}
+           :dev {:extra-deps {thheller/shadow-cljs {:mvn/version "2.8.94"
                                                     :exclusions [nrepl
                                                                  cider/piggieback
                                                                  org.clojure/clojure
                                                                  org.clojure/clojurescript
                                                                  org.clojure/core.async
-                                                                ;;  com.google.javascript/closure-compiler-unshaded
-                                                                ;;  org.clojure/google-closure-library
-                                                                 ]}
-                              
-                              ;; com.bhauman/figwheel-main {:mvn/version "0.2.3"}
-                              ;; com.bhauman/rebel-readline-cljs {:mvn/version "0.1.4"}
+                                                                 thheller/shadow-client]}
+                              thheller/shadow-client {:git/url "https://github.com/sergeiudris/shadow"
+                                                      :sha "320ea4abd28b18d7a576183a8df37446f9716e52"
+                                                      :exclusions [org.clojure/clojurescript
+                                                                   org.clojure/core.async]}
                               nrepl/nrepl {:mvn/version "0.6.0"}
                               cider/cider-nrepl {:mvn/version "0.24.0"}
-                              cider/piggieback {:mvn/version "0.4.2"}}}}}
+                              cider/piggieback {:mvn/version "0.4.2"}}}
+           :local {:extra-deps {org.clojure/clojurescript {:local/root "../code/clojurescript"}
+                                thheller/shadow-client {:local/root "../code/shadow"
+                                                        :exclusions [org.clojure/core.async
+                                                                     org.clojure/clojurescript]}}}}}

@@ -17,7 +17,6 @@
    [mult.impl.channels :as channels]
    [mult.impl.lrepl :as lrepl]
    [mult.impl.conf :as conf]
-   [mult.impl.stub :as stub]
    [mult.impl.self-hosting :as self-hosting]))
 
 (def channels (let [main| (chan 10)
@@ -209,8 +208,6 @@
                         (condp = cmd
                           "mult.open" (let [conf (-> (<! (p/-read-workspace-file editor ".vscode/mult.edn"))
                                                      (read-string)
-                                                     (conf/preprocess))
-                                            conf (-> stub/mult-edn
                                                      (conf/preprocess))
                                             tab (p/-create-tab editor (random-uuid))]
                                         (p/-send tab (p/-vl-conf tab|i (conf/dataize conf)))

@@ -6,6 +6,7 @@
                                      pipeline pipeline-async]]
    [cljs.js :as cljs]
    [cljs.env :as env]
+   [cljs.reader :refer [read-string]]
    [shadow.cljs.bootstrap.node :as boot]
    [cljs.nodejs :as node]))
 
@@ -54,8 +55,40 @@
 
   (def f (eval '(fn [file-uri] (cljs.core/re-matches #".+\.cljs" file-uri))))
   (f "abc.cljs")
-  
+
   (eval '(re-matches #".+clj" "abc.clj"))
+
+  (eval '{:iden {:type :shadow-cljs
+                 :runtime :cljs
+                 :build :extension}
+          :include '(fn [file-uri]
+                      (cljs.core/re-matches ".+.cljs" file-uri))
+          :conn :mult})
+
+  (read-string (str '{:iden {:type :shadow-cljs
+                             :runtime :cljs
+                             :build :extension}
+                      :include '(fn [file-uri]
+                                  (cljs.core/re-matches ".+.cljs" file-uri))
+                      :conn :mult}))
+
+
+
+  ;;
+  )
+
+
+(comment
+
+  (def mult-edn-str
+    (-> (.readFileSync fs "/home/user/code/mult/examples/fruits/.vscode/mult.edn") (.toString)))
+  (def mult-edn (read-string mult-edn-str))
+  (type (get-in mult-edn [:repls :ui :include-file?]))
+  (type '(fn [x] #{x}))
+  (def f (eval (get-in mult-edn [:repls :ui :include-file?])))
+  (f "/fruits/system/src/banana.cljs") ; => works
+  (type (re-pattern ".+.cljs"))
+  (type #".+.cljs")
   
 
   ;;

@@ -4,8 +4,7 @@
    [clojure.string :as string]
    [clojure.pprint :refer [pprint]]
    [cljs.reader :refer [read-string]]
-   [clojure.walk :as walk]
-   [mult.impl.stub :as stub]))
+   [clojure.walk :as walk]))
 
 (defn preprocess
   [conf]
