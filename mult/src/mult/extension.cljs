@@ -9,15 +9,16 @@
    [cljs.reader :refer [read-string]]
    [clojure.pprint :refer [pprint]]
 
-   [pad.cljsjs1]
-   [pad.selfhost1]
+   #_[pad.cljsjs1]
+   #_[pad.selfhost1]
 
    [mult.protocols :as p]
    [mult.impl.editor :as editor]
    [mult.impl.channels :as channels]
    [mult.impl.lrepl :as lrepl]
    [mult.impl.conf :as conf]
-   [mult.impl.stub :as stub]))
+   [mult.impl.stub :as stub]
+   [mult.impl.self-hosting :as self-hosting]))
 
 (def channels (let [main| (chan 10)
                     main|m (mult main|)
@@ -104,7 +105,8 @@
                 (p/-op-activate main|i) (let [{:keys [editor-context]} v
                                               state' (update-in state [:ctx] assoc :editor-context  editor-context)]
                                           (when-not (:activated? state)
-                                            (do (proc-ops (:channels state') (:ctx state')))
+                                            (<! (self-hosting/init (editor/workspace-path editor-context "resources/out/bootstrap")))
+                                            (proc-ops (:channels state') (:ctx state'))
                                             (>! ops| (p/-vl-activate ops|i))
                                             (recur state')))
                 (p/-op-deactivate main|i) (let []

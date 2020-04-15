@@ -141,3 +141,12 @@
   - nrepl
     - https://github.com/bhauman/figwheel-main/issues/112
     - https://github.com/bhauman/figwheel-main/issues/24
+
+- git
+  - https://stackoverflow.com/questions/2973996/git-rebase-without-changing-commit-timestamps
+  - https://stackoverflow.com/questions/2427238/in-git-what-is-the-difference-between-merge-squash-and-rebase
+  - https://stackoverflow.com/questions/5308816/how-to-use-git-merge-squash
+  - https://stackoverflow.com/questions/8939977/git-push-rejected-after-feature-branch-rebase
+    - git push --force-with-lease
+      - https://stackoverflow.com/questions/52823692/git-push-force-with-lease-vs-force
+  - https://stackoverflow.com/questions/9069061/what-is-the-difference-between-git-merge-and-git-merge-no-ff

@@ -82,6 +82,12 @@
     
     panel))
 
+(defn workspace-path
+  [editor-context relative-path]
+  (let [extpath (. editor-context -extensionPath)]
+    (.join path extpath relative-path)))
+
+
 ; https://stackoverflow.com/a/41029103/10589291
 
 (defn js-lookup

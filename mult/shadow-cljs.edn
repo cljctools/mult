@@ -38,5 +38,5 @@
           :bootstrap {:target :bootstrap
                       :output-dir "resources/out/bootstrap"
                       :exclude #{cljs.js}
-                      :entries [cljs.js mult.extension pad.selfhost1 clojure.core.async mult.impl.conf]
+                      :entries [cljs.js mult.extension mult.impl.self-hosting clojure.core.async mult.impl.conf]
                       :macros []}}}

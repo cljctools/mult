@@ -6,12 +6,6 @@ origins(){
   git remote -v
 }
 
-push(){
-  git push origin master
-  git push bb master
-  git push gl master
-}
-
 dc(){
 
     docker-compose --compatibility \

@@ -1,0 +1,10 @@
+#!/bin/bash
+
+
+dev(){
+  clojure -A:core:dev:local -m fruits.mango
+}
+
+
+
+"$@"

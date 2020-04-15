@@ -1,0 +1,11 @@
+{:paths ["src" "test" "resources" "classes"]
+ :mvn/repos {"central" {:url "https://repo1.maven.org/maven2/"}
+             "clojars" {:url "https://clojars.org/repo/"}}
+ :deps {}
+ :aliases
+ {:core {:extra-deps {}}
+  :dev {:extra-deps {nrepl/nrepl {:mvn/version "0.6.0"}
+                     cider/cider-nrepl {:mvn/version "0.24.0"}
+                     cider/piggieback {:mvn/version "0.4.2"}}}
+  :optimized {:extra-deps {}}
+  :local {:extra-deps {system {:local/root "../system"}}}}}
