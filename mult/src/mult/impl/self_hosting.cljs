@@ -83,12 +83,14 @@
   (def mult-edn-str
     (-> (.readFileSync fs "/home/user/code/mult/examples/fruits/.vscode/mult.edn") (.toString)))
   (def mult-edn (read-string mult-edn-str))
-  (type (get-in mult-edn [:repls :ui :include-file?]))
+  (type (get-in mult-edn [:repls :ui :pred/include-file?]))
   (type '(fn [x] #{x}))
-  (def f (eval (get-in mult-edn [:repls :ui :include-file?])))
+  (def f (eval (get-in mult-edn [:repls :ui :pred/include-file?])))
   (f "/fruits/system/src/banana.cljs") ; => works
   (type (re-pattern ".+.cljs"))
   (type #".+.cljs")
+  
+  (re-matches (re-pattern ".+\\.clj(s|c)") "/fruits/system/src/banana.cljc")
   
 
   ;;

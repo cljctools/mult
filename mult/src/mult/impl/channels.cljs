@@ -62,7 +62,9 @@
       (-op-disconnect [_] :ops/disconnect)
       (-vl-disconnect [_ opts] {OP (p/-op-disconnect _) :opts opts})
       (-op-tab-disposed [_] :ops/tab-disposed)
-      (-vl-tab-disposed [_ id] {OP (p/-op-tab-disposed _) :tab/id id}))))
+      (-vl-tab-disposed [_ id] {OP (p/-op-tab-disposed _) :tab/id id})
+      (-op-texteditor-changed [_])
+      (-vl-texteditor-changed [_ data] {OP (p/-op-texteditor-changed _) :data  data}))))
 
 (defn cmd|i
   []

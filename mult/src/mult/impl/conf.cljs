@@ -22,15 +22,13 @@
   [conf k]
   (get-in conf [:repls k :iden]))
 
-(defn dataize
-  [conf]
-  (walk/postwalk #(when (not (fn? %)) %)  conf))
+#_(defn dataize
+    [conf]
+    (walk/postwalk #(when (not (fn? %)) %)  conf))
 
 (comment
 
   (re-matches  (re-pattern ".+.clj") "asd.clj")
   
-  (dataize stub/mult-edn)
-  (fn? (fn []) )
   ;;
   )

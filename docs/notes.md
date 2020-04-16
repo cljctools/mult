@@ -24,6 +24,11 @@
   - https://shadow-cljs.github.io/docs/UsersGuide.html#missing-js-runtime
   - required js libs in node won't be processed
     - https://shadow-cljs.github.io/docs/UsersGuide.html#js-provider
+  - "Error in phase :compile-syntax-check: No such var: ioc/state-machine" in shadow-client-1.3.2.jar!/shadow/util.cljs
+  - resolved: https://github.com/sergeiudris/shadow/commit/320ea4abd28b18d7a576183a8df37446f9716e52
+  - related
+    - https://github.com/mfikes/andare/issues/2
+      - https://github.com/mfikes/andare/commit/9419fa02f49c293f90da80bb62134e5f2aed94ea#diff-283073ca0e5bfffccdd5ce09cbcc002aL18
 
 - cljs repl
   - https://clojurescript.org/reference/repl

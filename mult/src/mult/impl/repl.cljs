@@ -1,4 +1,4 @@
-(ns mult.impl.lrepl
+(ns mult.impl.repl
   (:require
    [clojure.core.async :as a :refer [<! >!  chan go alt! take! put! offer! poll! alts! pub sub unsub
                                      timeout close! to-chan  mult tap untap mix admix unmix
@@ -126,6 +126,9 @@
       (-interrupt [_ session-id opts])
       (-ls-sessions [_]))))
 
+(defn lrepl
+  [opts]
+  nil)
 
 (defn lrepl-plain
   []

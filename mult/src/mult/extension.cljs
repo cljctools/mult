@@ -15,7 +15,7 @@
    [mult.protocols :as p]
    [mult.impl.editor :as editor]
    [mult.impl.channels :as channels]
-   [mult.impl.lrepl :as lrepl]
+   [mult.impl.repl :as repl]
    [mult.impl.conf :as conf]
    [mult.impl.self-hosting :as self-hosting]))
 
@@ -70,6 +70,7 @@
     (go (loop [state {:channels channels
                       :ctx ctx
                       :procs {}
+                      :editor nil
                       :activated? false}]
           (reset! proc-main-state state)
           (try
@@ -102,17 +103,24 @@
                                               (>! main| (p/-vl-stop-proc main|i proc-id))
                                               (>! main| (p/-vl-start-proc main|i proc-id)))
                 (p/-op-activate main|i) (let [{:keys [editor-context]} v
-                                              state' (update-in state [:ctx] assoc :editor-context  editor-context)]
+                                              ctx' (assoc (:ctx state) :editor-context  editor-context)
+                                              editor (editor/editor channels ctx')
+                                              state' (-> state
+                                                         (assoc :ctx  ctx')
+                                                         (assoc :editor  editor))]
                                           (when-not (:activated? state)
-                                            (<! (self-hosting/init (editor/workspace-path editor-context "resources/out/bootstrap")))
-                                            (proc-ops (:channels state') (:ctx state'))
+                                            (<! (self-hosting/init (p/-join-workspace-path editor "resources/out/bootstrap")))
+                                            (proc-ops (:channels state') (:ctx state') editor)
                                             (>! ops| (p/-vl-activate ops|i))
                                             (recur state')))
                 (p/-op-deactivate main|i) (let []
                                             (when (:activated? state)
                                               (>! ops| (p/-vl-deactivate ops|i))
-                                              (>! main| (p/-vl-stop-proc main|i :proc-editor))
-                                              (recur (assoc state :activated? false)))))
+                                              (>! main| (p/-vl-stop-proc main|i :proc-ops))
+                                              (p/-release (:editor state))
+                                              (recur (-> state
+                                                         (assoc  :activated? false)
+                                                         (assoc  :editor nil))))))
               (recur state))
             (catch js/Error e (do (println "; proc-main error, will resume")
                                   (println e))))
@@ -129,7 +137,7 @@
 (def ^:private proc-ops-state (atom {}))
 
 (defn proc-ops
-  [channels ctx]
+  [channels ctx editor]
   (let [pid [:proc-ops (random-uuid)]
         {:keys [main| log| ops|m cmd|m conn| conn-status|m conn-status|x]} channels
         proc| (chan 1)
@@ -142,7 +150,6 @@
         log|i (channels/log|i)
         cmd|i (channels/cmd|i)
         conn|i (channels/netsock|i)
-        editor (editor/editor channels ctx)
         log (fn [& args] (put! log| (apply p/-vl-log log|i args)))
         adconn (fn [state id conn] (update state :conns assoc id conn))
         rmconn (fn [state id] (update state :conns dissoc id))
@@ -154,11 +161,11 @@
                    (close! cmd|t)
                    (close! conn-status|t)
                    (close! proc|)
-                   (put! main| (p/-vl-proc-stopped main|i pid))
-                   (p/-release editor))]
+                   (put! main| (p/-vl-proc-stopped main|i pid)))]
     (put! main| (p/-vl-proc-started main|i pid proc|))
     (go (loop [state {:tabs {}
                       :conns {}
+                      :lrepls {}
                       :mult.edn nil}]
           (reset! proc-ops-state state)
           (try
@@ -192,7 +199,7 @@
                           (p/-op-tab-disposed ops|i) (let [{:keys [tab/id]} v]
                                                        (log (format "tab  %s disposed" id)))
                           (p/-op-connect ops|i) (let [{:keys [id]} v
-                                                      c (lrepl/netsocket {:id id
+                                                      c (repl/netsocket {:id id
                                                                           :host (first id)
                                                                           :port (second id)
                                                                           :topic-fn :id})]
@@ -202,19 +209,28 @@
                           (p/-op-disconnect ops|i) (let [{:keys [k host port  id]} v
                                                          c (get-in state [:conns k])]
                                                      (unmix conn-status|x (:status| c))
-                                                     (p/-disconnect c)))
+                                                     (p/-disconnect c))
+                          (p/-op-texteditor-changed ops|i) (let [{:keys [filename ns-sym]} (:data v)]
+                                                             (prn v)))
                         (recur state))
                 cmd|t (let [cmd (:cmd/id v)]
                         (condp = cmd
                           "mult.open" (let [conf (-> (<! (p/-read-workspace-file editor ".vscode/mult.edn"))
                                                      (read-string)
                                                      (conf/preprocess))
-                                            tab (p/-create-tab editor (random-uuid))]
-                                        (p/-send tab (p/-vl-conf tab|i (conf/dataize conf)))
+                                            tabs (reduce (fn [ag tab-id]
+                                                           (assoc ag tab-id (p/-create-tab editor tab-id)))
+                                                         {} (:tabs/default conf))
+                                            lrepls (reduce (fn [ag [lrepl-id data]]
+                                                             (assoc ag lrepl-id (repl/lrepl (:iden data))))
+                                                           {} (:repls conf))]
+                                        (doseq [[tab-id tab] tabs]
+                                          (p/-send tab (p/-vl-conf tab|i conf)))
                                         (p/-show-info-msg editor "mult.open")
                                         (recur (-> state
                                                    (assoc :mult.edn conf)
-                                                   (update  :tabs assoc (:id tab) tab))))
+                                                   (assoc :lrepls lrepls)
+                                                   (assoc :tabs tabs))))
                           "mult.ping" (do
                                         (p/-show-info-msg editor "mult.ping via channels")
                                         (<! (timeout 3000))
@@ -228,7 +244,7 @@
               (release))))
         (println "; proc-ops go-block exits"))))
 
-
+(reduce (fn [ag x] (assoc ag x x)) {} #{1 2 3})
 
 ; repl only
 (def ^:private proc-log-state (atom {}))

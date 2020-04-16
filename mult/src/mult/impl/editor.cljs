@@ -18,6 +18,9 @@
 
 (def fs (node/require "fs"))
 (def path (node/require "path"))
+
+(def ^:const NS_DECL_LINE_RANGE 100)
+
 (declare vscode)
 (try
   (def vscode (node/require "vscode"))
@@ -79,13 +82,10 @@
     (.onDidReceiveMessage  panel.webview (fn [msg]
                                            (let [data (read-string msg)]
                                              ((:on-message handlers) id data))))
-    
-    panel))
+    (.onDidChangeViewState panel (fn [panel]
+                                   ((:on-state-change handlers) {:active? panel.active})))
 
-(defn workspace-path
-  [editor-context relative-path]
-  (let [extpath (. editor-context -extensionPath)]
-    (.join path extpath relative-path)))
+    panel))
 
 
 ; https://stackoverflow.com/a/41029103/10589291
@@ -150,6 +150,18 @@
   ;;
   )
 
+(defn parse-ns
+  "Safely tries to read the first form from the source text.
+   Returns ns name or nil"
+  [filename text log]
+  (try
+    (when (re-matches #".+\.clj(s|c)?" filename)
+      (let [fform (read-string text)]
+        (when (= (first fform) 'ns)
+          (second fform))))
+    (catch js/Error ex (log "; parse-ns error " {:filename filename
+                                                 :err ex}))))
+
 (defn editor
   [channels ctx]
   (let [pid [:proc-editor (random-uuid)]
@@ -170,7 +182,21 @@
                    (put! main| (p/-vl-proc-stopped main|i pid)))
         lookup (atom {:context context
                       :vscode vscode})]
-    (put! main| (p/-vl-proc-started main|i pid proc|))
+    (do
+      (put! main| (p/-vl-proc-started main|i pid proc|))
+      (.onDidChangeActiveTextEditor vscode.window (fn [text-editor]
+                                                    (when text-editor
+                                                      (let [range (vscode.Range.
+                                                                   (vscode.Position. 0 0)
+                                                                   (vscode.Position. NS_DECL_LINE_RANGE 0))
+                                                            text (.getText text-editor.document range)
+                                                            filename text-editor.document.fileName
+                                                            ns-sym (parse-ns filename text log)
+                                                            data {:filename filename
+                                                                  :ns-sym ns-sym}]
+                                                        #_(prn text-editor.document.languageId)
+                                                        (put! ops| (p/-vl-texteditor-changed ops|i data)))))))
+
     (go (loop []
           (try
             (if-let [[v port] (alts! [editor|t proc|])]
@@ -197,7 +223,9 @@
               panel (make-panel vscode context id
                                 {:on-message
                                  (fn [id data] (put! ops| (assoc data :tab/id id)))
-                                 :on-dispose (fn [id] (put! ops| (p/-vl-tab-disposed ops|i id)))})
+                                 :on-dispose (fn [id] (put! ops| (p/-vl-tab-disposed ops|i id)))
+                                 :on-state-change (fn [data] (prn data))
+                                 })
               html (tabapp-html vscode context panel
                                 "resources/out/tabapp.js"
                                 "resources/index.html"
@@ -209,6 +237,8 @@
             (-send [_ v] (.postMessage (.-webview panel) (pr-str v)))
             p/Release
             (-release [_] (println "release for tab not implemented"))
+            p/Active
+            (-active? [_] panel.active)
             cljs.core/ILookup
             (-lookup [_ k] (-lookup _ k nil))
             (-lookup [_ k not-found] (-lookup lookup k not-found)))))
@@ -216,6 +246,9 @@
         (let [c| (chan 1)]
           (read-workspace-file filepath (fn [file] (put! c| (.toString file)) (close! c|)))
           c|))
+      (-join-workspace-path [_ subpath]
+        (let [extpath (. context -extensionPath)]
+          (.join path extpath subpath)))
       (-selection [_]
         (when  vscode.window.activeTextEditor
           (let [start vscode.window.activeTextEditor.selection.start

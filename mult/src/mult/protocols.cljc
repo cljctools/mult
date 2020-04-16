@@ -38,6 +38,8 @@
   (-vl-tab-disposed [_ id])
   (-op-conf [_])
   (-vl-conf [_ conf])
+  (-op-texteditor-changed [_])
+  (-vl-texteditor-changed [_ data])
 
   (-op-connect [_])
   (-vl-connect [_ opts])
@@ -72,6 +74,9 @@
   :extend-via-metadata true
   (-release [_]))
 
+(defprotocol Active
+  (-active? [_]))
+
 (defprotocol NRepl
   #_(-clone-session [_ opts])
   (-close-session [_ session-id opts])
@@ -90,5 +95,6 @@
   (-create-tab [_ tabid])
   (-read-workspace-file [_ filepath])
   (-show-info-msg [_ msg])
-  (-active-file-ns [_] "nil if it's not clj file"))
+  (-active-file-ns [_] "nil if it's not clj file")
+  (-join-workspace-path [_ subpath]))
 
