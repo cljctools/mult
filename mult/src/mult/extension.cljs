@@ -174,19 +174,19 @@
                 proc| (release)
                 conn-status|t (let [op (p/-op conn|i v)]
                                 (condp = op
-                                  (p/-op-connected conn|i) (let [{:keys [id]} v]
+                                  (p/-op-connected conn|i) (let [{:keys [id]} (:opts v)]
                                                              (log (format "%s connected" id)))
-                                  (p/-op-ready conn|i) (let [{:keys [id]} v]
+                                  (p/-op-ready conn|i) (let [{:keys [id]} (:opts v)]
                                                          (log (format "%s ready" id)))
-                                  (p/-op-disconnected conn|i) (let [hadError (:hadError v)
-                                                                    {:keys [id]} v]
+                                  (p/-op-disconnected conn|i) (let [hadError (:hadError (:opts v))
+                                                                    {:keys [id]} (:opts v)]
                                                                 (log (format "%s disconnected, hadError %s" id hadError))
                                                                 (recur (rmconn state id)))
-                                  (p/-op-timeout conn|i) (let [{:keys [id]} v]
+                                  (p/-op-timeout conn|i) (let [{:keys [id]} (:opts v)]
                                                            (log (format "%s timeout" id))
                                                            (recur (rmconn state id)))
-                                  (p/-op-error conn|i) (let [err (:err v)
-                                                             {:keys [id]} v]
+                                  (p/-op-error conn|i) (let [err (:err (:opts v))
+                                                             {:keys [id]} (:opts v)]
                                                          (log (format "%s error" id) err)
                                                          (recur (rmconn state id))))
                                 (recur state))
@@ -218,18 +218,29 @@
                           "mult.open" (let [conf (-> (<! (p/-read-workspace-file editor ".vscode/mult.edn"))
                                                      (read-string)
                                                      (conf/preprocess))
+                                            conns (reduce (fn [ag [conn-id data]]
+                                                            (let [conn (repl/netsocket {:id conn-id
+                                                                                        :host (first conn-id)
+                                                                                        :port (second conn-id)
+                                                                                        :topic-fn :id})]
+                                                              (assoc ag conn-id conn)))
+                                                          {} (:connections conf))
                                             tabs (reduce (fn [ag tab-id]
                                                            (assoc ag tab-id (p/-create-tab editor tab-id)))
                                                          {} (:tabs/default conf))
                                             lrepls (reduce (fn [ag [lrepl-id data]]
                                                              (assoc ag lrepl-id (repl/lrepl (:iden data))))
                                                            {} (:repls conf))]
+                                        (doseq [[conn-id conn] conns]
+                                          (admix conn-status|x (:status| conn))
+                                          (p/-connect  conn))
                                         (doseq [[tab-id tab] tabs]
                                           (p/-send tab (p/-vl-conf tab|i conf)))
                                         (p/-show-info-msg editor "mult.open")
                                         (recur (-> state
                                                    (assoc :mult.edn conf)
                                                    (assoc :lrepls lrepls)
+                                                   (assoc :conns conns)
                                                    (assoc :tabs tabs))))
                           "mult.ping" (do
                                         (p/-show-info-msg editor "mult.ping via channels")

@@ -28,21 +28,32 @@
 
 (defn netsocket
   [opts]
-  (let [{:keys [topic-fn xf-send xf-msg]
+  (let [{:keys [topic-fn xf-send xf-msg reconnection-timeout id]
          :or {xf-send identity
               xf-msg identity
-              topic-fn (constantly nil)}} opts
+              topic-fn (constantly nil)
+              reconnection-timeout 1000}} opts
         status| (chan (sliding-buffer 10))
         send| (chan (sliding-buffer 1))
         msg| (chan (sliding-buffer 10))
         msg|m (mult msg|)
         msg|p (mult.async/pub (tap msg|m (chan (sliding-buffer 10))) topic-fn (fn [_] (sliding-buffer 10)))
         netsock|i (channels/netsock|i)
-        socket (doto (net.Socket.)
+        socket (net.Socket.)
+        connect #(.connect socket (clj->js opts))
+        socket (doto socket
                  (.on "connect" (fn [] (put! status| (p/-vl-connected netsock|i opts))))
                  (.on "ready" (fn [] (put! status| (p/-vl-ready netsock|i opts))))
                  (.on "timeout" (fn [] (put! status| (p/-vl-timeout netsock|i  opts))))
-                 (.on "close" (fn [hadError] (put! status| (p/-vl-disconnected netsock|i hadError opts))))
+                 (.on "close" (fn [hadError]
+                                (put! status| (p/-vl-disconnected netsock|i hadError opts))
+                                ; consider using take! if using go block here is wasteful
+                                (go
+                                  (<! (timeout reconnection-timeout))
+                                  (cond
+                                    socket.connecting (do nil)
+                                    socket.pending (do (connect))
+                                    :else (do nil)))))
                  (.on "error" (fn [err] (put! status| (p/-vl-error netsock|i err opts))))
                  (.on "data" (fn [buf]
                                (try
@@ -58,9 +69,9 @@
                             :msg|p msg|p})
         conn (reify
                p/Connect
-               (-connect [_] (.connect socket (clj->js opts)))
+               (-connect [_] (connect))
                (-disconnect [_] (.end socket))
-               (-connected? [_] (not socket.connecting) #_(not socket.pending))
+               (-connected? [_] (not socket.pending) #_(not socket.connecting))
                p/Send
                (-send [_ v] (try
                               (let [d (xf-send v)]
