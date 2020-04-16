@@ -90,12 +90,12 @@
       p/Op
       (-op [_ v] (get v OP))
       p/Vals
-      (-op-tab-clear [_] :tab/clear)
-      (-vl-tab-clear [_] {OP (p/-op-tab-clear _)})
       (-op-tab-append [_] :tab/append)
       (-vl-tab-append [_ data] {OP (p/-op-tab-append _) :data data})
       (-op-conf [_] :tab/conf)
-      (-vl-conf [_ conf] {OP (p/-op-conf _) :conf conf}))))
+      (-vl-conf [_ conf] {OP (p/-op-conf _) :conf conf})
+      (-op-namespace-changed [_])
+      (-vl-namespace-changed [_ data] {OP (p/-op-namespace-changed _) :data data}))))
 
 (defn netsock|i
   []

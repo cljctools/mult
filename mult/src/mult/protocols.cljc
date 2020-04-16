@@ -30,8 +30,6 @@
   (-op-proc-stopped [_])
   (-vl-proc-stopped [_ proc-id])
 
-  (-op-tab-clear [_])
-  (-vl-tab-clear [_])
   (-op-tab-append [_])
   (-vl-tab-append [_ data])
   (-op-tab-disposed [_])
@@ -40,6 +38,8 @@
   (-vl-conf [_ conf])
   (-op-texteditor-changed [_])
   (-vl-texteditor-changed [_ data])
+  (-op-namespace-changed [_])
+  (-vl-namespace-changed [_ data])
 
   (-op-connect [_])
   (-vl-connect [_ opts])
@@ -95,6 +95,6 @@
   (-create-tab [_ tabid])
   (-read-workspace-file [_ filepath])
   (-show-info-msg [_ msg])
-  (-active-file-ns [_] "nil if it's not clj file")
+  (-active-ns [_] "nil if it's not clj file")
   (-join-workspace-path [_ subpath]))
 

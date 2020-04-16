@@ -22,7 +22,9 @@
                  :ops| ops|}))
 
 (def state (r/atom {:data []
-                    :conf nil}))
+                    :conf nil
+                    :ns-sym nil
+                    :lrepl-id nil}))
 
 (defn ^:export main
   []
@@ -57,7 +59,9 @@
                 (p/-op-tab-append tab|i) (let [{:keys [data]} v]
                                            (swap! state update :data conj data))
                 (p/-op-conf tab|i) (let [{:keys [conf]} v]
-                                     (swap! state assoc :conf conf)))
+                                     (swap! state assoc :conf conf))
+                (p/-op-namespace-changed tab|i) (let []
+                                                  (swap! state merge (select-keys (:data v) [:ns-sym :lrepl-id]))))
               (recur))
             (catch js/Error e (do (println "; proc-ops error, will exit") (println e)))))
         (println "proc-ops go-block exiting"))))
@@ -65,17 +69,24 @@
 (defn rc-repl-tab
   [{:keys [ops|]} ratoms]
   (r/with-let [conf (r/cursor (ratoms :state) [:conf])
-               data (r/cursor (ratoms :state) [:data])]
+               data (r/cursor (ratoms :state) [:data])
+               ns-sym (r/cursor (ratoms :state) [:ns-sym])
+               lrepl-id (r/cursor (ratoms :state) [:lrepl-id])]
     [:<>
-     [:div {} "rc-repl-tab"]
-     [:button {:on-click (fn [e]
-                           (println "button clicked")
-                           #_(put! ops| ???))} "button"]
-     [:div ":conf"]
-     [:div {} (with-out-str (pprint @conf))]
+     #_[:div {} "rc-repl-tab"]
+     #_[:button {:on-click (fn [e]
+                             (println "button clicked")
+                             #_(put! ops| ???))} "button"]
+     #_[:div ":conf"]
+     #_[:div {} (with-out-str (pprint @conf))]
+     [:div @lrepl-id]
+     [:div @ns-sym]
      [:br]
      [:div ":data"]
-     [:div {} (with-out-str (pprint @data))]]))
+     [:section
+      (map (fn [v]
+             [:div {} (with-out-str (pprint v))])
+           @data)]]))
 
 (defn render-ui
   [channels ratoms]

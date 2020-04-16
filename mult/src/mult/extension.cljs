@@ -163,7 +163,9 @@
                    (close! proc|)
                    (put! main| (p/-vl-proc-stopped main|i pid)))]
     (put! main| (p/-vl-proc-started main|i pid proc|))
-    (go (loop [state {:tabs {}
+    (go (loop [state {:conf nil
+                      :conf* nil
+                      :tabs {}
                       :conns {}
                       :lrepls {}
                       :mult.edn nil}]
@@ -210,24 +212,31 @@
                                                          c (get-in state [:conns k])]
                                                      (unmix conn-status|x (:status| c))
                                                      (p/-disconnect c))
-                          (p/-op-texteditor-changed ops|i) (let [{:keys [filename ns-sym]} (:data v)]
-                                                             (prn v)))
+                          (p/-op-texteditor-changed ops|i) (let [{:keys [filepath ns-sym]} (:data v)
+                                                                 tab-ids (conf/filepath->tab-ids (:conf* state) filepath)
+                                                                 lrepl-ids (conf/filepath->lrepl-ids (:conf* state) filepath)
+                                                                 tabs (select-keys (:tabs state) tab-ids)
+                                                                 data (merge (:data v) {:lrepl-id (first lrepl-ids)})]
+                                                             (doseq [[id tab] tabs]
+                                                               (p/-send tab (p/-vl-namespace-changed tab|i data)))))
                         (recur state))
                 cmd|t (let [cmd (:cmd/id v)]
                         (condp = cmd
                           "mult.open" (let [conf (-> (<! (p/-read-workspace-file editor ".vscode/mult.edn"))
-                                                     (read-string)
-                                                     (conf/preprocess))
+                                                     (read-string))
+                                            conf* (conf/evaluate conf)
                                             conns (reduce (fn [ag [conn-id data]]
                                                             (let [conn (repl/netsocket {:id conn-id
-                                                                                        :host (first conn-id)
-                                                                                        :port (second conn-id)
-                                                                                        :topic-fn :id})]
+                                                                                        :host (:host data)
+                                                                                        :port (:port data)
+                                                                                        :xf-send #'repl/nrepl-xf-send
+                                                                                        :xf-msg #'repl/nrepl-xf-msg
+                                                                                        :topic-fn #'repl/nrepl-topic-fn})]
                                                               (assoc ag conn-id conn)))
                                                           {} (:connections conf))
                                             tabs (reduce (fn [ag tab-id]
                                                            (assoc ag tab-id (p/-create-tab editor tab-id)))
-                                                         {} (:tabs/default conf))
+                                                         {} (:tabs/active conf))
                                             lrepls (reduce (fn [ag [lrepl-id data]]
                                                              (assoc ag lrepl-id (repl/lrepl (:iden data))))
                                                            {} (:repls conf))]
@@ -237,18 +246,36 @@
                                         (doseq [[tab-id tab] tabs]
                                           (p/-send tab (p/-vl-conf tab|i conf)))
                                         (p/-show-info-msg editor "mult.open")
-                                        (recur (-> state
-                                                   (assoc :mult.edn conf)
-                                                   (assoc :lrepls lrepls)
-                                                   (assoc :conns conns)
-                                                   (assoc :tabs tabs))))
+                                        (recur (merge state {:conf conf
+                                                             :conf* conf*
+                                                             :lrepls lrepls
+                                                             :conns conns
+                                                             :tabs tabs})))
                           "mult.ping" (do
                                         (p/-show-info-msg editor "mult.ping via channels")
                                         (<! (timeout 3000))
                                         (p/-show-info-msg editor "mult.ping via channels later"))
-                          "mult.eval"  (let [tabs (:tabs state)]
-                                         (doseq [tab (vals tabs)]
-                                           (p/-send tab (p/-vl-tab-append tab|i {:value (rand-int 100)})))))
+                          "mult.eval"  (when-let [{:keys [filepath ns-sym]} (p/-active-ns editor)]
+                                         (let [lrepl-ids (conf/filepath->lrepl-ids (:conf* state) filepath)
+                                               lrepl-id (first lrepl-ids)
+                                               lrepl (get (:lrepls state) lrepl-id)
+                                               conn-id (get-in (:conf* state) [:repls lrepl-id :conn])
+                                               conn (get (:conns state) conn-id)
+                                               tab-ids (conf/lrepl-id->tab-ids (:conf* state) lrepl-id)
+                                               tabs (select-keys (:tabs state) tab-ids)
+                                               selection (p/-selection editor)]
+                                           (prn "selection" selection)
+                                           (prn "lrepl-id" lrepl-id)
+                                           (prn "conn-id" conn-id)
+                                           (prn "tab-ids" tab-ids)
+                                           (prn "conn" conn)
+                                           (prn "lrepl" lrepl)
+                                           (when lrepl
+                                             (try
+                                               (let [data (<! (p/-eval lrepl selection nil (select-keys conn [:msg|p :send|])))]
+                                                 (doseq [[id tab] tabs]
+                                                   (p/-send tab (p/-vl-tab-append tab|i (:out data)))))
+                                               (catch js/Error ex (log "; error when evaluating" ex)))))))
                         (recur state))))
             (catch js/Error e (do (log "; proc-ops error, will exit" e)))
             (finally

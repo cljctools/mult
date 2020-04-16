@@ -162,6 +162,20 @@
     (catch js/Error ex (log "; parse-ns error " {:filename filename
                                                  :err ex}))))
 
+(defn active-ns
+  [text-editor log]
+  (when text-editor
+    (let [range (vscode.Range.
+                 (vscode.Position. 0 0)
+                 (vscode.Position. NS_DECL_LINE_RANGE 0))
+          text (.getText text-editor.document range)
+          filepath text-editor.document.fileName
+          ns-sym (parse-ns filepath text log)
+          data {:filepath filepath
+                :ns-sym ns-sym}]
+      data
+      #_(prn text-editor.document.languageId))))
+
 (defn editor
   [channels ctx]
   (let [pid [:proc-editor (random-uuid)]
@@ -185,16 +199,8 @@
     (do
       (put! main| (p/-vl-proc-started main|i pid proc|))
       (.onDidChangeActiveTextEditor vscode.window (fn [text-editor]
-                                                    (when text-editor
-                                                      (let [range (vscode.Range.
-                                                                   (vscode.Position. 0 0)
-                                                                   (vscode.Position. NS_DECL_LINE_RANGE 0))
-                                                            text (.getText text-editor.document range)
-                                                            filename text-editor.document.fileName
-                                                            ns-sym (parse-ns filename text log)
-                                                            data {:filename filename
-                                                                  :ns-sym ns-sym}]
-                                                        #_(prn text-editor.document.languageId)
+                                                    (let [data (active-ns text-editor log)]
+                                                      (when data
                                                         (put! ops| (p/-vl-texteditor-changed ops|i data)))))))
 
     (go (loop []
@@ -249,6 +255,7 @@
       (-join-workspace-path [_ subpath]
         (let [extpath (. context -extensionPath)]
           (.join path extpath subpath)))
+      (-active-ns [_] (active-ns vscode.window.activeTextEditor log))
       (-selection [_]
         (when  vscode.window.activeTextEditor
           (let [start vscode.window.activeTextEditor.selection.start

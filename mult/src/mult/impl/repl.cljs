@@ -58,6 +58,8 @@
                  (.on "data" (fn [buf]
                                (try
                                  (when-let [d (xf-msg buf)]
+                                   (prn "data")
+                                   (prn d)
                                    (when (:id d)
                                      (put! msg| (p/-vl-data netsock|i d opts))))
                                  (catch js/Error e #_(println (ex-message e)))))))
@@ -75,6 +77,8 @@
                p/Send
                (-send [_ v] (try
                               (let [d (xf-send v)]
+                                (prn "sending")
+                                (prn v)
                                 (.write socket d))
                               (catch js/Error e #_(println (ex-message e)))))
                p/Release
@@ -96,6 +100,21 @@
       (release))
     conn))
 
+(defn nrepl-xf-send
+  [data]
+  (.encode bencode (clj->js data)))
+
+(defn nrepl-xf-msg
+  [msg]
+  (as-> msg v
+    (.toString v)
+    (.decode bencode v "utf8")
+    (js->clj v :keywordize-keys true)))
+
+(defn nrepl-topic-fn
+  [data]
+  (get-in data [:data :id]))
+
 (defn nrepl
   []
   (let [proc| (chan 10)]
@@ -112,21 +131,25 @@
                 res| (chan 50)
                 msg|s (sub msg|p topic c|)
                 release #(do
-                            (close! res|)
-                            (close! c|)
-                            (unsub msg|p topic c|)
-                            (mult.async/close-topic msg|p topic))
+                           (close! res|)
+                           (close! c|)
+                           (unsub msg|p topic c|)
+                           (mult.async/close-topic msg|p topic))
                 req {:op "eval" :code code :id id}]
             (>! send| req)
             (loop [t| (timeout 10000)]
               (alt!
                 c| ([v] (when v
+                          (prn "nrepl v:")
+                          (prn v)
                           (let [{:keys [data opts]} v]
                             (>! res| data)
                             (if (or (:status data) (:err data))
                               (do (release)
-                                  {:req  req
-                                   :res (<! (a/into [] res|))})
+                                  (let [res (<! (a/into [] res|))]
+                                    {:req  req
+                                     :res res
+                                     :out (first (keep #(or (get % :value) (get % :err)) res))}))
                               (recur t|)))))
                 t| (do
                      (release)
@@ -137,9 +160,6 @@
       (-interrupt [_ session-id opts])
       (-ls-sessions [_]))))
 
-(defn lrepl
-  [opts]
-  nil)
 
 (defn lrepl-plain
   []
@@ -164,6 +184,12 @@
       p/Eval
       (-eval [_ code session-id {:keys [msg|p send|] :as opts}]
         (p/-eval nr code session-id opts)))))
+
+(defn lrepl
+  [opts]
+  (lrepl-plain))
+
+
 
 (comment
 
