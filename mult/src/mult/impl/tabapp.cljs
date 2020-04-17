@@ -34,9 +34,13 @@
   [{:keys [tab| ops|] :as channels} ctx]
   (let []
     (do
+      (.addEventListener js/document "keyup"
+                         (fn [ev]
+                           (cond
+                             (and (= ev.keyCode 76) ev.ctrlKey) (swap! state assoc :data []))))
       (.addEventListener js/window "message"
                          (fn [ev]
-                           (println ev.data)
+                           #_(println ev.data)
                            (put! tab| (read-string ev.data))))
       (proc-ops channels ctx)
       (render-ui channels (select-keys ctx [:state])))
@@ -84,9 +88,9 @@
      [:br]
      [:div ":data"]
      [:section
-      (map (fn [v]
-             [:div {} (with-out-str (pprint v))])
-           @data)]]))
+      (map-indexed (fn [i v]
+                     ^{:key i} [:pre {} (with-out-str (pprint v))])
+                   @data)]]))
 
 (defn render-ui
   [channels ratoms]

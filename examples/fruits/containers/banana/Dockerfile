@@ -58,6 +58,6 @@ WORKDIR /ctx/system
 COPY system/deps.edn /ctx/system
 WORKDIR /ctx/app
 COPY containers/banana/deps.edn .
-RUN clojure -A:core:dev:optimized:local -Stree
+RUN clojure -A:core:dev:optimized -Stree
 
 EXPOSE 9500 9630 8899 

@@ -29,6 +29,7 @@ services:
     volumes:
       - ./system:/ctx/system
       - ./containers/banana:/ctx/app
+      - ../../../:/ctx/code
     build:
       context: ./
       dockerfile: ./containers/banana/Dockerfile

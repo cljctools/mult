@@ -63,6 +63,8 @@
       - https://github.com/nrepl/nrepl/blob/master/src/clojure/nrepl/core.clj#L80
     - nrepl.transport/bencode (is a transport-fn)
       - https://github.com/nrepl/nrepl/blob/master/src/clojure/nrepl/transport.clj#L93
+    - sessions
+      - https://nrepl.org/nrepl/design/middleware.html#_sessions
 
 - nodejs
   - https://nodejs.org/api/net.html#net_class_net_socket

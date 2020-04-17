@@ -13,6 +13,12 @@
 
   (+ 1 2)
 
+  (shadow.cljs.devtools.api/watch :app)
+
+  (shadow.cljs.devtools.api/nrepl-select :app)
+
+  
+
   ;;
   )
 

@@ -68,7 +68,7 @@
   (-send [_ v]))
 
 (defprotocol Eval
-  (-eval [_ code opts] [_ code session-id opts] [_ code nspace session-id opts]))
+  (-eval [_ opts] [_ code ns-sym] [_ conn code ns-sym] [_ conn code ns-sym session-id]))
 
 (defprotocol Release
   :extend-via-metadata true
@@ -77,7 +77,7 @@
 (defprotocol Active
   (-active? [_]))
 
-(defprotocol NRepl
+(defprotocol ReplConn
   #_(-clone-session [_ opts])
   (-close-session [_ session-id opts])
   (-describe [_  opts])

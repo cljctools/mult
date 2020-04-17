@@ -15,7 +15,8 @@
    [mult.protocols :as p]
    [mult.impl.editor :as editor]
    [mult.impl.channels :as channels]
-   [mult.impl.repl :as repl]
+   [mult.impl.conn :as conn]
+   [mult.impl.lrepl :as lrepl]
    [mult.impl.conf :as conf]
    [mult.impl.self-hosting :as self-hosting]))
 
@@ -151,8 +152,6 @@
         cmd|i (channels/cmd|i)
         conn|i (channels/netsock|i)
         log (fn [& args] (put! log| (apply p/-vl-log log|i args)))
-        adconn (fn [state id conn] (update state :conns assoc id conn))
-        rmconn (fn [state id] (update state :conns dissoc id))
         release #(do
                    (untap ops|m ops|t)
                    (untap cmd|m cmd|t)
@@ -183,14 +182,14 @@
                                   (p/-op-disconnected conn|i) (let [hadError (:hadError (:opts v))
                                                                     {:keys [id]} (:opts v)]
                                                                 (log (format "%s disconnected, hadError %s" id hadError))
-                                                                (recur (rmconn state id)))
+                                                                (recur (update state :conns dissoc id)))
                                   (p/-op-timeout conn|i) (let [{:keys [id]} (:opts v)]
                                                            (log (format "%s timeout" id))
-                                                           (recur (rmconn state id)))
+                                                           (recur (update state :conns dissoc id)))
                                   (p/-op-error conn|i) (let [err (:err (:opts v))
                                                              {:keys [id]} (:opts v)]
                                                          (log (format "%s error" id) err)
-                                                         (recur (rmconn state id))))
+                                                         (recur (update state :conns dissoc id))))
                                 (recur state))
                 ops|t (let [op (p/-op ops|i v)]
                         (condp = op
@@ -201,17 +200,17 @@
                           (p/-op-tab-disposed ops|i) (let [{:keys [tab/id]} v]
                                                        (log (format "tab  %s disposed" id)))
                           (p/-op-connect ops|i) (let [{:keys [id]} v
-                                                      c (repl/netsocket {:id id
-                                                                          :host (first id)
-                                                                          :port (second id)
-                                                                          :topic-fn :id})]
-                                                  (admix conn-status|x (:status| c))
-                                                  (p/-connect c)
-                                                  (recur (adconn state id c)))
-                          (p/-op-disconnect ops|i) (let [{:keys [k host port  id]} v
-                                                         c (get-in state [:conns k])]
-                                                     (unmix conn-status|x (:status| c))
-                                                     (p/-disconnect c))
+                                                      data (get-in (:conf* state) [:connections id])
+                                                      conn (conn/nrepl {:id id
+                                                                        :host (:host data)
+                                                                        :port (:port data)} log)]
+                                                  (admix conn-status|x (:status| conn))
+                                                  (p/-connect conn)
+                                                  (recur (update state :conns assoc id conn)))
+                          (p/-op-disconnect ops|i) (let [{:keys [host port id]} v
+                                                         conn (get-in state [:conns id])]
+                                                     (unmix conn-status|x (:status| conn))
+                                                     (p/-disconnect conn))
                           (p/-op-texteditor-changed ops|i) (let [{:keys [filepath ns-sym]} (:data v)
                                                                  tab-ids (conf/filepath->tab-ids (:conf* state) filepath)
                                                                  lrepl-ids (conf/filepath->lrepl-ids (:conf* state) filepath)
@@ -226,26 +225,23 @@
                                                      (read-string))
                                             conf* (conf/evaluate conf)
                                             conns (reduce (fn [ag [conn-id data]]
-                                                            (let [conn (repl/netsocket {:id conn-id
-                                                                                        :host (:host data)
-                                                                                        :port (:port data)
-                                                                                        :xf-send #'repl/nrepl-xf-send
-                                                                                        :xf-msg #'repl/nrepl-xf-msg
-                                                                                        :topic-fn #'repl/nrepl-topic-fn})]
+                                                            (let [conn (conn/nrepl {:id conn-id
+                                                                                    :host (:host data)
+                                                                                    :port (:port data)} log)]
                                                               (assoc ag conn-id conn)))
                                                           {} (:connections conf))
                                             tabs (reduce (fn [ag tab-id]
                                                            (assoc ag tab-id (p/-create-tab editor tab-id)))
                                                          {} (:tabs/active conf))
                                             lrepls (reduce (fn [ag [lrepl-id data]]
-                                                             (assoc ag lrepl-id (repl/lrepl (:iden data))))
+                                                             (assoc ag lrepl-id (lrepl/lrepl (:iden data))))
                                                            {} (:repls conf))]
                                         (doseq [[conn-id conn] conns]
                                           (admix conn-status|x (:status| conn))
                                           (p/-connect  conn))
                                         (doseq [[tab-id tab] tabs]
                                           (p/-send tab (p/-vl-conf tab|i conf)))
-                                        (p/-show-info-msg editor "mult.open")
+                                        #_(p/-show-info-msg editor "mult.open")
                                         (recur (merge state {:conf conf
                                                              :conf* conf*
                                                              :lrepls lrepls
@@ -264,18 +260,11 @@
                                                tab-ids (conf/lrepl-id->tab-ids (:conf* state) lrepl-id)
                                                tabs (select-keys (:tabs state) tab-ids)
                                                selection (p/-selection editor)]
-                                           (prn "selection" selection)
-                                           (prn "lrepl-id" lrepl-id)
-                                           (prn "conn-id" conn-id)
-                                           (prn "tab-ids" tab-ids)
-                                           (prn "conn" conn)
-                                           (prn "lrepl" lrepl)
-                                           (when lrepl
-                                             (try
-                                               (let [data (<! (p/-eval lrepl selection nil (select-keys conn [:msg|p :send|])))]
-                                                 (doseq [[id tab] tabs]
-                                                   (p/-send tab (p/-vl-tab-append tab|i (:out data)))))
-                                               (catch js/Error ex (log "; error when evaluating" ex)))))))
+                                           (try
+                                             (let [data (<! (p/-eval lrepl conn selection ns-sym))]
+                                               (doseq [[id tab] tabs]
+                                                 (p/-send tab (p/-vl-tab-append tab|i data))))
+                                             (catch js/Error ex (log "; error when evaluating" ex))))))
                         (recur state))))
             (catch js/Error e (do (log "; proc-ops error, will exit" e)))
             (finally
