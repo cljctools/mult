@@ -12,14 +12,19 @@
 
 (defn lrepl-plain
   []
-  (let []
+  (let [session (atom nil)]
     (reify
       p/Eval
-      (-eval [_ conn code session-id ns-sym]
-             (let [code' (format
+      (-eval [_ conn code ns-sym]
+             (let [code* (format
                           "(do (in-ns '%s) %s)" ns-sym code)]
-               (p/-eval conn {:code code'
-                              :session-id session-id}))))))
+               (go
+                 (when-not @session
+                   (when-let [{:keys [new-session] :as v} (<! (p/-clone-session conn))]
+                     (reset! session new-session)))
+                 (<! (p/-eval conn {:code code*
+                                    :session @session
+                                    :done-keys [:err :value]}))))))))
 
 (comment
   
@@ -29,27 +34,44 @@
   )
 
 (defn lrepl-shadow-clj
-  [{:keys [build]}]
-  (let []
+  [opts]
+  (let [session (atom nil)]
     (reify
       p/Eval
       (-eval [_ conn code ns-sym]
-        (p/-eval conn {:code code})))))
+        (let [code* (format
+                     "(do (in-ns '%s) %s)" ns-sym code)]
+          (go
+            (when-not @session
+              (when-let [{:keys [new-session] :as v} (<! (p/-clone-session conn))]
+                (reset! session new-session)))
+            (<! (p/-eval conn {:code code*
+                               :session @session
+                               :done-keys [:err :value]}))))))))
 
 (defn lrepl-shadow-cljs
   [{:keys [build]}]
-  (let []
+  (let [session (atom nil)]
     (reify
       p/Eval
-     (-eval [_ conn code ns-sym]
-            (let [code0 (format "(shadow.cljs.devtools.api/nrepl-select %s)" build)
-                  code' (format
-                         "(do (in-ns '%s) %s)" build ns-sym code)]
-              (go
-                #_(prn (<! (p/-eval conn code0 session-id)))
-                (<! (p/-eval conn {:code code
-                                   :done-keys [:err :value]}))))) 
-      )))
+      (-eval [_ conn code ns-sym]
+        (let [code0 (format "(shadow.cljs.devtools.api/nrepl-select %s)" build)
+              code* (format
+                     "(do (in-ns '%s) %s)" ns-sym code)
+              code* (format
+                     "(binding [*ns* (find-ns '%s)]
+                      %s
+                      )" ns-sym code)]
+          (go
+            (when-not @session
+              (when-let [{:keys [new-session] :as v} (<! (p/-clone-session conn))]
+                (reset! session new-session)))
+            #_(<! (p/-eval conn {:code code0
+                                 :session @session
+                                 :done-keys [:err :value]}))
+            (<! (p/-eval conn {:code code
+                               :session @session
+                               :done-keys [:err :value]}))))))))
 
 (defn lrepl
   [{:keys [type runtime build] :as opts}]

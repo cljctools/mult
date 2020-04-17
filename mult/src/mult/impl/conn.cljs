@@ -93,16 +93,27 @@
       (when-let [v (<! receive|t)]
         (try
           (let [d (xf-receive v)]
+            (prn "receive")
+            (prn d)
             (when (:id d)
               (>! nrepl| d)))
           (catch js/Error ex))
         (recur))
       (log (format "nrepl %s xform process exiting" id)))
     (reify
-      p/Eval
-      (-eval [_ opts]
-        (let [{:keys [code  done-keys]
-               :or {done-keys [:status :err]}} opts
+      p/Connect
+      (-connect [_] (p/-connect socket))
+      (-disconnect [_] (p/-disconnect socket))
+      (-connected? [_] (p/-connected? socket))
+      p/ReplConn
+
+      (-describe [_  opts])
+      (-interrupt [_ session opts])
+      (-ls-sessions [_])
+      (-nrepl-op [_ opts]
+        (let [{:keys [done-keys op-data result-keys]
+               :or {done-keys [:status :err]
+                    result-keys [:value :err]}} opts
               topic (str (random-uuid))
               nrepl|s (chan 10)
               _ (sub nrepl|p topic nrepl|s)
@@ -112,9 +123,11 @@
                          (close! nrepl|s)
                          (unsub nrepl|p topic nrepl|s)
                          (mult.async/close-topic nrepl|p topic))
-              req {:op "eval" :code code :id topic}
-              ex| (chan 1)]
+              ex| (chan 1)
+              req (merge op-data {:id topic})]
           (try
+            (prn "sending")
+            (prn req)
             (put! send| (xf-send req))
             (catch js/Error ex (put! ex| {:comment "Error xfroming/sending nrepl op" :err-str (str ex)})))
           (go
@@ -125,25 +138,29 @@
                                (if (not-empty (select-keys v done-keys))
                                  (do (release)
                                      (let [res (<! (a/into [] res|))]
-                                       {:req  req
-                                        :res res
-                                        :out (first (keep #(or (get % :value) (get % :err)) res))}))
+                                       (transduce
+                                        (comp
+                                         (keep #(or (not-empty (select-keys % result-keys)) nil))
+                                         #_(mapcat vals))
+                                        merge
+                                        {:req  req
+                                         :res res}
+                                        res)))
                                  (recur t|))))
                 t| ([v] (do
                           (release)
-                          {:comment "Error: Nrepl op timed out" :code code}))
+                          {:comment "Error: -nrepl-op timed out" :req req}))
                 ex| ([ex] (do
                             (release)
                             ex)))))))
-      p/Connect
-      (-connect [_] (p/-connect socket))
-      (-disconnect [_] (p/-disconnect socket))
-      (-connected? [_] (p/-connected? socket))
-      p/ReplConn
-      (-close-session [_ session-id opts])
-      (-describe [_  opts])
-      (-interrupt [_ session-id opts])
-      (-ls-sessions [_])
+      (-close-session [_ session opts])
+      (-clone-session [_]
+        (let []
+          (p/-nrepl-op _ (merge opts {:op-data {:op "clone"} :result-keys [:new-session]}))))
+      p/Eval
+      (-eval [_ opts]
+        (let [{:keys [code  session]} opts]
+          (p/-nrepl-op _ (merge opts {:op-data {:op "eval" :code code :session session}}))))
       cljs.core/ILookup
       (-lookup [_ k] (-lookup _ k nil))
       (-lookup [_ k not-found] (-lookup lookup k not-found)))))

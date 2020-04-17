@@ -10,6 +10,8 @@
   ; api
   (dir shadow)
 
+  (+ 1 2)
+
   (shadow/compile :app)
 
 

@@ -68,7 +68,7 @@
   (-send [_ v]))
 
 (defprotocol Eval
-  (-eval [_ opts] [_ code ns-sym] [_ conn code ns-sym] [_ conn code ns-sym session-id]))
+  (-eval [_ opts] [_ code ns-sym] [_ conn code ns-sym] [_ conn code ns-sym session]))
 
 (defprotocol Release
   :extend-via-metadata true
@@ -78,15 +78,16 @@
   (-active? [_]))
 
 (defprotocol ReplConn
-  #_(-clone-session [_ opts])
-  (-close-session [_ session-id opts])
+  (-nrepl-op [_ opts])
+  (-clone-session [_] [_ opts])
+  (-close-session [_ session opts])
   (-describe [_  opts])
   #_(-eval [_ code session-id opts])
-  (-interrupt [_ session-id opts])
+  (-interrupt [_ session opts])
   #_(-load-file [_ file opts])
   (-ls-sessions [_])
-  #_(-sideloader-provide [_ content name session-id type opts])
-  #_(-sideloader-start [_ session-id opts])
+  #_(-sideloader-provide [_ content name session type opts])
+  #_(-sideloader-start [_ session opts])
   #_(-stdin [_ stdin-content opts]))
 
 (defprotocol Editor

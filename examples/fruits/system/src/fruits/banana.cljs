@@ -1,7 +1,8 @@
 (ns fruits.banana
   (:require
    [clojure.core.async :as async :refer [<! >!  chan go alt! take! put!  alts! pub sub]]
-   [fruits.impl.core :as core]))
+   [fruits.impl.core :as core]
+   [fruits.impl.render :as render]))
 
 (defn ^:export main
   []

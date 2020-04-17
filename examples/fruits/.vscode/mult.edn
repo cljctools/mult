@@ -24,7 +24,9 @@
                                         (re-matches (re-pattern ".+\\.cljc?") filepath))
                   :conn :server}}
  :tabs {:system {:repls {:ui {}
-                         :server {}}
+                         :server {}
+                         :devserver {}
+                         }
                  :when-cljc :recent}
         :all {:repls {:ui {}
                       :server {}
