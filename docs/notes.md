@@ -160,3 +160,5 @@
   - https://stackoverflow.com/questions/173919/is-there-a-theirs-version-of-git-merge-s-ours
   - git push <remote> src-branch:<remote-dst-branch>
   - git merge --no-ff --squash remote/branch
+  - https://stackoverflow.com/questions/9110310/update-git-commit-author-date-when-amending/13497026
+    - git commit --amend --no-edit --date=now 
