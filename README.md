@@ -1,3 +1,3 @@
 # mult
 
-clojure extension for vscode
+clojure(script) extension for vscode

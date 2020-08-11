@@ -1,33 +1,61 @@
+# mult: clojure(script) extension for vscode
 
-- should be possible
-  - have multiple repl connections from an editor window
-  - every repl tab has a list of connections (1 or more)
-  - every tab has a (savable in settings) switch which runtime to prefer for cljc files - clj or cljs
-  - when switching between files, tab switches namesapces if they are relevant to connections
-  - these settings (sets of connections and preferred runtimes for cljc) are savable in workspace's .vsocde/settings
-  - point is: one editor window should allow for 
-    - seemless navigation between clj cljs cljc files 
-    - evaluation of forms in their respective runtimes and connections
-  - configuration file(s) should be part of the repo
-    - saved, e.g. in .vscode/mult.edn
-  - when opening repo in vscode, mult reads config(s) and sets up all connections and repl tabs 
-    - * if user chooses 'set everything up as in config'
-  - mult exposes a menu with all this options (in a tab, or dropdown after press)
-    - you shouldn't have to know secret keybindings to get a list of available options(actions)
-  - evaluation2
-    - should be always possible (besides automatic/config):
-      - open mult tab, add connections (connections are uris)
-      - mult will switch connections when files change
-      - but: tab may have a list of connections (like tags) on top, user can always override and select a connection
-      - if so, anything from anywhere when evaluated in this tab, is sent to that connection
-      - or user can by clicking switch tab to the another connection
-      - or user can switch to default behavior
-      - point is: user has full control over connections
-        - they don't result from keycombo-popups
-        - autodetection (if any) is secondary to: config, specifying connections as strings
-        - connections are just connections and can be added/removed to/from repl tab(s)
+## rationale
 
+- clojure(script) IDE experience is no minor issue - it's the thing between you and programs
+- the editor and the extension 
+  - should be long-term satisfactory, enjoyable and even inspiring
+  - should be open source
+  - should be written in clojure, or at least the extension should be written in clojure(script)
+    - for simplicity
+    - for asynchrony done via processes
+- the extension should
+  - support multiple repl connections from one editor window
+  - have a file configuration (for user and projects), where connections and repls can be specified (to not depend on key-combo connection sequences)
+  - be simpler, code-wise and feature-wise 
+- making an editor in clojure is, no doubt, a goal, but the extension for an existing editor is a logical first step
+  - the work of making an extension is trasferrable even into an editor written in clojure, so the work won't be lost
+- existing editor + extension combos
+  - Emacs + Cider
+    - perfect, if you're into it
+  - IntelliJ + Cursive
+    - both closed source, Cursive comes with conditions
+  - VSCode + Calva
+    - can be considered the current best option
+    - VSCode is the undeniable best open source editor
+    - Calva works perfectly, but is written in typescript
+    - nodejs runtime is undesirable, but not a problem
 
+## should be possible
+
+- have multiple repl connections from an editor window
+- every repl tab has a list of connections (1 or more)
+- every tab has a (savable in settings) switch which runtime to prefer for cljc files - clj or cljs
+- when switching between files, tab switches namesapces if they are relevant to connections
+- these settings (sets of connections and preferred runtimes for cljc) are savable in workspace's .vsocde/settings
+- point is: one editor window should allow for 
+  - seemless navigation between clj cljs cljc files 
+  - evaluation of forms in their respective runtimes and connections
+- configuration file(s) should be part of the repo
+  - saved, e.g. in .vscode/mult.edn
+- when opening repo in vscode, mult reads config(s) and sets up all connections and repl tabs 
+  - * if user chooses 'set everything up as in config'
+- mult exposes a menu with all this options (in a tab, or dropdown after press)
+  - you shouldn't have to know secret keybindings to get a list of available options(actions)
+- evaluation2
+  - should be always possible (besides automatic/config):
+    - open mult tab, add connections (connections are uris)
+    - mult will switch connections when files change
+    - but: tab may have a list of connections (like tags) on top, user can always override and select a connection
+    - if so, anything from anywhere when evaluated in this tab, is sent to that connection
+    - or user can by clicking switch tab to the another connection
+    - or user can switch to default behavior
+    - point is: user has full control over connections
+      - they don't result from keycombo-popups
+      - autodetection (if any) is secondary to: config, specifying connections as strings
+      - connections are just connections and can be added/removed to/from repl tab(s)
+
+## notes
 
 - mult.edn 
   - is either in .vscode/mult.edn or in ~/mult.edn
