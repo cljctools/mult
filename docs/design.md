@@ -25,6 +25,26 @@
     - VSCode is the undeniable best open source editor
     - Calva works perfectly, but is written in typescript
     - nodejs runtime is undesirable, but not a problem
+- what exactly mult's design and value is ? what's the trigger to bother at all?
+  - sometimes (rarely, but it happens), you run multiple apps that form a system
+  - it's not an every-day thing, but when it happens, pain follows
+  - so what you want is this
+    - open one editor window
+      - which (via workspaces for exmaple) already support multiple directories(repos) per workspace
+    - add to that workspace all those apps(repos), start the system, so now multiple apps expose multiple nREPL connections
+      - some nREPL connections - like shadow-cljs provides - expose 2 logcal repls (clj and cljs) by deafult, so it's one-connection:multiple-repls already by nREPL design
+    - navigate between src code of those app and your REPL tab should follow you, switching connections and logical repls as you specified them in one config file
+      - example config [mult.edn](../examples/fruits/.vscode/mult.edn)
+    - that config says: hey, here are connections (separately), here are repls (that use those connections by key, but are separate) and here are tabs (every tab has some repls)
+    - plus, that config has eval-able functions that help you easily (no need for sub-language) using clojure write a regexp for how to tell which repl to use for which namespaces
+    - what you get, is an extension, where connections, repls, tabs are separated and a new repl, tab can be added/removed as needed
+    - additionally, extension should handle reconnections by default, when you start/stop apps - if repl is within config, extension always attempts to connect; no key-combos on every restart
+  - is such extension features somehting that is NEEDed ? Kind of yes, but not every day, that's true
+  - but
+    - there is **no reason** why extensions should not by design be 'zero, one or more'!
+    - why is there a limitation of one window, one app (process) ? or hard coded workarounds? 
+    - it shoudl be by design: 0,1 or more connections, repls, tabs, configurable via file
+
 
 ## should be possible
 
