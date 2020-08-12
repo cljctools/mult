@@ -8,7 +8,7 @@
   - should be open source
   - should be written in clojure, or at least the extension should be written in clojure(script)
     - for simplicity
-    - for asynchrony done via processes
+    - for asynchrony done via processes (core.async)
 - the extension should
   - support multiple repl connections from one editor window
   - have a file configuration (for user and projects), where connections and repls can be specified (to not depend on key-combo connection sequences)
@@ -19,10 +19,10 @@
   - Emacs + Cider
     - perfect, if you're into it
   - IntelliJ + Cursive
-    - both closed source, Cursive comes with conditions
+    - ~~both are closed source~~, Cursive comes with conditions
   - VSCode + Calva
     - can be considered the current best option
-    - VSCode is the undeniable best open source editor
+    - VSCode can be considered the best open source editor
     - Calva works perfectly, but is written in typescript
     - nodejs runtime is undesirable, but not a problem
 - what exactly mult's design and value is ? what's the trigger to bother at all?
@@ -43,7 +43,7 @@
   - but
     - there is **no reason** why extensions should not by design be 'zero, one or more'!
     - why is there a limitation of one window, one app (process) ? or hard coded workarounds? 
-    - it shoudl be by design: 0,1 or more connections, repls, tabs, configurable via file
+    - it should be by design: 0,1 or more connections, repls, tabs, configurable via file
 
 
 ## should be possible

@@ -178,12 +178,24 @@
 
 #### clojure editor experience
 
-- https://www.reddit.com/r/Clojure/comments/8vsirv/is_counterclockwise_on_eclipse_dead/
+- options
+  - Emacs Cider
+  - IntelliJ Cursive
+  - VSCode Calva
+  - Neovim Conjure
+    - https://github.com/Olical/conjure
+- misc
+  - https://www.reddit.com/r/Clojure/comments/8vsirv/is_counterclockwise_on_eclipse_dead/
+
+#### open source jvm editors
+
+- https://github.com/JetBrains/intellij-community
 
 
 #### Socket REPL
 
-- clojure group discussion
+- clojure group discussion in relation to vscode
   - https://groups.google.com/g/clojure/c/Na7npowHssY/m/t7kDBfCGCgAJ
     - https://github.com/mauricioszabo/atom-chlorine
     - https://github.com/mauricioszabo/clover
+- https://oli.me.uk/exploring-repl-tooling-with-prepl/
