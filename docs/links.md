@@ -179,3 +179,11 @@
 #### clojure editor experience
 
 - https://www.reddit.com/r/Clojure/comments/8vsirv/is_counterclockwise_on_eclipse_dead/
+
+
+#### Socket REPL
+
+- clojure group discussion
+  - https://groups.google.com/g/clojure/c/Na7npowHssY/m/t7kDBfCGCgAJ
+    - https://github.com/mauricioszabo/atom-chlorine
+    - https://github.com/mauricioszabo/clover
