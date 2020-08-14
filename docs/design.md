@@ -44,6 +44,15 @@
     - there is **no reason** why extensions should not by design be 'zero, one or more'!
     - why is there a limitation of one window, one app (process) ? or hard coded workarounds? 
     - it should be by design: 0,1 or more connections, repls, tabs, configurable via file
+- mult itself (as a VSCode extension) is an example of a project, that needs mult
+  - mult is developed using shadow-cljs, which thankfully supports mutiple build (apps)
+  - and mult consists of 2 apps
+    - [mult/src/mult/extension.cljs](../mult/src/mult/extension.cljs) - extension itself
+    - [mult/src/mult/impl/tabapp.cljs](../mult/src/mult/impl/tabapp.cljs) - react app that runs in the tab (VSCode is built with electron and tabs are actual browser tabs, isolated runtimes)
+  - existing extensions support this already - you can manually select(switch) shadow-cljs build (from :extesnion to :tabapp for example)
+  - but what you would prefer is to define in config file, that tabapp.cljs corresponds to :tabapp build and extension should do the switch automatically (over nrepl, as an :op) when the active file changes 
+  - again, an eval-able predicate in mult.edn is used to determine which file corresponds to which repl(s)
+  - for shared files (used in both apps) the preference can be set in the config file, still allowing to manually select(pin) :tabapp or :extension (this is how existing extensions approach it)
 
 
 ## should be possible
