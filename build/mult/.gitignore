@@ -17,3 +17,5 @@ node_modules/
 .shadow-cljs
 resources/public/js-out
 tmp/
+
+.user

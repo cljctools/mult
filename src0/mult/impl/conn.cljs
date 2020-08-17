@@ -7,7 +7,6 @@
    [clojure.string :as string]
    [clojure.pprint :refer [pprint]]
    [cljs.reader :refer [read-string]]
-   [bencode-cljc.core :refer [serialize deserialize]]
    [mult.protocols :as p]
    [mult.impl.channels :as channels]
    [mult.impl.async :as mult.async]

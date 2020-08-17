@@ -71,6 +71,17 @@
   - sessions
     - https://nrepl.org/nrepl/design/middleware.html#_sessions
 
+#### nrepl 2
+
+- nREPL 0.8 
+  - https://www.reddit.com/r/Clojure/comments/h9h2b8/nrepl_08_evolving_the_protocol/
+  - https://metaredux.com/posts/2020/06/15/nrepl-0-8-evolving-the-protocol.html
+
+#### Calva
+
+- debugger
+  - https://www.reddit.com/r/Clojure/comments/fxrvqk/latest_calva_has_a_debugger/
+
 #### nodejs
 
 - https://nodejs.org/api/net.html#net_class_net_socket

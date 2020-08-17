@@ -1,0 +1,14 @@
+{:paths ["src"]
+ :deps {org.clojure/clojure         {:mvn/version "1.10.1"}
+        org.clojure/clojurescript {:mvn/version "1.10.758"}
+        org.clojure/spec.alpha {:mvn/version "0.2.187"}
+        ;;  org.clojure/core.async {:mvn/version "1.1.587"}
+        andare {:mvn/version "1.1.587"}
+        com.cognitect/transit-cljs {:mvn/version "0.8.256"}
+        reagent {:mvn/version "0.10.0"}
+
+        github.com.cljctools/cljc {:local/root "../../../../cljctools/cljc"}
+        github.com.cljctools/csp {:local/root "../../../../cljctools/csp"}
+
+        github.com.cljctools/vscode {:local/root "../../../../cljctools/vscode/impl"}
+        github.com.cljctools/mult.meta {:local/root "../meta"}}}

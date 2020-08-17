@@ -18,7 +18,7 @@
    [mult.impl.conn :as conn]
    [mult.impl.lrepl :as lrepl]
    [mult.impl.conf :as conf]
-   [mult.impl.self-hosting :as self-hosting]))
+   #_[mult.impl.self-hosting :as self-hosting]))
 
 (def channels (let [main| (chan 10)
                     main|m (mult main|)
@@ -110,7 +110,7 @@
                                                          (assoc :ctx  ctx')
                                                          (assoc :editor  editor))]
                                           (when-not (:activated? state)
-                                            (<! (self-hosting/init (p/-join-workspace-path editor "resources/out/bootstrap")))
+                                            #_(<! (self-hosting/init (p/-join-workspace-path editor "resources/out/bootstrap")))
                                             (proc-ops (:channels state') (:ctx state') editor)
                                             (>! ops| (p/-vl-activate ops|i))
                                             (recur state')))
@@ -195,7 +195,7 @@
                         (condp = op
                           (p/-op-activate ops|i) (do
                                                    (p/-register-commands editor (default-commands))
-                                                   (p/-show-info-msg editor "actiavting"))
+                                                   (p/-show-info-msg editor "mult actiavting"))
                           (p/-op-deactivate ops|i) (p/-show-info-msg editor "deactiavting")
                           (p/-op-tab-disposed ops|i) (let [{:keys [tab/id]} v]
                                                        (log (format "tab  %s disposed" id)))

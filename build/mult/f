@@ -1,7 +1,12 @@
 #!/bin/bash
 
 clean(){
-    rm -rf resources/out out  .shadow-cljs .cpcache 
+    rm -rf resources/out out
+}
+
+purge(){
+    clean
+    rm -rf  .shadow-cljs .cpcache 
 }
 
 shadow(){
@@ -15,7 +20,7 @@ server(){
 
 dev(){
     npm i
-    shadow -A:core:dev watch :extension :bootstrap :tabapp 
+    shadow -A:core:dev watch :mult-extension :mult-bootstrap :mult-tabapp
     # shadow -A:core:dev watch :extension :bootstrap 
 }
 
@@ -25,23 +30,33 @@ tree(){
 
 compile(){
     npm i
-    shadow -A:core:dev compile :extension :bootstrap :tabapp
+    shadow -A:core:dev compile :mult-extension :mult-bootstrap :mult-tabapp
 }
 
 dock() {
 
-    docker build -t mult -f Dockerfile .
+    NAME=mult.extension
+
+    # WORKDIR_PATH=$VOLUME_PATH/deathstar/build/worker
+    VOLUME_PATH1=/ctx/code
+    WORKDIR_PATH=$VOLUME_PATH1/mult/build/extension
+
+    docker build \
+    --build-arg WORKDIR_PATH=$WORKDIR_PATH \
+    -t $NAME \
+    -f dev.Dockerfile .
+
     docker run  --rm \
                 --cpus=4.0 \
                 --memory=4g \
-                --name mult \
+                --name $NAME \
                 -it \
                 -p 5100:5100 \
                 -p 5101:5101 \
                 -p 5102:5102 \
-                -v "$(pwd)":/ctx/app \
-                -v "$(cd ../../ && pwd)":/ctx/code \
-                 mult \
+                -v "$(cd ../../../ && pwd)":$VOLUME_PATH1 \
+                -v "$(pwd)/.user":/root \
+                 $NAME \
                  bash
 }
 

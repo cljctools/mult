@@ -1,5 +1,5 @@
 {:optimizations :simple
- :output-to "resources/out/extension.js"
+ :output-to "resources/out/mult-extension/extension.js"
  :target :nodejs
  :main mult.extension
  :verbose true
