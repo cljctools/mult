@@ -162,7 +162,9 @@
 - it has a settings button or something to open more ui as needed
 - point is: most of the time gui tab shows nothing but evalutaion results and (maybe) repl input terminal at the bottom (will be added much-much later, if at all)
 
-#### the problem with gui tab: vscode styling/themes do not apply?
+#### the problem with gui tab: vscode styling/themes do not apply? wrong: they apply allright, via css
 
 - that is a question, indeed
 - but still: single renderer is better
+- this is how WebView is themed:
+  - https://code.visualstudio.com/api/extension-guides/webview#theming-webview-content
