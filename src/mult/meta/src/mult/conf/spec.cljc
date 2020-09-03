@@ -25,9 +25,9 @@
 (s/def ::include-file? some?)
 (s/def ::repl (s/keys :req [::conn-id
                             ::repl-type
-                            ::runtime
-                            ::include-file?]
-                      :opt [::shadow-build-key]))
+                            ::runtime]
+                      :opt [::include-file?
+                            ::shadow-build-key]))
 (s/def ::repls (s/map-of ::repl-id ::repl))
 
 

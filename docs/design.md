@@ -113,3 +113,27 @@
       - should be a file with editing working as in any file (e.g. a tmp,per serssion file)
       - so that when typing into it you are actually editing code in an editor file
 
+
+#### using multiple mult.edn files in a source tree (along with ~/.mult/mult.edn)
+
+- when a directory tree or workspace is open, mult should find mult.edns
+- user should have an option to add mult.edns (open their tabs) as they navigate
+- or, should be able to add all mult.edns
+- each mult.edn has it's own connnections, repls and tabs 
+  - connections should not be colliding, that's on user?
+- when user navigate the tree, mult should select the coorect mult.edn|logical-repl combo
+- or, user can press stand-by and unfreeze when a file is found, letting mult pick the right repl at that moment
+- ~/.mult/mult.edn should be for run-once kind of sessions, when you run a project, open and repl and eval, without include-file? predicate
+  - you specify in user-level conf :host :port :conn-type and select that from mult gui, it gives you a repl and evals everyhting against it
+  - so you can have defaut connections, repls, tabs for one-time repl sessions (which are frequent and are important)
+- with vscode workspaces
+  - you only search for mult.edns in workspace repos(directories), recursively
+  - it can, for example be projectA, projectB, projectB/some-path-to-another-mult-edn
+  - so you have an option to activate 0,1 or more configs
+- config files are read on mult start and on "update configs" action
+  - when configs are updated, connections are stop/started, lrepls recreated
+- on-time repl case
+  - you use ~/.mult/mult.edn for that - it has deafult connections and tab
+  - its up to user to either change port to constant in a project they rapidly cloned and are "lein repl" ing
+  - or open ~/.mult/mult.edn and change the port every time new random one is given on restart (and press update configs)
+  - bottom line: you should always opt for specifying the port
