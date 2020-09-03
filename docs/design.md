@@ -137,3 +137,32 @@
   - its up to user to either change port to constant in a project they rapidly cloned and are "lein repl" ing
   - or open ~/.mult/mult.edn and change the port every time new random one is given on restart (and press update configs)
   - bottom line: you should always opt for specifying the port
+
+#### single gui vscode tab with multiple react tabs vs multiple vscode tabs? - single gui tab
+
+- why single vsocde with interactive ui
+  - simpler state sync: extension has state, gui tab is renderer that gets that state as a whole (with multiple you need to substate/process inputs by tab id)
+  - how to show with many-vscode-tabs that foo.mult.edn has A,B,C tabs , while bar.mult.edn has it's own A,B tabs? should you?
+  - ability to "launch mult" and then choose action/operation, no need to switch to another tab or have gui beyond mult gui tab (while you can still double click vscode tab and minimize mult gui)
+  - gui not limimted to vscode WebView api (making repl tabs active,pinnig, swtiching ..)
+- why multiple vscode tabs 
+  - tabs have native behavior
+  - enforces more straghtfoward design (you can do less)
+- it is single gui tab
+  - you can open/close mult (either tab is open or not)
+  - no need for "split" state: renderer renders extensions state
+  - can open/close that tab at will - extension has the state,on reopen the current state gets rendered
+  - no need for multiple vsode tabs: mutliple renderers add no value over single renderer, only add unneccessary complexity
+
+#### gui tab design: mostly it's blank, empty
+
+- it is blank, empty
+- execept thin line(small font): what are the mult.edns (identified by filepath) and what are their tabs
+- those are hidable
+- it has a settings button or something to open more ui as needed
+- point is: most of the time gui tab shows nothing but evalutaion results and (maybe) repl input terminal at the bottom (will be added much-much later, if at all)
+
+#### the problem with gui tab: vscode styling/themes do not apply?
+
+- that is a question, indeed
+- but still: single renderer is better
