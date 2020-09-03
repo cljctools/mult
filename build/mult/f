@@ -20,7 +20,7 @@ server(){
 
 dev(){
     npm i
-    shadow -A:core:dev watch :mult-extension :mult-bootstrap :mult-tabapp
+    shadow -A:core:dev watch :extension :gui #:extension-bootstrap  
     # shadow -A:core:dev watch :extension :bootstrap 
 }
 

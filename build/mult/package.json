@@ -12,16 +12,16 @@
 		"onLanguage:clojure",
 		"onCommand:mult.open"
 	],
-	"main": "./resources/out/mult-extension/extension.js",
+	"main": "./resources/out/extension/main.js",
 	"scripts": {
 		"postinstall": "node ./node_modules/vscode/bin/install"
 	},
 	"dependencies": {
+		"antd": "4.6.1",
 		"bencode": "2.0.1",
-		"nrepl-client": "0.3.0",
-		"react": "16.13.0",
-		"react-dom": "16.13.0",
-		"vscode": "1.1.36"
+		"react": "16.13.1",
+		"react-dom": "16.13.1",
+		"vscode": "1.1.37"
 	},
 	"devDependencies": {
 		"shadow-cljs": "2.10.21"
@@ -52,7 +52,7 @@
 			},
 			{
 				"command": "mult.eval",
-				"key": "alt+w"
+				"key": "ctrl+alt+m ctrl+alt+e"
 			}
 		],
 		"languages": [

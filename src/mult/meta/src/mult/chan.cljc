@@ -44,7 +44,7 @@
 (defmethod op*
   {::op.spec/op-key ::update-settings-filepaths
    ::op.spec/op-type ::op.spec/response} [_]
-  (s/keys :req [::extension.spec/settings-filepaths]))
+  (s/keys :req []))
 
 (defmethod op
   {::op.spec/op-key ::update-settings-filepaths
@@ -52,12 +52,12 @@
   [op-meta out| settings-filepaths]
   (put! out|
         (merge op-meta
-               {::extension.spec/settings-filepaths settings-filepaths})))
+               {})))
 
 (defmethod op*
   {::op.spec/op-key ::apply-settings-file
    ::op.spec/op-type ::op.spec/request} [_]
-  (s/keys :req [::extension.spec/filepath ::op.spec/out|]))
+  (s/keys :req []))
 
 (defmethod op
   {::op.spec/op-key ::apply-settings-file
@@ -66,8 +66,7 @@
    (op op-meta channels filepath (chan 1)))
   ([op-meta channels filepath out|]
    (put! (::ops| channels) (merge op-meta
-                                  {::extension.spec/filepath filepath
-                                   ::op.spec/out| out|}))
+                                  {::op.spec/out| out|}))
    out|))
 
 (defmethod op*

@@ -1,7 +1,8 @@
 (ns mult.gui.main
   (:require
-   [clojure.core.async :as a :refer [<! >!  chan go alt! take! put! offer! poll! alts! pub sub
-                                     timeout close! to-chan go-loop sliding-buffer dropping-buffer
+   [clojure.core.async :as a :refer [chan go go-loop <! >!  take! put! offer! poll! alt! alts! close!
+                                     pub sub unsub mult tap untap mix admix unmix
+                                     timeout to-chan  sliding-buffer dropping-buffer
                                      pipeline pipeline-async]]
    [goog.string :refer [format]]
    [cljs.reader :refer [read-string]]
@@ -10,14 +11,15 @@
    [cljctools.vscode.tab-conn.impl :as tab-conn.impl]
    [cljctools.vscode.tab-conn.chan :as tab-conn.chan]
 
-   [mult.gui.render]
-   [mult.gui.chan]
+   [mult.gui.render :as mult.gui.render]
+   [mult.gui.chan :as mult.gui.chan]
 
-   [mult.spec]
-   [mult.chan]))
+   [mult.spec :as mult.spec]
+   [mult.chan :as mult.chan]))
 
 
 (def channels (merge
+               (mult.gui.chan/create-channels)
                (tab-conn.chan/create-channels)))
 
 (def state (mult.gui.render/create-state {}))

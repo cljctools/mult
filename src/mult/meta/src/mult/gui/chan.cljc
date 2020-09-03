@@ -7,7 +7,7 @@
                                      pipeline pipeline-async]]
    [clojure.spec.alpha :as s]
    [cljctools.csp.op.spec :as op.spec]
-   [mult.spec]))
+   [mult.spec :as mult.spec]))
 
 (do (clojure.spec.alpha/check-asserts true))
 
