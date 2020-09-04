@@ -210,3 +210,154 @@
     - https://github.com/mauricioszabo/atom-chlorine
     - https://github.com/mauricioszabo/clover
 - https://oli.me.uk/exploring-repl-tooling-with-prepl/
+
+
+#### markdown: representing directory tree
+
+- https://stackoverflow.com/questions/19699059/representing-directory-file-structure-in-markdown-syntax
+
+```
+.
++-- _config.yml
++-- _drafts
+|   +-- begin-with-the-crazy-ideas.textile
+|   +-- on-simplicity-in-technology.markdown
++-- _includes
+|   +-- footer.html
+|   +-- header.html
++-- _layouts
+|   +-- default.html
+|   +-- post.html
++-- _posts
+|   +-- 2007-10-29-why-every-programmer-should-play-nethack.textile
+|   +-- 2009-04-26-barcamp-boston-4-roundup.textile
++-- _data
+|   +-- members.yml
++-- _site
++-- index.html
+
+```
+
+- using VSCode extension file-tree-generator
+  - https://marketplace.visualstudio.com/items?itemName=Shinotatwu-DS.file-tree-generator
+
+```
+📦mult
+ ┣ 📂gui
+ ┃ ┣ 📂src
+ ┃ ┃ ┗ 📂mult
+ ┃ ┃ ┃ ┗ 📂gui
+ ┃ ┃ ┃ ┃ ┣ 📜main.cljs
+ ┃ ┃ ┃ ┃ ┗ 📜render.cljs
+ ┃ ┗ 📜deps.edn
+ ┣ 📂impl
+ ┃ ┣ 📂src
+ ┃ ┃ ┗ 📂mult
+ ┃ ┃ ┃ ┣ 📂conf
+ ┃ ┃ ┃ ┃ ┗ 📜impl.cljs
+ ┃ ┃ ┃ ┣ 📜lrepl.cljs
+ ┃ ┃ ┃ ┗ 📜main.cljs
+ ┃ ┗ 📜deps.edn
+ ┗ 📂meta
+ ┃ ┣ 📂src
+ ┃ ┃ ┗ 📂mult
+ ┃ ┃ ┃ ┣ 📂conf
+ ┃ ┃ ┃ ┃ ┗ 📜spec.cljc
+ ┃ ┃ ┃ ┣ 📂gui
+ ┃ ┃ ┃ ┃ ┗ 📜chan.cljc
+ ┃ ┃ ┃ ┣ 📜chan.cljc
+ ┃ ┃ ┃ ┣ 📜protocols.cljc
+ ┃ ┃ ┃ ┗ 📜spec.cljc
+ ┃ ┗ 📜deps.edn
+
+```
+
+- unicode characters: folder
+  - https://www.compart.com/en/unicode/search?q=folder#characters
+
+- https://www.fileformat.info/info/unicode/char/1f5b9/index.htm
+  - <div>&#x1f5b9</div>
+
+#### tree mult/src/
+
+```bash
+
+mult/src/
+├── mult
+│   ├── gui
+│   │   ├── deps.edn
+│   │   └── src
+│   │       └── mult
+│   │           └── gui
+│   │               ├── main.cljs
+│   │               └── render.cljs
+│   ├── impl
+│   │   ├── deps.edn
+│   │   └── src
+│   │       └── mult
+│   │           ├── conf
+│   │           │   └── impl.cljs
+│   │           ├── lrepl.cljs
+│   │           └── main.cljs
+│   └── meta
+│       ├── deps.edn
+│       └── src
+│           └── mult
+│               ├── chan.cljc
+│               ├── conf
+│               │   └── spec.cljc
+│               ├── gui
+│               │   └── chan.cljc
+│               ├── protocols.cljc
+│               └── spec.cljc
+└── pad
+    ├── deps.edn
+    └── src
+        └── pad
+            ├── cljsjs1.cljs
+            ├── impl
+            │   ├── channels.cljs
+            │   └── proc.cljs
+            ├── nrepl1.cljs
+            ├── protocols
+            │   ├── channels.cljc
+            │   ├── proc|.cljc
+            │   ├── proc.cljc
+            │   ├── procs|.cljc
+            │   └── procs.cljs
+            ├── selfhost1.cljs
+            └── tabapp1.cljs
+
+
+```
+#### tree via plain markdown
+
+- raw attempt:
+
+- /mult
+  - /src/mult
+    - /impl
+      - /src/mult
+        - /conf
+          - impl.cljs
+        - lrepl.cljs
+        - main.cljs
+      - deps.edn
+    - /meta
+    - /gui
+
+- another attempt
+```
+- /mult
+- /src/mult
+    - /impl
+      - /src/mult
+        - /conf
+          - impl.cljs
+        - lrepl.cljs
+        - main.cljs
+      - deps.edn
+    - /meta
+    - /gui
+
+```
