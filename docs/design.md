@@ -168,3 +168,7 @@
 - but still: single renderer is better
 - this is how WebView is themed:
   - https://code.visualstudio.com/api/extension-guides/webview#theming-webview-content
+
+## transports: extension should understand channels instead of connections
+
+- https://github.com/sergeiudris/deathstar.lab/blob/d848b3c7fa249570d24489030cc64625556a6918/docs/design/design.md#what-if-actual-browser-page-is-game-eval-environment
