@@ -2,6 +2,8 @@
 
 clojure(script) extension for vscode
 
+<img width="256px" src="./docs/bad-santa.jpg"></img>
+
 ## content
 
   - [rationale](./docs/design.md#rationale)
