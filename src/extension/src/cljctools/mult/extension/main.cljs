@@ -1,4 +1,4 @@
-(ns mult.main
+(ns cljctools.mult.extension.main
   (:require
    [clojure.core.async :as a :refer [chan go go-loop <! >!  take! put! offer! poll! alt! alts! close!
                                      pub sub unsub mult tap untap mix admix unmix pipe
@@ -8,7 +8,7 @@
    [clojure.string :as string]
    [cljs.reader :refer [read-string]]
    [clojure.pprint :refer [pprint]]
-
+   
    [cljctools.csp.op.spec :as op.spec]
   ;;  [cljctools.vscode.spec :as host.spec]
   ;;  [cljctools.vscode.chan :as host.chan]
