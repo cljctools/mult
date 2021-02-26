@@ -1,0 +1,43 @@
+{:deps         true
+ :nrepl {:host "0.0.0.0"
+         :port #shadow/env ["SHADOWCLJS_NREPL_PORT" :as :int :default 8899]}
+ :http {:port #shadow/env ["SHADOWCLJS_HTTP_PORT" :as :int :default 9630]
+        :host "0.0.0.0"}
+ :builds {:extension {;;       :target :node-library
+                      :target :node-script
+                      :main cljctools.mult.extension.main/main
+                      :exports-var cljctools.mult.extension.main/exports
+                      :output-to "resources/out/extension/main.js"
+                      :compiler-options {:optimizations :simple
+                                        ;;  :dump-core false
+                                         :stable-names true
+                                         :infer-externs   false #_:auto
+                                         :recompile-dependents true
+                                         :source-maps true
+                                        ;;  :verbose true
+                                         }
+                      :devtools {:repl-init-ns cljctools.mult.extension.main
+                                 :repl-pprint true
+                                 :autobuild true
+                                 :devtools-url "http://localhost:9630"
+                                 :after-load cljctools.mult.extension.main/reload}}
+          :extension-bootstrap {:target :bootstrap
+                                :output-dir "resources/out/extension-bootstrap"
+                                :exclude #{cljs.js}
+                                :compiler-options {:infer-externs   false #_:auto}
+                                :entries [cljs.js cljctools.mult.extension.main clojure.core.async]
+                                :macros []}
+          :ui {:target :browser
+               :output-dir "resources/out/ui"
+               :asset-path "/out/ui"
+               :module-loader true
+               :modules {:main {:entries [cljctools.mult.ui.main]}}
+               :compiler-options {:infer-externs   false #_:auto
+                                  :closure-warnings {:global-this :off}
+                                  :closure-defines  {"mult.impl.tabapp._some_val_"         true}}
+               :devtools {:repl-init-ns cljctools.mult.ui.main
+                          :repl-pprint true
+                          :autobuild true
+                          :devtools-url "http://localhost:9630"
+                          :http-root  "resources"
+                          :http-port  #shadow/env ["SHADOWCLJS_DEVTOOLS_HTTP_PORT" :as :int :default 9500]}}}}
