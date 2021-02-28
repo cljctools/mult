@@ -4,6 +4,8 @@ clojure(script) extension for vscode
 
 <img width="256px" src="./docs/bad-santa.jpg"></img>
 
+*Billy Bob Thornton, Bad Santa*
+
 ## content
 
   - [rationale](./docs/design.md#rationale)
