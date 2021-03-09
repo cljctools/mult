@@ -1,0 +1,13 @@
+{:paths ["src"]
+ :deps {org.clojure/clojure         {:mvn/version "1.10.3"}
+        org.clojure/clojurescript {:mvn/version "1.10.758"}
+        org.clojure/spec.alpha {:mvn/version "0.2.187"}
+        ;;  org.clojure/core.async {:mvn/version "1.1.587"}
+        andare/andare {:mvn/version "1.1.587"}
+
+        github.cljctools/nrepl-api {:local/root "../../../nrepl-api"}
+        github.cljctools/socket {:local/root "../../../socket"}
+        github.cljctools/paredit {:local/root "../../../paredit"}
+
+        github.cljctools/mult-spec {:local/root  "../spec"}
+        github.cljctools/mult-editor {:local/root  "../editor"}}}
