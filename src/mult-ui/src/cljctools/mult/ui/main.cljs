@@ -62,23 +62,17 @@
 (when (exists? js/acquireVsCodeApi)
   (defonce vscode (js/acquireVsCodeApi)))
 
-(defn ^:export main
-  []
-  (println ::main)
-  (start {::id :main}))
-
-(do (main))
-
 (defn start
   [{:keys [::id] :as opts}]
   (go
     (let [recv| (chan (sliding-buffer 10))
-          matchA (reagent.core/atom nil)
-          stateA (reagent.core/atom
+          matchA (r/atom nil)
+          stateA (r/atom
                   {::recv| recv|
                    ::matchA matchA})]
 
       (swap! registryA assoc id stateA)
+      (println (type vscode))
       (.addEventListener js/window "message"
                          (fn [ev]
                            #_(println ev.data)
@@ -110,6 +104,14 @@
   (go
     (when (get @registryA id)
       (swap! registryA dissoc id))))
+
+(defn ^:export main
+  []
+  (println ::main)
+  (start {::id :main}))
+
+(do (main))
+
 
 (defn send
   [data]

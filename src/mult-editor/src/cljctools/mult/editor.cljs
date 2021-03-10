@@ -58,23 +58,6 @@
          close-tab
          tab-send)
 
-(defn mount
-  [{:keys [::id
-           ::context] :as opts}]
-  (go
-    (let [stateA (atom (merge
-                        opts
-                        {::opts opts}))]
-
-      (swap! registryA assoc id stateA))))
-
-(defn unmount
-  [{:keys [::id] :as opts}]
-  (go
-    (let [state @(get @registryA id)]
-      (swap! registryA dissoc id))))
-
-
 (defn show-information-message
   [msg]
   (.. vscode.window (showInformationMessage msg)))
@@ -143,6 +126,8 @@
                                (let [value (read-string msg)]
                                  (put! tab-recv| (merge value {::tab-id tab-id}))))
                   on-dispose (fn []
+                               (println ::tab-disposed)
+                               (swap! registry-tabsA dissoc tab-id)
                                (put! tab-evt| {:op ::onDidDispose
                                                ::tab-id tab-id}))
                   on-state-change (fn [data] (do nil))}} opts
@@ -173,7 +158,7 @@
                    (.toString o)
                    (reduce (fn [html [match replacement]]
                              (clojure.string/replace html match replacement)) o replacements-uris))
-            state* (atom (merge
+            stateA (atom (merge
                           opts
                           {::opts opts
                            ::panel panel
@@ -183,8 +168,8 @@
                            ::close (fn [] (.dispose panel))
                            ::send (fn [value] (.postMessage (.-webview panel) (pr-str value)))}))]
         (set! (.-html (.-webview panel)) html)
-        (swap! registry-tabsA assoc tab-id state*)
-        state*))))
+        (swap! registry-tabsA assoc tab-id stateA)
+        stateA))))
 
 (defn close-tab
   [{:keys [::tab-id] :as opts}]

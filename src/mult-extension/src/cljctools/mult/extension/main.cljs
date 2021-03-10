@@ -26,13 +26,12 @@
   [{:keys [::id
            ::mult.editor/context] :as opts}]
   (go
-    (let [editor {::mult.editor/id :main
-                  ::mult.editor/context context}
-          tab-recv| (chan 10)
+    (let [tab-recv| (chan 10)
           tab-evt| (chan 10)
           cmd| (chan 10)
           tab {::mult.editor/tab-id "mult-tab"
                ::mult.editor/context context
+               ::mult.editor/tab-title "mult"
                ::mult.editor/tab-recv| tab-recv|
                ::mult.editor/tab-evt| tab-evt|}
           procsA (atom [])
@@ -44,19 +43,17 @@
           stateA (atom (merge
                         opts
                         {::opts opts
-                         ::editor editor
                          ::tab tab
                          ::stop-procs stop-procs}))]
 
       (swap! registryA assoc id stateA)
-      (<! (mult.editor/mount editor))
-      (<! (mult.editor/register-commands {::mult.editor/cmd-ids
-                                          #{"mult.open"
-                                            "mult.ping"
-                                            "mult.eval"}
-                                          ::mult.editor/context context
-                                          ::mult.editor/cmd| cmd|}))
-      (<! (mult.editor/open-tab tab))
+      (mult.editor/register-commands {::mult.editor/cmd-ids
+                                      #{"mult.open"
+                                        "mult.ping"
+                                        "mult.eval"}
+                                      ::mult.editor/context context
+                                      ::mult.editor/cmd| cmd|})
+      (mult.editor/open-tab tab)
 
       (let [stop| (chan 1)
             proc|
@@ -84,6 +81,7 @@
 
                         "mult.open"
                         (let []
+                          (println "mult.open")
                           (<! (mult.editor/open-tab tab)))
 
                         "mult.ping"
@@ -98,7 +96,6 @@
     (let []
       (let [state @(get @registryA id)]
         (when (::stop-procs state)
-          (<! (mult.editor/unmount (::editor state)))
           (<! (mult.editor/close-tab (::tab state)))
           (<! ((::stop-procs state))))
         (swap! registryA dissoc id)))))
