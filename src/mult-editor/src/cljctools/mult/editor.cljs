@@ -115,7 +115,7 @@
          tab-recv| (chan 10)
          tab-evt| (chan 10)
          tab-title "Default title"
-         tab-html-replacements {"./js-out/main.js" "./resources/out/ui/main.js"
+         tab-html-replacements {"./out/ui/main.js" "./resources/out/ui/main.js"
                                 "./css/style.css" "./css/style.css"}
          tab-html-filepath "./resources/index.html"
          tab-view-column vscode.ViewColumn.Two}}]

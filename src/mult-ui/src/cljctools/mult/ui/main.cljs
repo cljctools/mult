@@ -72,7 +72,6 @@
                    ::matchA matchA})]
 
       (swap! registryA assoc id stateA)
-      (println (type vscode))
       (.addEventListener js/window "message"
                          (fn [ev]
                            #_(println ev.data)
@@ -83,8 +82,9 @@
          (swap! matchA (fn [old-match]
                          (if new-match
                            (assoc new-match :controllers (rfc/apply-controllers (:controllers old-match) new-match))))))
-       {:use-fragment true})
-      (reagent.dom/render [current-page] (.getElementById js/document "ui"))
+       {:use-fragment false})
+      (rfe/push-state ::frontpage)
+      (reagent.dom/render [current-page matchA] (.getElementById js/document "ui"))
       (go
         (loop []
           (let [[value port] (alts! [recv|])]
@@ -136,18 +136,16 @@
      (if (:foo query)
        [:p "Optional foo query param: " (:foo query)])]))
 
-(defonce match (r/atom nil))
-
-(defn current-page []
+(defn current-page [matchA]
   [:div
    [:ul
     [:li [:a {:href (rfe/href ::frontpage)} "Frontpage"]]
     [:li
      [:a {:href (rfe/href ::item-list)} "Item list"]]]
-   (if @match
-     (let [view (:view (:data @match))]
-       [view @match]))
-   [:pre (with-out-str (fipp.edn/pprint @match))]])
+   (if @matchA
+     (let [view (:view (:data @matchA))]
+       [view @matchA]))
+   [:pre (with-out-str (fipp.edn/pprint @matchA))]])
 
 (defn log-fn [& params]
   (fn [_]
