@@ -9,12 +9,15 @@
    [cljs.reader :refer [read-string]]
    [goog.string.format]
    [goog.string :refer [format]]
+   [clojure.spec.alpha :as s]
 
    [cljctools.mult.spec :as mult.spec]
    [cljctools.mult.editor :as mult.editor]
    [cljctools.nrepl-client]
    [cljctools.socket]
    [cljctools.socket.nodejs-net]))
+
+(do (clojure.spec.alpha/check-asserts true))
 
 (defonce ^:private registryA (atom {}))
 (defonce ^:private registry-connectionsA (atom {}))

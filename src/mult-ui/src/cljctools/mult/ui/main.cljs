@@ -11,6 +11,7 @@
    [goog.object]
    [clojure.string :as str]
    [cljs.reader :refer [read-string]]
+   [clojure.spec.alpha :as s]
 
    ;; reitit
 
@@ -50,6 +51,8 @@
 
    [cljctools.mult.spec :as mult.spec]))
 
+(do (clojure.spec.alpha/check-asserts true))
+
 (defonce ^:private registryA (atom {}))
 
 (declare vscode
@@ -88,16 +91,16 @@
       (go
         (loop []
           (let [[value port] (alts! [recv|])]
-            (condp = port
+            (when value
+              (condp = port
 
-              recv|
-              (when value
+                recv|
                 (condp = (:op value)
 
                   ::mult.spec/ping
                   (let []
-                    (println ::ping value)))
-                (recur)))))))))
+                    (println ::ping value))))
+              (recur))))))))
 
 (defn stop
   [{:keys [::id] :as opts}]
