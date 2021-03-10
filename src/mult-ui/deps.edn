@@ -14,4 +14,4 @@
         fipp {:mvn/version "0.6.23"}
 
 
-        github.cljctools/mult-spec {:local/root  "../spec"}}}
+        github.cljctools/mult-spec {:local/root  "../mult-spec"}}}

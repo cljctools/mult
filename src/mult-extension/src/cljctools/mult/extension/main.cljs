@@ -100,7 +100,7 @@
         (when (::stop-procs state)
           (<! (mult.editor/unmount (::editor state)))
           (<! (mult.editor/close-tab (::tab state)))
-          (<! ((::stop-procs))))
+          (<! ((::stop-procs state))))
         (swap! registryA dissoc id)))))
 
 (def exports #js {:activate (fn [context]

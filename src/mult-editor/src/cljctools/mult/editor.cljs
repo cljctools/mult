@@ -62,39 +62,16 @@
   [{:keys [::id
            ::context] :as opts}]
   (go
-    (let [procsA (atom [])
-          stop-procs (fn []
-                       (doseq [[stop| proc|] @procsA]
-                         (close! stop|))
-                       (a/merge (mapv second @procsA)))
-          state* (atom (merge
+    (let [stateA (atom (merge
                         opts
-                        {::opts opts
-                         ::stop-procs stop-procs}))]
+                        {::opts opts}))]
 
-      (swap! registryA assoc id state*)
-
-      (let [stop| (chan 1)
-            proc|
-            (go
-              (loop []
-                (let [[value port] (alts! [stop| foo|])]
-                  (condp = port
-
-                    stop|
-                    (do nil)
-
-                    foo|
-                    (if-let [{:keys []} value]
-                      (recur))))))]
-        (swap! procsA conj [stop| proc|])))))
+      (swap! registryA assoc id stateA))))
 
 (defn unmount
   [{:keys [::id] :as opts}]
   (go
     (let [state @(get @registryA id)]
-      (when (::stop-procs state)
-        (<! ((::stop-procs state))))
       (swap! registryA dissoc id))))
 
 
@@ -177,25 +154,25 @@
                         :retainContextWhenHidden true})
             _ (do (.onDidDispose panel (fn []
                                          (on-dispose)))
-                  (.onDidReceiveMessage  panel.webview (fn [msg]
-                                                         (on-message msg)))
+                  (.onDidReceiveMessage  (.-webview panel) (fn [msg]
+                                                             (on-message msg)))
                   (.onDidChangeViewState panel (fn [panel]
                                                  (on-state-change {:op ::onDidChangeViewState
                                                                    ::tab-active? panel.active}))))
             replacements-uris (into {}
                                     (mapv (fn [[k filepath]]
                                             [k (as-> nil o
-                                                 (.join path context.extensionPath filepath)
+                                                 (.join path (.-extensionPath context) filepath)
                                                  (vscode.Uri.file o)
-                                                 (.asWebviewUri panel.webview o)
+                                                 (.asWebviewUri (.-webview panel) o)
                                                  (.toString o))])
                                           tab-html-replacements))
             html (as-> nil o
-                   (.join path context.extensionPath tab-html-filepath)
+                   (.join path (.-extensionPath context) tab-html-filepath)
                    (.readFileSync fs o)
                    (.toString o)
                    (reduce (fn [html [match replacement]]
-                             (string/replace html match replacement)) o replacements-uris))
+                             (clojure.string/replace html match replacement)) o replacements-uris))
             state* (atom (merge
                           opts
                           {::opts opts
@@ -205,20 +182,20 @@
                            ::active? (fn [] panel.active)
                            ::close (fn [] (.dispose panel))
                            ::send (fn [value] (.postMessage (.-webview panel) (pr-str value)))}))]
-        (set! panel.webview.html html)
-        (swap! registry-tabs* assoc tab-id state*)
+        (set! (.-html (.-webview panel)) html)
+        (swap! registry-tabsA assoc tab-id state*)
         state*))))
 
 (defn close-tab
   [{:keys [::tab-id] :as opts}]
   (go
-    (when (get @registry-tabs* tab-id)
-      (let [state @(get @registry-tabs* id)]
+    (when (get @registry-tabsA tab-id)
+      (let [state @(get @registry-tabsA tab-id)]
         ((::close state))
-        (swap! registry-tabs* dissoc id)))))
+        (swap! registry-tabsA dissoc tab-id)))))
 
 (defn tab-send
   [{:keys [::tab-id :value] :as opts}]
-  (when (get @registry-tabs* tab-id)
-    (let [state @(get @registry-tabs* tab-id)]
+  (when (get @registry-tabsA tab-id)
+    (let [state @(get @registry-tabsA tab-id)]
       ((::send state) value))))

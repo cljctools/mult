@@ -53,14 +53,21 @@
 (defonce ^:private registryA (atom {}))
 
 (declare vscode
-         current-page)
+         start
+         stop
+         current-page
+         routes
+         send)
 
 (when (exists? js/acquireVsCodeApi)
   (defonce vscode (js/acquireVsCodeApi)))
 
-(defn send
-  [data]
-  (.postMessage vscode (pr-str data)))
+(defn ^:export main
+  []
+  (println ::main)
+  (start {::id :main}))
+
+(do (main))
 
 (defn start
   [{:keys [::id] :as opts}]
@@ -71,7 +78,7 @@
                   {::recv| recv|
                    ::matchA matchA})]
 
-      (swap! registryA assoc id state*)
+      (swap! registryA assoc id stateA)
       (.addEventListener js/window "message"
                          (fn [ev]
                            #_(println ev.data)
@@ -104,12 +111,10 @@
     (when (get @registryA id)
       (swap! registryA dissoc id))))
 
-(defn ^:export main
-  []
-  (println ::main)
-  (start {::id :main}))
+(defn send
+  [data]
+  (.postMessage vscode (pr-str data)))
 
-(do (main))
 
 
 (defn home-page []
@@ -184,28 +189,3 @@
      (if @match
        (let [page (:page (:data @match))]
          [page @match]))])
-
-
-#_(defn create-proc-ops
-    [channels ctx opts]
-    (let [{:keys [::ui.chan/ops|]} channels
-          {:keys [::ui.spec/state*]} ctx]
-      (go
-        (loop []
-          (when-let [[value port] (alts! [ops|])]
-            (condp = port
-              ops|
-              (condp = (select-keys value [::op.spec/op-key ::op.spec/op-type ::op.spec/op-orient])
-
-                {::op.spec/op-key ::ui.chan/init
-                 ::op.spec/op-type ::op.spec/fire-and-forget}
-                (let [{:keys []} value]
-                  (println ::init)
-                  (ui.render/render-ui channels state* {}))
-
-                {::op.spec/op-key ::ui.chan/update-state
-                 ::op.spec/op-type ::op.spec/fire-and-forget}
-                (let [{:keys []} value]
-                  (swap! state* merge value))))
-
-            (recur))))))

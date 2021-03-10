@@ -20,7 +20,7 @@ server(){
 
 dev(){
 
-    npm i
+    # npm i
     shadow -A:dev watch :ui :extension :extension-bootstrap
 
 }

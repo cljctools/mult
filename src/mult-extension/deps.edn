@@ -5,10 +5,10 @@
         ;;  org.clojure/core.async {:mvn/version "1.1.587"}
         andare/andare {:mvn/version "1.1.587"}
 
-        github.cljctools/nrepl-api {:local/root "../../../nrepl-api"}
+        github.cljctools/nrepl-client {:local/root "../../../nrepl-client"}
         github.cljctools/socket {:local/root "../../../socket"}
-        github.cljctools/socket-nodejs-net {:local/root "../../../socket/modules/socket-nodejs-net"}
+        github.cljctools/socket-nodejs-net {:local/root "../../../socket/src/socket-nodejs-net"}
         github.cljctools/paredit {:local/root "../../../paredit"}
 
-        github.cljctools/mult-spec {:local/root  "../spec"}
-        github.cljctools/mult-editor {:local/root  "../editor"}}}
+        github.cljctools/mult-spec {:local/root  "../mult-spec"}
+        github.cljctools/mult-editor {:local/root  "../mult-editor"}}}
