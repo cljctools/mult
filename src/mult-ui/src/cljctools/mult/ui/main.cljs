@@ -48,24 +48,68 @@
    ["@ant-design/icons/SyncOutlined" :default AntIconSyncOutlined]
    ["@ant-design/icons/ReloadOutlined" :default AntIconReloadOutlined]
 
-   [cljctools.csp.op.spec :as op.spec]
-   [cljctools.cljc.core :as cljc.core]
+   [cljctools.mult.spec :as mult.spec]))
 
-   [cljctools.mult.ui.spec :as ui.spec]
-   [cljctools.mult.ui.chan :as ui.chan]))
+(defonce ^:private registryA (atom {}))
 
-(goog-define BAR_PORT 0)
-(goog-define FOO_ORIGIN "")
+(declare vscode
+         current-page)
 
-#_(set! BAR_PORT (str (subs js/location.port 0 2) (subs (str BAR_PORT) 2)))
-#_(set! FOO_ORIGIN "http://localhost:3001")
+(when (exists? js/acquireVsCodeApi)
+  (defonce vscode (js/acquireVsCodeApi)))
 
-(def channels (merge
-               (ui.chan/create-channels)))
+(defn send
+  [data]
+  (.postMessage vscode (pr-str data)))
 
-(def state* (reagent.core/atom {}))
+(defn start
+  [{:keys [::id] :as opts}]
+  (go
+    (let [recv| (chan (sliding-buffer 10))
+          matchA (reagent.core/atom nil)
+          stateA (reagent.core/atom
+                  {::recv| recv|
+                   ::matchA matchA})]
 
-(defonce match (r/atom nil))
+      (swap! registryA assoc id state*)
+      (.addEventListener js/window "message"
+                         (fn [ev]
+                           #_(println ev.data)
+                           (put! recv| (read-string ev.data))))
+      (rfe/start!
+       (routes)
+       (fn [new-match]
+         (swap! matchA (fn [old-match]
+                         (if new-match
+                           (assoc new-match :controllers (rfc/apply-controllers (:controllers old-match) new-match))))))
+       {:use-fragment true})
+      (reagent.dom/render [current-page] (.getElementById js/document "ui"))
+      (go
+        (loop []
+          (let [[value port] (alts! [recv|])]
+            (condp = port
+
+              recv|
+              (when value
+                (condp = (:op value)
+
+                  ::mult.spec/ping
+                  (let []
+                    (println ::ping value)))
+                (recur)))))))))
+
+(defn stop
+  [{:keys [::id] :as opts}]
+  (go
+    (when (get @registryA id)
+      (swap! registryA dissoc id))))
+
+(defn ^:export main
+  []
+  (println ::main)
+  (start {::id :main}))
+
+(do (main))
 
 
 (defn home-page []
@@ -102,7 +146,8 @@
   (fn [_]
     (apply js/console.log params)))
 
-(def routes
+(defn routes
+  []
   (rf/router
    ["/"
     [""
@@ -164,25 +209,3 @@
                   (swap! state* merge value))))
 
             (recur))))))
-
-(defn ^:export main
-  []
-  (println ::main)
-  (println ::BAR_PORT BAR_PORT)
-  #_(create-proc-ops channels ctx {})
-  (rfe/start!
-   routes
-   (fn [new-match]
-     (swap! match (fn [old-match]
-                    (if new-match
-                      (assoc new-match :controllers (rfc/apply-controllers (:controllers old-match) new-match))))))
-   {:use-fragment true})
-  (reagent.dom/render [current-page] (.getElementById js/document "ui"))
-  #_(reagent.dom/render [:f> rc-current-page channels state*]  (.getElementById js/document "ui"))
-  #_(ui.chan/op
-     {::op.spec/op-key ::ui.chan/init
-      ::op.spec/op-type ::op.spec/fire-and-forget}
-     channels
-     {}))
-
-(do (main))

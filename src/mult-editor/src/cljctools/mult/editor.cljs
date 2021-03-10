@@ -47,8 +47,8 @@
 
 (def ^:const NS_DECL_LINE_RANGE 100)
 
-(defonce ^:private registry* (atom {}))
-(defonce ^:private registry-tabs* (atom {}))
+(defonce ^:private registryA (atom {}))
+(defonce ^:private registry-tabsA (atom {}))
 
 (declare show-information-message
          register-commands
@@ -62,41 +62,40 @@
   [{:keys [::id
            ::context] :as opts}]
   (go
-    (let [procs* (atom [])
+    (let [procsA (atom [])
           stop-procs (fn []
-                       (doseq [[stop| proc|] @procs*]
+                       (doseq [[stop| proc|] @procsA]
                          (close! stop|))
-                       (a/merge (mapv second @procs*)))
+                       (a/merge (mapv second @procsA)))
           state* (atom (merge
                         opts
                         {::opts opts
                          ::stop-procs stop-procs}))]
 
-      (swap! registry* assoc id state*)
+      (swap! registryA assoc id state*)
 
       (let [stop| (chan 1)
             proc|
             (go
               (loop []
-                (when-let [[value port] (alts! [stop| foo|])]
+                (let [[value port] (alts! [stop| foo|])]
                   (condp = port
 
                     stop|
                     (do nil)
 
                     foo|
-                    (do
-                      (recur)))))
-              (println ::go-block-exits))]
-        (swap! procs* conj [stop| proc|])))))
+                    (if-let [{:keys []} value]
+                      (recur))))))]
+        (swap! procsA conj [stop| proc|])))))
 
 (defn unmount
   [{:keys [::id] :as opts}]
   (go
-    (let [state @(get @registry* id)]
+    (let [state @(get @registryA id)]
       (when (::stop-procs state)
         (<! ((::stop-procs state))))
-      (swap! registry* dissoc id))))
+      (swap! registryA dissoc id))))
 
 
 (defn show-information-message
@@ -161,7 +160,7 @@
          tab-html-filepath "./resources/index.html"
          tab-view-column vscode.ViewColumn.Two}}]
   (go
-    (when-not (get @registry-tabs* tab-id)
+    (when-not (get @registry-tabsA tab-id)
       (let [{:keys [on-message on-dispose on-state-change]
              :or {on-message (fn [msg]
                                (let [value (read-string msg)]

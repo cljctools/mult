@@ -16,9 +16,9 @@
    [cljctools.socket]
    [cljctools.socket.nodejs-net]))
 
-(defonce ^:private registry* (atom {}))
-(defonce ^:private registry-connections* (atom {}))
-(defonce ^:private registry-tabs* (atom {}))
+(defonce ^:private registryA (atom {}))
+(defonce ^:private registry-connectionsA (atom {}))
+(defonce ^:private registry-tabsA (atom {}))
 
 (declare )
 
@@ -35,20 +35,20 @@
                ::mult.editor/context context
                ::mult.editor/tab-recv| tab-recv|
                ::mult.editor/tab-evt| tab-evt|}
-          procs* (atom [])
+          procsA (atom [])
           stop-procs (fn []
-                       (doseq [[stop| proc|] @procs*]
+                       (doseq [[stop| proc|] @procsA]
                          (close! stop|))
-                       (a/merge (mapv second @procs*)))
+                       (a/merge (mapv second @procsA)))
 
-          state* (atom (merge
+          stateA (atom (merge
                         opts
                         {::opts opts
                          ::editor editor
                          ::tab tab
                          ::stop-procs stop-procs}))]
 
-      (swap! registry* assoc id state*)
+      (swap! registryA assoc id stateA)
       (<! (mult.editor/mount editor))
       (<! (mult.editor/register-commands {::mult.editor/cmd-ids
                                           #{"mult.open"
@@ -62,22 +62,23 @@
             proc|
             (go
               (loop []
-                (when-let [[value port] (alts! [stop| cmd|])]
+                (let [[value port] (alts! [stop| cmd|])]
                   (condp = port
 
                     stop|
                     (do nil)
 
                     tab-evt|
-                    (let [{:keys [:op ::mult.editor/tab-id]} value]
+                    (when-let [{:keys [:op ::mult.editor/tab-id]} value]
                       (condp = op
 
                         ::mult.editor/onDidDispose
                         (let []
-                          (println ::tab-disposed tab-id))))
+                          (println ::tab-disposed tab-id)))
+                      (recur))
 
                     cmd|
-                    (let [{:keys [::mult.editor/cmd-id]} value]
+                    (when-let [{:keys [::mult.editor/cmd-id]} value]
 
                       (condp = cmd-id
 
@@ -88,21 +89,19 @@
                         "mult.ping"
                         (let []
                           (mult.editor/show-information-message "mult.ping")))
-
-                      (recur)))))
-              (println ::go-block-exits))]
-        (swap! procs* conj [stop| proc|])))))
+                      (recur))))))]
+        (swap! procsA conj [stop| proc|])))))
 
 (defn unmount
   [{:keys [::id] :as opts}]
   (go
     (let []
-      (let [state @(get @registry* id)]
+      (let [state @(get @registryA id)]
         (when (::stop-procs state)
           (<! (mult.editor/unmount (::editor state)))
           (<! (mult.editor/close-tab (::tab state)))
           (<! ((::stop-procs))))
-        (swap! registry* dissoc id)))))
+        (swap! registryA dissoc id)))))
 
 (def exports #js {:activate (fn [context]
                               (println ::activate)
