@@ -1,12 +1,20 @@
 {
 	"folders": [
 		{
-			"name": "cljctools",
-			"path": "../../cljctools"
-		},
-		{
 			"name": "mult",
 			"path": "../../mult"
+		},
+		{
+			"name": "paredit",
+			"path": "../../paredit"
+		},
+		{
+			"name": "nrepl-client",
+			"path": "../../nrepl-client"
+		},
+    {
+			"name": "socket",
+			"path": "../../socket"
 		}
 	],
 	"settings": {
@@ -14,6 +22,7 @@
 		"**/.git": false
 		},
 		"editor.tabSize": 2,
+		"explorer.autoReveal": false,
 		"calva.fmt.allgnMapItems": true,
 		"calva.fmt.newIndentEngine": true,
 		"explorer.confirmDragAndDrop": false,
