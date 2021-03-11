@@ -13,5 +13,7 @@
         ;; Just for pretty printting the match
         fipp {:mvn/version "0.6.23"}
 
-
-        github.cljctools/mult-spec {:local/root  "../mult-spec"}}}
+        github.cljctools/mult-spec {:local/root  "../mult-spec"}
+        github.cljctools/mult-editor-meta {:local/root  "../mult-editor-meta"}
+        github.cljctools/mult-editor-tabapp {:local/root  "../mult-editor-tabapp"}
+        github.cljctools/mult-editor-tabapp-impl-vscode {:local/root  "../mult-editor-tabapp-impl-vscode"}}}

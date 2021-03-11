@@ -11,107 +11,145 @@
    [goog.string :refer [format]]
    [clojure.spec.alpha :as s]
 
-   [cljctools.mult.spec :as mult.spec]
-   [cljctools.mult.editor :as mult.editor]
+
    [cljctools.nrepl-client]
-   [cljctools.socket]
-   [cljctools.socket.nodejs-net]))
+   [cljctools.socket.spec]
+   [cljctools.socket.api]
+   [cljctools.socket.nodejs-net]
+
+   [cljctools.mult.spec :as mult.spec]
+   [cljctools.mult.editor.api :as editor.api]
+   [cljctools.mult.editor.spec :as editor.spec]
+   [cljctools.mult.editor.protocols :as editor.protocols]
+   [cljctools.mult.editor.impl :as editor.impl]))
 
 (do (clojure.spec.alpha/check-asserts true))
+
+(s/def ::id  (s/or :keyword keyword? :string string?))
+
+(defprotocol Release
+  (release* [_]))
+
+(defprotocol Extension
+  #_Release
+  #_IDeref)
+
+(s/def ::extension #(and
+                     (satisfies? Extension %)
+                     (satisfies? Release %)
+                     (satisfies? cljs.core/IDeref %)))
+
+(s/def ::create-opts (s/keys :req [::id
+                                   ::editor.impl/context]
+                             :opt []))
 
 (defonce ^:private registryA (atom {}))
 (defonce ^:private registry-connectionsA (atom {}))
 (defonce ^:private registry-tabsA (atom {}))
 
-(declare )
+(declare)
 
-(defn mount
+(defn create
   [{:keys [::id
-           ::mult.editor/context] :as opts}]
-  (go
-    (let [tab-recv| (chan 10)
-          tab-evt| (chan 10)
-          cmd| (chan 10)
-          tab {::mult.editor/tab-id "mult-tab"
-               ::mult.editor/context context
-               ::mult.editor/tab-title "mult"
-               ::mult.editor/tab-recv| tab-recv|
-               ::mult.editor/tab-evt| tab-evt|}
-          procsA (atom [])
-          stop-procs (fn []
-                       (doseq [[stop| proc|] @procsA]
-                         (close! stop|))
-                       (a/merge (mapv second @procsA)))
+           ::editor.impl/context] :as opts}]
+  {:pre [(s/assert ::create-opts opts)]
+   :post [(s/assert ::extension %)]}
+  (let [stateA (atom nil)
+        tab-recv| (chan 10)
+        tab-evt| (chan 10)
+        cmd| (chan 10)
 
-          stateA (atom (merge
-                        opts
-                        {::opts opts
-                         ::tab tab
-                         ::stop-procs stop-procs}))]
+        editor (editor.api/create
+                {::editor.spec/id ::editor
+                 ::editor.impl/context context})
 
-      (swap! registryA assoc id stateA)
-      (mult.editor/register-commands {::mult.editor/cmd-ids
-                                      #{"mult.open"
-                                        "mult.ping"
-                                        "mult.eval"}
-                                      ::mult.editor/context context
-                                      ::mult.editor/cmd| cmd|})
-      (mult.editor/open-tab tab)
+        tab (editor.api/create-tab
+             editor
+             {::editor.spec/tab-id "mult-tab"
+              ::editor.spec/tab-title "mult"
+              ::editor.spec/on-tab-closed (fn [tab]
+                                            (put! tab-evt| {:op ::tab-closed
+                                                            ::editor.spec/tab tab}))
+              ::editor.spec/on-tab-message (fn [tab msg]
+                                             (put! tab-recv| (read-string msg)))})
 
-      (let [stop| (chan 1)
-            proc|
-            (go
-              (loop []
-                (let [[value port] (alts! [stop| cmd|])]
-                  (condp = port
+        extension
+        ^{:type ::extension}
+        (reify
+          Extension
+          Release
+          (release*
+            [_]
+            (editor.protocols/release* tab)
+            (editor.protocols/release* editor)
+            (close! cmd|)
+            (close! tab-evt|)
+            (close! tab-recv|))
+          cljs.core/IDeref
+          (-deref [_] @stateA))]
+    (reset! stateA (merge
+                    opts
+                    {::opts opts
+                     ::editor.spec/editor editor
+                     ::editor.spec/tab tab}))
+    (swap! registryA assoc id)
+    (editor.api/register-commands
+     editor
+     {::editor.spec/cmd-ids
+      #{"mult.open"
+        "mult.ping"
+        "mult.eval"}
+      ::editor.spec/cmd| cmd|})
+    (editor.protocols/open* tab)
+    (go
+      (loop []
+        (let [[value port] (alts! [tab-evt| cmd|])]
+          (when value
+            (condp = port
 
-                    stop|
-                    (do nil)
+              tab-evt|
+              (condp = (:op value)
 
-                    tab-evt|
-                    (when-let [{:keys [:op ::mult.editor/tab-id]} value]
-                      (condp = op
+                ::tab-closed
+                (let [{:keys [::editor.spec/tab]} value]
+                  (println ::tab-disposed)))
 
-                        ::mult.editor/onDidDispose
-                        (let []
-                          (println ::tab-disposed tab-id)))
-                      (recur))
+              cmd|
+              (condp = (::editor.spec/cmd-id value)
 
-                    cmd|
-                    (when-let [{:keys [::mult.editor/cmd-id]} value]
+                "mult.open"
+                (let []
+                  (println "mult.open")
+                  (editor.protocols/open* tab))
 
-                      (condp = cmd-id
+                "mult.ping"
+                (let []
+                  (editor.protocols/show-notification* editor "mult.ping")
+                  (editor.protocols/send* tab (pr-str {:op ::mult.spec/ping})))))
+            (recur)))))
+    extension))
 
-                        "mult.open"
-                        (let []
-                          (println "mult.open")
-                          (<! (mult.editor/open-tab tab)))
-
-                        "mult.ping"
-                        (let []
-                          (mult.editor/show-information-message "mult.ping")))
-                      (recur))))))]
-        (swap! procsA conj [stop| proc|])))))
-
-(defn unmount
-  [{:keys [::id] :as opts}]
-  (go
-    (let []
-      (let [state @(get @registryA id)]
-        (when (::stop-procs state)
-          (<! (mult.editor/close-tab (::tab state)))
-          (<! ((::stop-procs state))))
-        (swap! registryA dissoc id)))))
+(defmulti release
+  "Releases extension instance"
+  {:arglists '([id] [extension])} (fn [x & args] (type x)))
+(defmethod release :default
+  [id]
+  (when-let [extension (get @registryA id)]
+    (release extension)))
+(defmethod release ::extension
+  [extension]
+  {:pre [(s/assert ::extension extension)]}
+  (release* extension)
+  (swap! registryA dissoc (get @extension ::id)))
 
 (def exports #js {:activate (fn [context]
                               (println ::activate)
-                              (mount {::id :main
-                                      ::mult.editor/context context}))
+                              (create {::id ::main
+                                       ::editor.impl/context context}))
                   :deactivate (fn []
                                 (println ::deactivate)
-                                (unmount {::id :main}))})
+                                (release ::main))})
 (when (exists? js/module)
   (set! js/module.exports exports))
 
-(defn ^:export main [& args]
-  (println ::main))
+(defn ^:export main [] (println ::main))

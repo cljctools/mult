@@ -49,78 +49,98 @@
    ["@ant-design/icons/SyncOutlined" :default AntIconSyncOutlined]
    ["@ant-design/icons/ReloadOutlined" :default AntIconReloadOutlined]
 
-   [cljctools.mult.spec :as mult.spec]))
+   [cljctools.mult.spec :as mult.spec]
+   [cljctools.mult.editor.spec :as editor.spec]
+   [cljctools.mult.editor.protocols :as editor.protocols]
+   [cljctools.mult.editor.tabapp.api :as tabapp.api]
+   [cljctools.mult.editor.tabapp.impl]))
 
 (do (clojure.spec.alpha/check-asserts true))
 
+(s/def ::id keyword?)
+
+(defprotocol Release
+  (release* [_]))
+
+(defprotocol UI
+  #_Release
+  #_IDeref)
+
+(s/def ::ui #(and
+              (satisfies? UI %)
+              (satisfies? Release %)
+              (satisfies? cljs.core/IDeref %)))
+
+(s/def ::create-opts (s/keys :req [::id]
+                             :opt []))
+
 (defonce ^:private registryA (atom {}))
 
-(declare vscode
-         start
-         stop
-         current-page
-         routes
-         send)
+(declare current-page
+         routes)
 
-(when (exists? js/acquireVsCodeApi)
-  (defonce vscode (js/acquireVsCodeApi)))
+(defn create
+  [{:as opts
+    :keys [::id]}]
+  {:pre [(s/assert ::create-opts opts)]
+   :post [(s/assert ::ui %)]}
+  (let [stateA (atom nil)
+        recv| (chan (sliding-buffer 10))
+        inputs| (chan (sliding-buffer 10))
+        matchA (r/atom nil)
 
-(defn start
-  [{:keys [::id] :as opts}]
-  (go
-    (let [recv| (chan (sliding-buffer 10))
-          matchA (r/atom nil)
-          stateA (r/atom
-                  {::recv| recv|
-                   ::matchA matchA})]
+        tabapp (tabapp.api/create
+                {::editor.spec/id ::tabapp
+                 ::editor.spec/on-message
+                 (fn [msg]
+                   (put! recv| (read-string msg)))})
+        ui
+        ^{:type ::ui}
+        (reify
+          UI
+          Release
+          (release*
+            [_]
+            (editor.protocols/release* tabapp)
+            (close! recv|)
+            (close! inputs|))
+          cljs.core/IDeref
+          (-deref [_] @stateA))]
+    (reset! stateA (merge
+                    opts
+                    {::matchA matchA
+                     ::tabapp tabapp}))
+    (swap! registryA assoc id stateA)
+    (rfe/start!
+     (routes)
+     (fn [new-match]
+       (swap! matchA (fn [old-match]
+                       (if new-match
+                         (assoc new-match :controllers (rfc/apply-controllers (:controllers old-match) new-match))))))
+     {:use-fragment false})
+    (rfe/push-state ::frontpage)
+    (reagent.dom/render [current-page matchA] (.getElementById js/document "ui"))
+    (go
+      (loop []
+        (let [[value port] (alts! [recv|])]
+          (when value
+            (condp = port
 
-      (swap! registryA assoc id stateA)
-      (.addEventListener js/window "message"
-                         (fn [ev]
-                           #_(println ev.data)
-                           (put! recv| (read-string ev.data))))
-      (rfe/start!
-       (routes)
-       (fn [new-match]
-         (swap! matchA (fn [old-match]
-                         (if new-match
-                           (assoc new-match :controllers (rfc/apply-controllers (:controllers old-match) new-match))))))
-       {:use-fragment false})
-      (rfe/push-state ::frontpage)
-      (reagent.dom/render [current-page matchA] (.getElementById js/document "ui"))
-      (go
-        (loop []
-          (let [[value port] (alts! [recv|])]
-            (when value
-              (condp = port
+              inputs|
+              (condp = (:op value)
 
-                recv|
-                (condp = (:op value)
+                ::foo
+                (let []
+                  (editor.protocols/send* tabapp {:op ::bar})))
 
-                  ::mult.spec/ping
-                  (let []
-                    (println ::ping value))))
-              (recur))))))))
+              recv|
+              (condp = (:op value)
 
-(defn stop
-  [{:keys [::id] :as opts}]
-  (go
-    (when (get @registryA id)
-      (swap! registryA dissoc id))))
-
-(defn ^:export main
-  []
-  (println ::main)
-  (start {::id :main}))
-
-(do (main))
-
-
-(defn send
-  [data]
-  (.postMessage vscode (pr-str data)))
-
-
+                ::mult.spec/ping
+                (let []
+                  (println ::ping value))))
+            (recur)))))
+    ui))
 
 (defn home-page []
   [:div
@@ -192,3 +212,10 @@
      (if @match
        (let [page (:page (:data @match))]
          [page @match]))])
+
+(defn ^:export main
+  []
+  (println ::main)
+  (create {::id ::main}))
+
+(do (main))
