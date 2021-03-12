@@ -22,6 +22,7 @@
   (show-notification* [_ text])
   (active-text-editor* [_])
   (create-tab* [_ opts])
+  (read-mult-edn* [_])
   #_Release
   #_IDeref)
 

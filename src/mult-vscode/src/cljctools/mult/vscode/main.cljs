@@ -72,6 +72,7 @@
   (go
     (let [editor (create-editor context {::id ::editor})
           {:keys [::mult.spec/cmd|]} @editor
+          mult-edn (<! (mult.protocols/read-mult-edn* editor))
           cljctools-mult (mult.core/create {::mult.core/id ::mult
                                             ::mult.spec/editor editor
                                             ::mult.spec/cmd| cmd|})]
@@ -143,6 +144,36 @@
           (create-tab*
             [_ opts]
             (create-tab context opts))
+
+          (read-mult-edn*
+           [_]
+           (go
+             (let [workspace-file-uri (.-workspaceFile (.-workspace vscode))
+                   workspace-file-path (.-fsPath workspace-file-uri)
+                   workspace-edn (->
+                                  (.readFileSync fs workspace-file-path)
+                                  (.toString)
+                                  (js/JSON.parse)
+                                  (js->clj))
+                   mult-edn-path-str (get-in workspace-edn ["settings" "cljctools.mult.edn"])
+                   [folder-name filepath] (clojure.string/split mult-edn-path-str #":")
+                   workspace-folder (first (filter
+                                            (fn [folder] (= (.-name folder) folder-name))
+                                            (.-workspaceFolders  (.-workspace vscode))))
+                   mult-edn-path (.join path (.-fsPath (.-uri workspace-folder)) filepath)
+                   mult-edn (->
+                             (.readFileSync fs mult-edn-path)
+                             (.toString)
+                             (read-string))]
+               mult-edn))
+           #_(go
+               (let [workspace-file-uri (.-workspaceFile (.-workspace vscode))
+                     workspace-file-path (.-fsPath workspace-file-uri)
+                     uint8array (<p! (.readFile (.-fs (.-workspace vscode)) workspace-file-uri))
+                     text (.decode (js/TextDecoder.) uint8array)
+                     json (js/JSON.parse text)
+                     edn (js->clj json)]
+                 (println text))))
 
           mult.protocols/Release
           (release*
