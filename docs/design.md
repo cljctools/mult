@@ -114,9 +114,9 @@
       - so that when typing into it you are actually editing code in an editor file
 
 
-#### using multiple mult.edn files in a source tree (along with ~/.mult/mult.edn)
+#### ~~using multiple mult.edn files in a source tree (along with ~/.mult/mult.edn)~~
 
-- when a directory tree or workspace is open, mult should find mult.edns
+- <s>when a directory tree or workspace is open, mult should find mult.edns
 - user should have an option to add mult.edns (open their tabs) as they navigate
 - or, should be able to add all mult.edns
 - each mult.edn has it's own connnections, repls and tabs 
@@ -136,7 +136,9 @@
   - you use ~/.mult/mult.edn for that - it has deafult connections and tab
   - its up to user to either change port to constant in a project they rapidly cloned and are "lein repl" ing
   - or open ~/.mult/mult.edn and change the port every time new random one is given on restart (and press update configs)
-  - bottom line: you should always opt for specifying the port
+  - bottom line: you should always opt for specifying the port</s>
+
+one mult.edn, use .vscode/mult.edn or use workspace.json to specify where https://github.com/sergeiudris/deathstar.lab/issues/6#issuecomment-797487475
 
 #### single gui vscode tab with multiple react tabs vs multiple vscode tabs? - single gui tab
 
