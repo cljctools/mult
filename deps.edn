@@ -5,11 +5,17 @@
         github.cljctools/mult-vscode-ui {:local/root "./src/mult-vscode-ui"}}
  :aliases {;  :cljs {:extra-deps {github.com/cljctools.self-hosting  {:local/root "../../cljctools/self-hosting/cljs"}}}
           ;  :shadow {:extra-deps {github.com/cljctools.self-hosting  {:local/root "../../cljctools/self-hosting/shadow"}}}
-           :self-hosted-cljs {:extra-deps {github.cljctools/self-hosted-meta {:local/root "./src/self-hosted-meta"}
-                                           github.cljctools/self-hosted-cljs {:local/root "./src/self-hosted-cljs"}}}
+           :cljs-self-hosting-cljs {:extra-deps
+                                    {github.cljctools/cljs-self-hosting-meta
+                                     {:local/root "../cljs-self-hosting/src/cljs-self-hosting-meta"}
+                                     github.cljctools/cljs-self-hosting-cljs
+                                     {:local/root "../cljs-self-hosting/src/cljs-self-hosting-cljs"}}}
 
-           :self-hosted-shadow-nodejs {:extra-deps {github.cljctools/self-hosted-meta {:local/root "./src/self-hosted-meta"}
-                                                    github.cljctools/self-hosted-shadow-nodejs {:local/root "./src/self-hosted-shadow-nodejs"}}}
+           :cljs-self-hosting-shadow-nodejs {:extra-deps
+                                             {github.cljctools/cljs-self-hosting-meta
+                                              {:local/root "../cljs-self-hosting/src/cljs-self-hosting-meta"}
+                                              github.cljctools/cljs-self-hosting-shadow-nodejs
+                                              {:local/root "../cljs-self-hosting/src/cljs-self-hosting-shadow-nodejs"}}}
 
            :dev {:extra-deps {thheller/shadow-cljs {:mvn/version "2.11.7"
                                                     :exclusions [nrepl

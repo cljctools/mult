@@ -15,6 +15,10 @@
     {
 			"name": "socket",
 			"path": "../../socket"
+		},
+		{
+			"name": "cljs-self-hosting",
+			"path": "../../cljs-self-hosting"
 		}
 	],
 	"settings": {

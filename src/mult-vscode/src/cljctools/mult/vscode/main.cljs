@@ -11,8 +11,8 @@
    [goog.string :refer [format]]
    [clojure.spec.alpha :as s]
 
-   [cljctools.self-hosted.spec :as self-hosted.spec]
-   [cljctools.self-hosted.core :as self-hosted.core]
+   [cljctools.cljs-self-hosting.spec :as cljs-self-hosting.spec]
+   [cljctools.cljs-self-hosting.core :as cljs-self-hosting.core]
    [clojure.walk]
 
    [cljctools.socket.spec :as socket.spec]
@@ -124,7 +124,7 @@
 
         cmd| (chan 10)
 
-        compiler (self-hosted.core/create-compiler)
+        compiler (cljs-self-hosting.core/create-compiler)
 
         active-text-editor
         ^{:type ::mult.spec/text-editor}
@@ -193,7 +193,7 @@
           (init*
             [_]
             (go
-              (<! (self-hosted.core/init
+              (<! (cljs-self-hosting.core/init
                    compiler
                    {:path (.join path (.-extensionPath context) "./resources/out/mult-bootstrap")
                     :load-on-init '#{cljctools.mult.vscode.main
@@ -214,7 +214,7 @@
     (reset! stateA (merge
                     opts
                     {::opts opts
-                     ::self-hosted.spec/compiler compiler
+                     ::cljs-self-hosting.spec/compiler compiler
                      ::mult.spec/cmd| cmd|}))
     
     editor))
@@ -348,10 +348,10 @@
            x))
   (eval '(let [x 3]
            x))
-  
-  (take! (self-hosted.core/eval-str
-          (::self-hosted.spec/compiler  @(get @registryA ::editor))
-          {::self-hosted.spec/code-str
+
+  (take! (cljs-self-hosting.core/eval-str
+          (::cljs-self-hosting.spec/compiler  @(get @registryA ::editor))
+          {::cljs-self-hosting.spec/code-str
            "
             (do
             
@@ -361,7 +361,7 @@
             )
             
     "
-           ::self-hosted.spec/ns-symbol
+           ::cljs-self-hosting.spec/ns-symbol
            'cljctools.mult.vscode.main})
          (fn [data]
            (prn data)

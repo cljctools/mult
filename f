@@ -21,13 +21,13 @@ server(){
 dev(){
 
     # npm i
-    shadow -A:dev:self-hosted-shadow-nodejs watch :mult :mult-ui :mult-bootstrap
+    shadow -A:dev:cljs-self-hosting-shadow-nodejs watch :mult :mult-ui :mult-bootstrap
 
 }
 
 compile(){
     npm i
-    shadow -A:dev:self-hosted-shadow-nodejs compile  :mult :mult-ui :mult-bootstrap 
+    shadow -A:dev:cljs-self-hosting-shadow-nodejs compile  :mult :mult-ui :mult-bootstrap 
 }
 
 release(){
