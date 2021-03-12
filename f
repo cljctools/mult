@@ -27,7 +27,7 @@ dev(){
 
 compile(){
     npm i
-    shadow -A:dev compile  :mult :mult-ui :mult-bootstrap
+    shadow -A:dev:self-hosted-shadow-nodejs compile  :mult :mult-ui :mult-bootstrap 
 }
 
 release(){
@@ -42,7 +42,7 @@ tree(){
 
 
 cljs_compile(){
-    clj -A:dev -m cljs.main -co cljs-build.edn -c
+    clj -A:dev:self-hosted-cljs -m cljs.main -co cljs-build.edn -c
     #  clj -A:dev -m cljs.main -co cljs-build.edn -v -c # -r
 }
 
