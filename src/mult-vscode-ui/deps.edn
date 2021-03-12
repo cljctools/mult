@@ -1,0 +1,2 @@
+{:paths ["src"]
+ :deps {github.cljctools/mult-ui {:local/root  "../mult-ui"}}}
