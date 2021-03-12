@@ -1,26 +1,44 @@
-#:mult.conf.spec{:connections {:devserver #:mult.conf.spec{:host "localhost"
-                                                           :port 5100
-                                                           :conn-type :nrepl}}
-                 :repls {:extension #:mult.conf.spec{:conn-id :devserver
-                                                     :repl-type :shadow-cljs
-                                                     :runtime :cljs
-                                                     :shadow-build-key :extension
-                                                     :include-file? (fn [filepath]
-                                                                      (re-matches (re-pattern ".+\\.clj(s|c)") filepath))}
-                         :gui #:mult.conf.spec{:conn-id :devserver
-                                               :repl-type :shadow-cljs
-                                               :runtime :cljs
-                                               :shadow-build-key :gui
-                                               :include-file? (fn [filepath]
-                                                                (re-matches (re-pattern ".+\\.clj(s|c)") filepath))}
-                         :devserver #:mult.conf.spec{:conn-id :gui
-                                                     :repl-type :shadow-cljs
-                                                     :runtime :clj
-                                                     :include-file? (fn [filepath]
-                                                                      (re-matches (re-pattern ".+dev/shadow.clj") filepath))}}
+#:mult.spec{:connection-metas
+            #{#:mult.spec{:connection-meta-id :shadow-devserver
+                          :host "localhost"
+                          :port 8899
+                          :connection-type :nrepl}
+              #:mult.spec{:connection-meta-id :foo
+                          :host "localhost"
+                          :port 4200
+                          :connection-type :nrepl}}
+            :logical-repl-metas
+            #{#:mult.spec{:logical-repl-meta-id :mult
+                          :connection-meta-id :shadow-devserver
+                          :logical-repl-type :shadow-cljs
+                          :runtime :cljs
+                          :shadow-build-key :mult
+                          :include-file?
+                          (fn [filepath]
+                            (re-matches (re-pattern ".+\\.clj(s|c)") filepath))}
 
-                 :tabs {:extension #:mult.conf.spec{:repl-ids #{:extension}}
-                        :extension-gui #:mult.conf.spec{:repl-ids #{:extension :gui}}
-                        :extension-gui-devserver #:mult.conf.spec{:repl-ids #{:extension :gui :devserver}}}
-                 :open-tabs #{:extension-gui}
-                 :active-tab #{:extension-gui}}
+              #:mult.spec{:logical-repl-meta-id :mult-ui
+                          :connection-meta-id :shadow-devserver
+                          :logical-repl-type :shadow-cljs
+                          :runtime :cljs
+                          :shadow-build-key :mult-ui
+                          :include-file?
+                          (fn [filepath]
+                            (re-matches (re-pattern ".+\\.clj(s|c)") filepath))}
+
+              #:mult.spec{:logical-repl-meta-id :shadow-devserver
+                          :connection-meta-id :shadow-devserver
+                          :logical-repl-type :shadow-cljs
+                          :runtime :clj
+                          :include-file?
+                          (fn [filepath]
+                            (re-matches (re-pattern ".+dev/shadow.clj") filepath))}}
+
+            :tab-metas
+            #{#:mult.spec{:tab-meta-id :mult
+                          :logical-repl-meta-ids #{:mult :mult-ui}}
+
+              #:mult.spec{:tab-meta-id :devserver
+                          :logical-repl-meta-ids #{:devserver}}}
+            :open-tabs #{:mult}
+            :active-tab :mult}

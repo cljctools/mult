@@ -45,3 +45,45 @@
                           (satisfies? mult.protocols/CljctoolsMult %)
                           #?(:clj (satisfies? clojure.lang.IDeref %))
                           #?(:cljs (satisfies? cljs.core/IDeref %))))
+
+
+(s/def ::host string?)
+(s/def ::port int?)
+(s/def ::connection-meta-id keyword?)
+(s/def ::connection-type #{:nrepl})
+(s/def ::connection-meta (s/keys :req [::connection-meta-id
+                                       ::host
+                                       ::port
+                                       ::connection-type]))
+
+(s/def ::connection-metas (s/coll-of ::connection-meta :into #{}))
+
+(s/def ::logical-repl-meta-id keyword?)
+(s/def ::logical-repl-type #{:shadow-cljs :nrepl})
+(s/def ::runtime #{:cljs :clj})
+(s/def ::shadow-build-key keyword?)
+(s/def ::include-file? ifn?)
+
+(s/def ::logical-repl-meta (s/keys :req [::logical-repl-meta-id
+                                         ::connection-meta-id
+                                         ::logical-repl-type
+                                         ::runtime
+                                         ::include-file?]
+                                   :opt [::shadow-build-key]))
+
+(s/def ::logical-repl-metas (s/coll-of ::logical-repl-meta :into #{}))
+
+(s/def ::tab-meta-id keyword?)
+(s/def ::logical-repl-meta-ids (s/coll-of ::logical-repl-meta-id :into #{}))
+
+(s/def ::tab-meta (s/keys :req [::tab-meta-id
+                                   ::logical-repl-meta-ids]))
+
+(s/def ::open-tabs (s/coll-of ::tab-meta-id :into #{}))
+(s/def ::active-tab ::tab-meta-id)
+
+(s/def ::config (s/keys :req [::connection-metas
+                              ::logical-repl-metas
+                              ::tab-metas
+                              ::open-tabs
+                              ::active-tab]))
