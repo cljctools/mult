@@ -23,7 +23,7 @@
 (s/def ::id  (s/or :keyword keyword? :string string?))
 
 (s/def ::create-opts (s/keys :req [::id
-                                  ;;  ::mult.spec/config
+                                   ::mult.spec/config
                                    ::mult.spec/editor
                                    ::mult.spec/cmd|]
                              :opt []))
@@ -40,6 +40,7 @@
 (defn create
   [{:keys [::id
            ::mult.spec/cmd|
+           ::mult.spec/config
            ::mult.spec/editor] :as opts}]
   {:pre [(s/assert ::create-opts opts)]
    :post [(s/assert ::mult.spec/cljctools-mult %)]}

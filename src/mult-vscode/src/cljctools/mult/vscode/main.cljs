@@ -13,6 +13,7 @@
 
    [cljctools.self-hosted.spec :as self-hosted.spec]
    [cljctools.self-hosted.core :as self-hosted.core]
+   [clojure.walk]
 
    [cljctools.socket.spec :as socket.spec]
    [cljctools.socket.core :as socket.core]
@@ -76,9 +77,14 @@
     (let [editor (create-editor context {::id ::editor})
           _ (<! (mult.protocols/init* editor))
           {:keys [::mult.spec/cmd|]} @editor
-          config (<! (mult.protocols/read-mult-edn* editor))
+          config-data (<! (mult.protocols/read-mult-edn* editor))
+          config (clojure.walk/postwalk
+                  (fn [form]
+                    (if (and (list? form) (= (first form) 'fn))
+                      (eval form)
+                      form))  config-data)
           cljctools-mult (mult.core/create {::mult.core/id ::mult
-                                            ;; ::mult.spec/config config
+                                            ::mult.spec/config config
                                             ::mult.spec/editor editor
                                             ::mult.spec/cmd| cmd|})]
       (register-commands* editor {::mult.spec/cmd-ids #{"mult.open"
@@ -329,6 +335,9 @@
                                  (on-tab-state-change)))))
     (set! (.-html (.-webview panel)) html)
     panel))
+
+
+
 
 
 (comment
