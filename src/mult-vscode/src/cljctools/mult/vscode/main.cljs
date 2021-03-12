@@ -15,7 +15,7 @@
    [cljctools.socket.core :as socket.core]
    [cljctools.socket.nodejs-net.core :as socket.nodejs-net.core]
 
-   [cljctools.mult.spec :as mult.protocols]
+   [cljctools.mult.protocols :as mult.protocols]
    [cljctools.mult.spec :as mult.spec]
    [cljctools.mult.core :as mult.core]))
 
@@ -28,11 +28,8 @@
 
 
 (s/def ::id keyword?)
-(s/def ::context some?)
 
-
-(s/def ::create-opts (s/keys :req [::id
-                                   ::context]
+(s/def ::create-opts (s/keys :req [::id]
                              :opt []))
 
 (s/def ::tab-html-filepath string?)
@@ -45,7 +42,7 @@
 
 (s/def ::create-webview-panel-opts (s/and
                                     ::create-tab-opts
-                                    (s/keys :req [::context]
+                                    (s/keys :req []
                                             :opt [::on-tab-closed
                                                   ::on-tab-message
                                                   ::on-tab-state-change
@@ -53,15 +50,13 @@
                                                   ::tab-html-replacements
                                                   ::tab-view-column])))
 
-(s/def ::cmd-id string?)
-(s/def ::cmd-ids (s/coll-of ::cmd-id))
-(s/def ::register-commands-opts (s/keys :req [::context
-                                              ::cmd-ids
+
+(s/def ::register-commands-opts (s/keys :req [::mult.spec/cmd-ids
                                               ::mult.spec/cmd|]
                                         :opt []))
 
 (defprotocol Vscode
-  (register-commands* [_]))
+  (register-commands* [_ opts]))
 
 (declare create-editor
          create-tab
@@ -70,20 +65,19 @@
 
 (defonce ^:private registryA (atom {}))
 
-(def ^:const NS_DECL_LINE_RANGE 100)
+
 
 (defn activate
-  [cotext]
+  [context]
   (go
-    (let [editor (create-editor {::id ::editor
-                                 ::context context})
+    (let [editor (create-editor context {::id ::editor})
           {:keys [::mult.spec/cmd|]} @editor
-          mult (mult.core/create {::mult.core/id ::mult
-                                  ::mult.spec/editor editor
-                                  ::mult.spec/cmd| cmd|})]
-      (register-commands* editor {::cmd-ids #{"mult.open"
-                                              "mult.ping"
-                                              "mult.eval"}
+          cljctools-mult (mult.core/create {::mult.core/id ::mult
+                                            ::mult.spec/editor editor
+                                            ::mult.spec/cmd| cmd|})]
+      (register-commands* editor {::mult.spec/cmd-ids #{"mult.open"
+                                                        "mult.ping"
+                                                        "mult.eval"}
                                   ::mult.spec/cmd| cmd|})
       (swap! registryA assoc ::editor editor))))
 
@@ -109,17 +103,17 @@
 (defn ^:export main [] (println ::main))
 
 (defn create-editor
-  [{:as opts
-    :keys [::id
-           ::context]}]
+  [context
+   {:as opts
+    :keys [::id]}]
   {:pre [(s/assert ::create-opts opts)]
-   :post [(s/assert ::mult.spec/Editor %)]}
+   :post [(s/assert ::mult.spec/editor %)]}
   (let [stateA (atom nil)
 
         cmd| (chan 10)
 
         active-text-editor
-        ^{:type ::mult.spec/TextEditor}
+        ^{:type ::mult.spec/text-editor}
         (reify
           mult.protocols/TextEditor
           (text*
@@ -148,18 +142,17 @@
 
           (create-tab*
             [_ opts]
-            (create-tab opts))
+            (create-tab context opts))
 
           mult.protocols/Release
           (release*
             [_]
-            (do nil))
+            (close! cmd|))
 
           Vscode
           (register-commands*
             [_ opts]
-            (register-commands (merge opts
-                                      {::context context})))
+            (register-commands context opts))
 
           cljs.core/IDeref
           (-deref [_] @stateA))]
@@ -171,13 +164,13 @@
     editor))
 
 (defn create-tab
-  [opts]
+  [context opts]
   {:pre [(s/assert ::create-tab-opts opts)]
-   :post [(s/assert ::mult.spec/Tab %)]}
+   :post [(s/assert ::mult.spec/tab %)]}
   (let [stateA (atom {})
 
         tab
-        ^{:type ::mult.spec/Tab}
+        ^{:type ::mult.spec/tab}
         (reify
           mult.protocols/Tab
 
@@ -185,9 +178,7 @@
           (open*
             [_]
             (when-not (get @stateA ::panel)
-              (let [panel (create-webview-panel (merge
-                                                 {::context context}
-                                                 opts))]
+              (let [panel (create-webview-panel context opts)]
                 (swap! stateA assoc ::panel panel))))
 
           mult.protocols/Close
@@ -219,34 +210,33 @@
     tab))
 
 (defn register-commands
-  [{:as opts
-    :keys [::context
-           ::cmd-ids
-           ::cmd|]}]
+  [context
+   {:as opts
+    :keys [::mult.spec/cmd-ids
+           ::mult.spec/cmd|]}]
   {:pre [(s/assert ::register-commands-opts opts)]}
   (doseq [cmd-id cmd-ids]
     (let [disposable (.. vscode.commands
                          (registerCommand
                           cmd-id
                           (fn [& args]
-                            (put! cmd| {::cmd-id cmd-id}))))]
+                            (put! cmd| {::mult.spec/cmd-id cmd-id}))))]
       (.. context.subscriptions (push disposable)))))
 
 (defn create-webview-panel
-  [{:as opts
-    :keys [::context
-           ::mult.spec/tab-id
+  [context
+    {:as opts
+    :keys [::mult.spec/tab-id
            ::mult.spec/tab-title
-           ::on-tab-closed
-           ::on-tab-message
+           ::mult.spec/on-tab-closed
+           ::mult.spec/on-tab-message
            ::on-tab-state-change
            ::tab-view-column
            ::tab-html-filepath
            ::tab-html-replacements]
-    :or {tab-id (str #?(:clj  (java.util.UUID/randomUUID)
-                        :cljs (random-uuid)))
+    :or {tab-id (str (random-uuid))
          tab-title "Default title"
-         tab-html-replacements {"./out/ui/main.js" "./resources/out/ui/main.js"
+         tab-html-replacements {"./out/mult-ui/main.js" "./resources/out/mult-ui/main.js"
                                 "./css/style.css" "./css/style.css"}
          tab-html-filepath "./resources/index.html"
          tab-view-column vscode.ViewColumn.Two}}]

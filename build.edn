@@ -1,7 +1,7 @@
 {:optimizations :simple
- :output-to "resources/out/extension/main.js"
+ :output-to "resources/out/mult/main.js"
  :target :nodejs
- :main cljctools.mult.extension.main
+ :main cljctools.mult.vscode.main
  :verbose true
  :output-dir "out"}
 #_{:optimizations :advanced

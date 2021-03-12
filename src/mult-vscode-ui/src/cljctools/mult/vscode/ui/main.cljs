@@ -15,7 +15,7 @@
 
    [cljctools.mult.ui.core :as mult.ui.core]))
 
-(do (clojure.spec.alpha/check-asserts true
+(do (clojure.spec.alpha/check-asserts true))
 
 (declare vscode)
 
@@ -24,11 +24,12 @@
 
 (defn ^:export main
   []
-  (let [msg| (chan 10)
-        send| (chan 10)
-        mult-ui (mult.ui.core/create
-                 {::mult.ui.core/recv| msg|
-                  ::mult.ui.core/send| send|})]
+  (println ::main)
+  (let [recv| (chan 10)
+        send| (chan 10)]
+    (mult.ui.core/create
+     {::mult.ui.core/recv| recv|
+      ::mult.ui.core/send| send|})
     (.addEventListener js/window "message"
                        (fn [ev]
                          (put! recv| (read-string ev.data))))
@@ -41,3 +42,6 @@
 (defn ^:export reload
   []
   (println ::reload))
+
+
+(do (main))

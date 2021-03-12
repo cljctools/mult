@@ -21,18 +21,18 @@ server(){
 dev(){
 
     # npm i
-    shadow -A:dev watch :ui :extension :extension-bootstrap
+    shadow -A:dev watch :mult :mult-ui # :mult-bootstrap
 
 }
 
 compile(){
     npm i
-    shadow -A:dev compile  :ui :extension :extension-bootstrap
+    shadow -A:dev compile  :mult :mult-ui :mult-bootstrap
 }
 
 release(){
     npm i
-    shadow -A:dev release :ui :extension
+    shadow -A:dev release :mult-ui
 }
 
 tree(){
