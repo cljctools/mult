@@ -11,6 +11,9 @@
    [goog.string :refer [format]]
    [clojure.spec.alpha :as s]
 
+   [cljctools.self-hosted.spec :as self-hosted.spec]
+   [cljctools.self-hosted.core :as self-hosted.core]
+
    [cljctools.socket.spec :as socket.spec]
    [cljctools.socket.core :as socket.core]
    [cljctools.socket.nodejs-net.core :as socket.nodejs-net.core]
@@ -71,9 +74,11 @@
   [context]
   (go
     (let [editor (create-editor context {::id ::editor})
+          _ (<! (mult.protocols/init* editor))
           {:keys [::mult.spec/cmd|]} @editor
-          mult-edn (<! (mult.protocols/read-mult-edn* editor))
+          config (<! (mult.protocols/read-mult-edn* editor))
           cljctools-mult (mult.core/create {::mult.core/id ::mult
+                                            ;; ::mult.spec/config config
                                             ::mult.spec/editor editor
                                             ::mult.spec/cmd| cmd|})]
       (register-commands* editor {::mult.spec/cmd-ids #{"mult.open"
@@ -113,6 +118,8 @@
 
         cmd| (chan 10)
 
+        compiler (self-hosted.core/create-compiler)
+
         active-text-editor
         ^{:type ::mult.spec/text-editor}
         (reify
@@ -137,6 +144,8 @@
             [_ text]
             (.. vscode.window (showInformationMessage text)))
 
+
+
           (active-text-editor*
             [_]
             active-text-editor)
@@ -146,34 +155,43 @@
             (create-tab context opts))
 
           (read-mult-edn*
-           [_]
-           (go
-             (let [workspace-file-uri (.-workspaceFile (.-workspace vscode))
-                   workspace-file-path (.-fsPath workspace-file-uri)
-                   workspace-edn (->
-                                  (.readFileSync fs workspace-file-path)
-                                  (.toString)
-                                  (js/JSON.parse)
-                                  (js->clj))
-                   mult-edn-path-str (get-in workspace-edn ["settings" "cljctools.mult.edn"])
-                   [folder-name filepath] (clojure.string/split mult-edn-path-str #":")
-                   workspace-folder (first (filter
-                                            (fn [folder] (= (.-name folder) folder-name))
-                                            (.-workspaceFolders  (.-workspace vscode))))
-                   mult-edn-path (.join path (.-fsPath (.-uri workspace-folder)) filepath)
-                   mult-edn (->
-                             (.readFileSync fs mult-edn-path)
-                             (.toString)
-                             (read-string))]
-               mult-edn))
-           #_(go
-               (let [workspace-file-uri (.-workspaceFile (.-workspace vscode))
-                     workspace-file-path (.-fsPath workspace-file-uri)
-                     uint8array (<p! (.readFile (.-fs (.-workspace vscode)) workspace-file-uri))
-                     text (.decode (js/TextDecoder.) uint8array)
-                     json (js/JSON.parse text)
-                     edn (js->clj json)]
-                 (println text))))
+            [_]
+            (go
+              (let [workspace-file-uri (.-workspaceFile (.-workspace vscode))
+                    workspace-file-path (.-fsPath workspace-file-uri)
+                    workspace-edn (->
+                                   (.readFileSync fs workspace-file-path)
+                                   (.toString)
+                                   (js/JSON.parse)
+                                   (js->clj))
+                    mult-edn-path-str (get-in workspace-edn ["settings" "cljctools.mult.edn"])
+                    [folder-name filepath] (clojure.string/split mult-edn-path-str #":")
+                    workspace-folder (first (filter
+                                             (fn [folder] (= (.-name folder) folder-name))
+                                             (.-workspaceFolders  (.-workspace vscode))))
+                    mult-edn-path (.join path (.-fsPath (.-uri workspace-folder)) filepath)
+                    mult-edn (->
+                              (.readFileSync fs mult-edn-path)
+                              (.toString)
+                              (read-string))]
+                mult-edn))
+            #_(go
+                (let [workspace-file-uri (.-workspaceFile (.-workspace vscode))
+                      workspace-file-path (.-fsPath workspace-file-uri)
+                      uint8array (<p! (.readFile (.-fs (.-workspace vscode)) workspace-file-uri))
+                      text (.decode (js/TextDecoder.) uint8array)
+                      json (js/JSON.parse text)
+                      edn (js->clj json)]
+                  (println text))))
+
+          (init*
+            [_]
+            (go
+              (<! (self-hosted.core/init
+                   compiler
+                   {:path (.join path (.-extensionPath context) "./resources/out/mult-bootstrap")
+                    :load-on-init '#{cljctools.mult.vscode.main
+                                     clojure.core.async}}))))
 
           mult.protocols/Release
           (release*
@@ -187,11 +205,12 @@
 
           cljs.core/IDeref
           (-deref [_] @stateA))]
-
     (reset! stateA (merge
                     opts
                     {::opts opts
+                     ::self-hosted.spec/compiler compiler
                      ::mult.spec/cmd| cmd|}))
+    
     editor))
 
 (defn create-tab
@@ -310,3 +329,35 @@
                                  (on-tab-state-change)))))
     (set! (.-html (.-webview panel)) html)
     panel))
+
+
+(comment
+
+  (type '(println 3))
+  (eval '(println 3))
+  (type '(let [x 3]
+           x))
+  (eval '(let [x 3]
+           x))
+  
+  (take! (self-hosted.core/eval-str
+          (::self-hosted.spec/compiler  @(get @registryA ::editor))
+          {::self-hosted.spec/code-str
+           "
+            (do
+            
+            [(cljs.core/type cljs.core/type)
+            (type registryA)
+            ]
+            )
+            
+    "
+           ::self-hosted.spec/ns-symbol
+           'cljctools.mult.vscode.main})
+         (fn [data]
+           (prn data)
+           (prn (type (:value data)))))
+
+
+ ;;
+  )

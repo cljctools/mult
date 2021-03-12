@@ -21,7 +21,7 @@ server(){
 dev(){
 
     # npm i
-    shadow -A:dev watch :mult :mult-ui # :mult-bootstrap
+    shadow -A:dev:self-hosted-shadow-nodejs watch :mult :mult-ui :mult-bootstrap
 
 }
 

@@ -17,8 +17,8 @@
    [cljctools.self-hosted.spec :as self-hosted.spec]
    [cljctools.self-hosted.protocols :as self-hosted.protocols]))
 
-(defonce fs (node/require "fs"))
-(defonce path (node/require "path"))
+(defonce fs (js/require "fs"))
+(defonce path (js/require "path"))
 
 (s/def ::path string?)
 (s/def ::load-on-init some?)
@@ -62,23 +62,31 @@
           (eval-data*
             [_ opts])
           (eval-str*
-           [_ opts]
-           {:pre [(s/assert ::eval-str-opts opts)]}
-           (let [{:keys [::self-hosted.spec/code-str
-                         ::self-hosted.spec/ns-symbol]} opts
-                 result| (chan 1)]
-             (cljs/eval-str
-              compile-state-ref
-              code-str
-              "[test]"
-              {:eval cljs/js-eval
-               :ns ns-symbol
-               :load (partial boot/load compile-state-ref)}
-              (fn [result]
-                (put! result| result #(close! result|))))
-             result|))
+            [_ opts]
+            {:pre [(s/assert ::eval-str-opts opts)]}
+            (let [{:keys [::self-hosted.spec/code-str
+                          ::self-hosted.spec/ns-symbol]} opts
+                  result| (chan 1)]
+              (cljs/eval-str
+               compile-state-ref
+               code-str
+               "[test]"
+               {:eval cljs/js-eval
+                :ns ns-symbol
+                :load (partial boot/load compile-state-ref)}
+               (fn [result]
+                 (put! result| result #(close! result|))))
+              result|))
           (compile-js-str*
-            [_ opts]))]
+            [_ opts])
+
+          self-hosted.protocols/Release
+          (release*
+            [_]
+            (do nil))
+
+          cljs.core/IDeref
+          (-deref [_] @stateA))]
     (reset! stateA {::self-hosted.spec/compile-state-ref compile-state-ref})
     compiler))
 

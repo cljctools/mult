@@ -23,6 +23,7 @@
 (s/def ::id  (s/or :keyword keyword? :string string?))
 
 (s/def ::create-opts (s/keys :req [::id
+                                  ;;  ::mult.spec/config
                                    ::mult.spec/editor
                                    ::mult.spec/cmd|]
                              :opt []))
