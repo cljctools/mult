@@ -1,4 +1,4 @@
-(ns cljctools.mult.editor.tabapp.api
+(ns cljctools.mult.editor.tabapp.core
   (:refer-clojure :exclude [send])
   (:require
    [clojure.core.async :as a :refer [chan go go-loop <! >! take! put! offer! poll! alt! alts! close!
@@ -13,7 +13,7 @@
    [clojure.spec.alpha :as s]
    [cljctools.mult.editor.protocols :as editor.protocols]
    [cljctools.mult.editor.spec :as editor.spec]
-   [cljctools.mult.editor.tabapp.impl :as tabapp.impl]))
+   [cljctools.mult.editor.tabapp.impl :as editor.tabapp.impl]))
 
 (defonce ^:private registryA (atom {}))
 
@@ -26,7 +26,7 @@
    :post [(s/assert ::editor.spec/tabapp %)]}
   (or
    (get @registryA id)
-   (let [tabapp (tabapp.impl/create
+   (let [tabapp (editor.tabapp.impl/create
                  (merge
                   opts
                   {::editor.spec/id id}))]

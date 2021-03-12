@@ -12,13 +12,13 @@
    [clojure.spec.alpha :as s]
 
 
-   [cljctools.nrepl-client]
-   [cljctools.socket.spec]
-   [cljctools.socket.api]
-   [cljctools.socket.nodejs-net]
+   [cljctools.nrepl-client.core :as nrepl-client.core]
+   [cljctools.socket.spec :as socket.spec]
+   [cljctools.socket.core :as socket.core]
+   [cljctools.socket.nodejs-net.core :as socket.nodejs-net.core]
 
    [cljctools.mult.spec :as mult.spec]
-   [cljctools.mult.editor.api :as editor.api]
+   [cljctools.mult.editor.core :as editor.core]
    [cljctools.mult.editor.spec :as editor.spec]
    [cljctools.mult.editor.protocols :as editor.protocols]
    [cljctools.mult.editor.impl :as editor.impl]))
@@ -59,11 +59,11 @@
         tab-evt| (chan 10)
         cmd| (chan 10)
 
-        editor (editor.api/create
+        editor (editor.core/create
                 {::editor.spec/id ::editor
                  ::editor.impl/context context})
 
-        tab (editor.api/create-tab
+        tab (editor.core/create-tab
              editor
              {::editor.spec/tab-id "mult-tab"
               ::editor.spec/tab-title "mult"
@@ -93,7 +93,7 @@
                      ::editor.spec/editor editor
                      ::editor.spec/tab tab}))
     (swap! registryA assoc id)
-    (editor.api/register-commands
+    (editor.core/register-commands
      editor
      {::editor.spec/cmd-ids
       #{"mult.open"

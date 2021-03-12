@@ -1,4 +1,4 @@
-(ns cljctools.mult.editor.api
+(ns cljctools.mult.editor.core
   (:refer-clojure :exclude [send])
   (:require
    [clojure.core.async :as a :refer [chan go go-loop <! >! take! put! offer! poll! alt! alts! close!

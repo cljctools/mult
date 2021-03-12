@@ -52,7 +52,7 @@
    [cljctools.mult.spec :as mult.spec]
    [cljctools.mult.editor.spec :as editor.spec]
    [cljctools.mult.editor.protocols :as editor.protocols]
-   [cljctools.mult.editor.tabapp.api :as tabapp.api]
+   [cljctools.mult.editor.tabapp.core :as editor.tabapp.core]
    [cljctools.mult.editor.tabapp.impl]))
 
 (do (clojure.spec.alpha/check-asserts true))
@@ -89,7 +89,7 @@
         inputs| (chan (sliding-buffer 10))
         matchA (r/atom nil)
 
-        tabapp (tabapp.api/create
+        tabapp (editor.tabapp.core/create
                 {::editor.spec/id ::tabapp
                  ::editor.spec/on-message
                  (fn [msg]
