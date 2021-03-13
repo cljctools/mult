@@ -39,3 +39,9 @@
   #_Release
   #_IDeref)
 
+
+(defprotocol LogicalRepl
+  (eval* [_ opts])
+  #_Release
+  #_IDeref)
+

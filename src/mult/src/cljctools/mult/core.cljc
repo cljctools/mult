@@ -11,12 +11,14 @@
    #?(:cljs [goog.string :refer [format]])
    [clojure.spec.alpha :as s]
 
-   [cljctools.nrepl-client.core :as nrepl-client.core]
+   
    [cljctools.socket.spec :as socket.spec]
    [cljctools.socket.core :as socket.core]
 
    [cljctools.mult.spec :as mult.spec]
-   [cljctools.mult.protocols :as mult.protocols]))
+   [cljctools.mult.protocols :as mult.protocols]
+
+   [cljctools.mult.logical-repl :as mult.logical-repl]))
 
 (do (clojure.spec.alpha/check-asserts true))
 
@@ -66,19 +68,46 @@
                                (assoc! result ::mult.spec/connection-meta-id
                                        (merge
                                         connection-meta
-                                        {::socket.spec/socket
-                                         (condp = connection-opts-type
+                                        (condp = connection-opts-type
 
-                                           ::socket.spec/tcp-socket-opts
-                                           (socket.core/open
-                                            (merge
-                                             (create-opts-net-socket connection-opts)
-                                             {::socket.spec/connect? true
-                                              ::socket.spec/reconnection-timeout 2000}))
-                                           (do (println ::connection-opts-type-not-supported)))
-                                         })))
+                                          ::socket.spec/tcp-socket-opts
+                                          (let [socket (socket.core/open
+                                                        (merge
+                                                         (create-opts-net-socket connection-opts)
+                                                         {::socket.spec/connect? true
+                                                          ::socket.spec/reconnection-timeout 2000}))]
+                                            {::socket.spec/socket socket
+                                             ::mult.spec/send| (get @socket ::socket.spec/send|)
+                                             ::mult.spec/recv| (get @socket ::socket.spec/recv|)
+                                             ::mult.spec/recv|mult (get @socket ::socket.spec/recv|mult)})
+
+                                          (do (println ::connection-opts-type-not-supported))))))
                              (transient {})
                              (get config ::mult.spec/connection-metas)))
+
+        logical-repls (persistent!
+                       (reduce (fn [result {:keys [::mult.spec/connection-opts
+                                                   ::mult.spec/connection-opts-type] :as connection-meta}]
+                                 (assoc! result ::mult.spec/connection-meta-id
+                                         (merge
+                                          connection-meta
+                                          (condp = connection-opts-type
+
+                                            ::socket.spec/tcp-socket-opts
+                                            (let [socket (socket.core/open
+                                                          (merge
+                                                           (create-opts-net-socket connection-opts)
+                                                           {::socket.spec/connect? true
+                                                            ::socket.spec/reconnection-timeout 2000}))]
+                                              {::socket.spec/socket socket
+                                               ::mult.spec/send| (get @socket ::socket.spec/send|)
+                                               ::mult.spec/recv| (get @socket ::socket.spec/recv|)
+                                               ::mult.spec/recv|mult (get @socket ::socket.spec/recv|mult)})
+
+                                            (do (println ::connection-opts-type-not-supported))))))
+                               (transient {})
+                               (get config ::mult.spec/connection-metas)))
+
 
         cljctools-mult
         ^{:type ::mult.spec/cljctools-mult}
@@ -90,8 +119,10 @@
             (mult.protocols/release* tab)
             (close! tab-evt|)
             (close! tab-recv|))
-          cljs.core/IDeref
-          (-deref [_] @stateA))]
+          #?(:clj clojure.lang.IDeref)
+          #?(:clj (deref [_] @stateA))
+          #?(:cljs cljs.core/IDeref)
+          #?(:cljs (-deref [_] @stateA)))]
     (reset! stateA (merge
                     opts
                     {::opts opts
@@ -175,3 +206,9 @@
                 ::mult.spec/ns-symbol ns-symbol}]
       data
       #_(prn active-text-editor.document.languageId))))
+
+
+(defn create-logical-repl
+  []
+  
+  )

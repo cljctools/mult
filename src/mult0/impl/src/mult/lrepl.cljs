@@ -39,15 +39,15 @@
     (reify
       p/Eval
       (-eval [_ conn code ns-sym]
-        (let [code* (format
-                     "(do (in-ns '%s) %s)" ns-sym code)]
-          (go
-            (when-not @session
-              (when-let [{:keys [new-session] :as v} (<! (p/-clone-session conn))]
-                (reset! session new-session)))
-            (<! (p/-eval conn {:code code*
-                               :session @session
-                               :done-keys [:err :value]}))))))))
+             (let [code* (format
+                          "(do (in-ns '%s) %s)" ns-sym code)]
+               (go
+                 (when-not @session
+                   (when-let [{:keys [new-session] :as v} (<! (p/-clone-session conn))]
+                     (reset! session new-session)))
+                 (<! (p/-eval conn {:code code*
+                                    :session @session
+                                    :done-keys [:err :value]}))))))))
 
 (defn lrepl-shadow-cljs
   [{:keys [build]}]

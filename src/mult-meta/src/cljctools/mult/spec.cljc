@@ -15,6 +15,9 @@
 (s/def ::mult #?(:clj #(satisfies? clojure.core.async.Mult %)
                  :cljs #(satisfies? cljs.core.async/Mult %)))
 
+(s/def ::send| ::channel)
+(s/def ::recv| ::channel)
+(s/def ::recv|mult ::mult)
 
 
 (s/def ::on-tab-closed ifn?)
@@ -44,6 +47,17 @@
                           (satisfies? mult.protocols/CljctoolsMult %)
                           #?(:clj (satisfies? clojure.lang.IDeref %))
                           #?(:cljs (satisfies? cljs.core/IDeref %))))
+
+(s/def ::logical-repl #(and
+                        (satisfies? mult.protocols/LogicalRepl %)
+                        (satisfies? mult.protocols/Release %)
+                        #?(:clj (satisfies? clojure.lang.IDeref %))
+                        #?(:cljs (satisfies? cljs.core/IDeref %))))
+
+(s/def ::code-string string?)
+(s/def ::logical-repl-eval-opts (s/keys :req [::code-string
+                                              ::ns-symbol]))
+
 
 (s/def ::connection-meta-id keyword?)
 (s/def ::repl-protocol #{:nrepl})
@@ -102,3 +116,5 @@
 
 (s/def ::op-value (s/keys :req-un [::op]
                           :opt []))
+
+
