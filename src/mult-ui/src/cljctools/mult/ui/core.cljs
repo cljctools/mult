@@ -104,7 +104,6 @@
 
                 ::mult.spec/op-eval
                 (let [{:keys [::mult.spec/eval-data]} value]
-                  (println ::eval-data eval-data)
                   (println eval-data))))
             (recur)))))))
 

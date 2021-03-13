@@ -140,11 +140,11 @@
 
           (selection*
             [_]
-            (when  (.-activeTextEditor vscode)
-              (let [start (.. vscode -activeTextEditor -selection -start)
-                    end (.. vscode -activeTextEditor -selection -end)
+            (when-let [vscode-active-text-editor (.. vscode -window -activeTextEditor)]
+              (let [start (.. vscode-active-text-editor -selection -start)
+                    end (.. vscode-active-text-editor -selection -end)
                     range (vscode.Range. start end)
-                    text (.getText (.. vscode -activeTextEditor -document) range)]
+                    text (.getText (.. vscode-active-text-editor -document) range)]
                 text)))
 
           (filepath*

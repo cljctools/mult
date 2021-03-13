@@ -109,8 +109,6 @@
                 ::mult.spec/cmd-eval
                 (let [active-text-editor (mult.protocols/active-text-editor* editor)
                       selection (mult.protocols/selection* active-text-editor)]
-                  (println ::cmd-eval)
-                  (println ::selection selection)
                   (send-data tab {:op ::mult.spec/op-eval
                                   ::mult.spec/eval-data selection}))))
             (recur)))))
