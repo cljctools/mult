@@ -30,13 +30,12 @@
                              :opt [::socket.spec/create-opts-websocket]))
 
 (defonce ^:private registryA (atom {}))
-(defonce ^:private registry-connectionsA (atom {}))
-(defonce ^:private registry-tabsA (atom {}))
 
 (def ^:const NS_DECLARATION_LINE_RANGE 100)
 
 (declare parse-ns
-         active-ns)
+         active-ns
+         send-data)
 
 (defn create
   [{:keys [::id
@@ -94,17 +93,26 @@
                   (println ::tab-disposed)))
 
               cmd|
-              (condp = (::mult.spec/cmd-id value)
+              (condp = (:op value)
 
-                "mult.open"
+                ::mult.spec/cmd-open
                 (let []
-                  (println "mult.open")
+                  (println ::cmd-open)
                   (mult.protocols/open* tab))
 
-                "mult.ping"
+                ::mult.spec/cmd-ping
                 (let []
-                  (mult.protocols/show-notification* editor "mult.ping")
-                  (mult.protocols/send* tab (pr-str {:op ::mult.spec/ping})))))
+                  (println ::cmd-ping)
+                  (mult.protocols/show-notification* editor (str ::cmd-ping))
+                  (mult.protocols/send* tab (pr-str {:op ::mult.spec/op-ping})))
+
+                ::mult.spec/cmd-eval
+                (let [active-text-editor (mult.protocols/active-text-editor* editor)
+                      selection (mult.protocols/selection* active-text-editor)]
+                  (println ::cmd-eval)
+                  (println ::selection selection)
+                  (send-data tab {:op ::mult.spec/op-eval
+                                  ::mult.spec/eval-data selection}))))
             (recur)))))
     cljctools-mult))
 
@@ -121,6 +129,10 @@
   (mult.protocols/release* cljctools-mult)
   (swap! registryA dissoc (get @cljctools-mult ::id)))
 
+(defn send-data
+  [tab data]
+  {:pre [(s/assert ::mult.spec/op-value data)]}
+  (mult.protocols/send* tab (pr-str data)))
 
 (defn parse-ns
   "Safely tries to read the first form from the source text.

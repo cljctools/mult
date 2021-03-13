@@ -52,7 +52,7 @@
 			},
 			{
 				"command": "mult.eval",
-				"key": "ctrl+alt+m ctrl+alt+e"
+				"key": "ctrl+w"
 			}
 		],
 		"languages": [

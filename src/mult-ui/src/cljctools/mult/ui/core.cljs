@@ -61,7 +61,8 @@
                              :opt []))
 
 (declare current-page
-         routes)
+         routes
+         send-data)
 
 (def matchA (r/atom nil))
 (def stateA (r/atom nil))
@@ -92,15 +93,25 @@
 
                 ::foo
                 (let []
-                  (put! send| {:op ::foo})))
+                  (send-data send| {:op ::mult.spec/op-ping})))
 
               recv|
               (condp = (:op value)
 
-                ::mult.spec/ping
+                ::mult.spec/op-ping
                 (let []
-                  (println ::ping value))))
+                  (println ::ping value))
+
+                ::mult.spec/op-eval
+                (let [{:keys [::mult.spec/eval-data]} value]
+                  (println ::eval-data eval-data)
+                  (println eval-data))))
             (recur)))))))
+
+(defn send-data
+  [send| data]
+  {:pre [(s/assert ::mult.spec/op-value data)]}
+  (put! send| (pr-str data)))
 
 (defn home-page []
   [:div

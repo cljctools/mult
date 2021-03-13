@@ -53,8 +53,11 @@
                                                   ::tab-html-replacements
                                                   ::tab-view-column])))
 
+(s/def ::cmd-id string?)
+(s/def ::cmd (s/keys :req [::cmd-id]))
+(s/def ::cmds (s/map-of ::mult.spec/cmd ::cmd))
 
-(s/def ::register-commands-opts (s/keys :req [::mult.spec/cmd-ids
+(s/def ::register-commands-opts (s/keys :req [::cmds
                                               ::mult.spec/cmd|]
                                         :opt []))
 
@@ -67,7 +70,6 @@
          create-webview-panel)
 
 (defonce ^:private registryA (atom {}))
-
 
 
 (defn activate
@@ -86,9 +88,9 @@
                                             ::mult.spec/editor editor
                                             ::socket.spec/create-opts-net-socket socket.nodejs-net.core/create-opts
                                             ::mult.spec/cmd| cmd|})]
-      (register-commands* editor {::mult.spec/cmd-ids #{"mult.open"
-                                                        "mult.ping"
-                                                        "mult.eval"}
+      (register-commands* editor {::cmds {::mult.spec/cmd-open {::cmd-id "mult.open"}
+                                          ::mult.spec/cmd-ping {::cmd-id "mult.ping"}
+                                          ::mult.spec/cmd-eval {::cmd-id "mult.eval"}}
                                   ::mult.spec/cmd| cmd|})
       (swap! registryA assoc ::editor editor))))
 
@@ -135,6 +137,15 @@
                          (vscode.Position. line-start col-start)
                          (vscode.Position. line-end col-end))]
               (.getText (.-activeTextEditor vscode) range)))
+
+          (selection*
+            [_]
+            (when  (.-activeTextEditor vscode)
+              (let [start (.. vscode -activeTextEditor -selection -start)
+                    end (.. vscode -activeTextEditor -selection -end)
+                    range (vscode.Range. start end)
+                    text (.getText (.. vscode -activeTextEditor -document) range)]
+                text)))
 
           (filepath*
             [_]
@@ -270,15 +281,15 @@
 (defn register-commands
   [context
    {:as opts
-    :keys [::mult.spec/cmd-ids
+    :keys [::cmds
            ::mult.spec/cmd|]}]
   {:pre [(s/assert ::register-commands-opts opts)]}
-  (doseq [cmd-id cmd-ids]
+  (doseq [[mult-cmd {:keys [::cmd-id] :as cmd}] cmds]
     (let [disposable (.. vscode.commands
                          (registerCommand
                           cmd-id
                           (fn [& args]
-                            (put! cmd| {::mult.spec/cmd-id cmd-id}))))]
+                            (put! cmd| {:op mult-cmd}))))]
       (.. context.subscriptions (push disposable)))))
 
 (defn create-webview-panel

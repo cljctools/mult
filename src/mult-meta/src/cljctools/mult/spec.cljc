@@ -14,9 +14,7 @@
 (s/def ::mult #?(:clj #(satisfies? clojure.core.async.Mult %)
                  :cljs #(satisfies? cljs.core.async/Mult %)))
 
-(s/def ::cmd-id string?)
-(s/def ::cmd-ids (s/coll-of ::cmd-id))
-(s/def ::cmd| ::channel)
+
 
 (s/def ::on-tab-closed ifn?)
 (s/def ::on-tab-message ifn?)
@@ -87,3 +85,16 @@
                               ::tab-metas
                               ::open-tabs
                               ::active-tab]))
+
+(s/def ::cmd| ::channel)
+(s/def ::cmd #{::cmd-open
+               ::cmd-ping
+               ::cmd-eval})
+
+(s/def ::op #{::op-ping
+              ::op-eval})
+
+(s/def ::eval-data any?)
+
+(s/def ::op-value (s/keys :req-un [::op]
+                          :opt []))
