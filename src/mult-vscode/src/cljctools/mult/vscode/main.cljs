@@ -84,7 +84,7 @@
           cljctools-mult (mult.core/create {::mult.core/id ::mult
                                             ::mult.spec/config config
                                             ::mult.spec/editor editor
-                                            ::mult.spec/create-opts-net-socket socket.nodejs-net.core/create-opts
+                                            ::socket.spec/create-opts-net-socket socket.nodejs-net.core/create-opts
                                             ::mult.spec/cmd| cmd|})]
       (register-commands* editor {::mult.spec/cmd-ids #{"mult.open"
                                                         "mult.ping"

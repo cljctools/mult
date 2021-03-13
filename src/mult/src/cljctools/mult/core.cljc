@@ -26,8 +26,8 @@
                                    ::mult.spec/config
                                    ::mult.spec/editor
                                    ::mult.spec/cmd|
-                                   ::mult.spec/create-opts-net-socket]
-                             :opt [::mult.spec/create-opts-websocket]))
+                                   ::socket.spec/create-opts-net-socket]
+                             :opt [::socket.spec/create-opts-websocket]))
 
 (defonce ^:private registryA (atom {}))
 (defonce ^:private registry-connectionsA (atom {}))
@@ -41,8 +41,8 @@
 (defn create
   [{:keys [::id
            ::mult.spec/cmd|
-           ::mult.spec/create-opts-net-socket
-           ::mult.spec/create-opts-websocket
+           ::socket.spec/create-opts-net-socket
+           ::socket.spec/create-opts-websocket
            ::mult.spec/config
            ::mult.spec/editor] :as opts}]
   {:pre [(s/assert ::create-opts opts)]

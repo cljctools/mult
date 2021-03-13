@@ -87,7 +87,3 @@
                               ::tab-metas
                               ::open-tabs
                               ::active-tab]))
-
-
-(s/def ::create-net-socket-opts ifn?)
-(s/def ::create-websocket-opts ifn?)
