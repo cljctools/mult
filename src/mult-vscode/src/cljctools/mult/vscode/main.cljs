@@ -227,7 +227,16 @@
           (open*
             [_]
             (when-not (get @stateA ::panel)
-              (let [panel (create-webview-panel context opts)]
+              (let [on-tab-closed
+                    (fn on-tab-closed
+                      []
+                      (when (::mult.spec/on-tab-closed opts)
+                        ((::mult.spec/on-tab-closed opts)))
+                      (mult.protocols/release* _))
+                    panel (create-webview-panel context
+                                                (merge
+                                                 opts
+                                                 {::mult.spec/on-tab-closed on-tab-closed}))]
                 (swap! stateA assoc ::panel panel))))
 
           mult.protocols/Close
