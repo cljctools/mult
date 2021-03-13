@@ -74,8 +74,7 @@
 (defn activate
   [context]
   (go
-    (let [editor (create-editor context {::id ::editor})
-          _ (<! (mult.protocols/init* editor))
+    (let [editor (<! (create-editor context {::id ::editor}))
           {:keys [::mult.spec/cmd|]} @editor
           config-data (<! (mult.protocols/read-mult-edn* editor))
           config (clojure.walk/postwalk
@@ -118,8 +117,7 @@
   [context
    {:as opts
     :keys [::id]}]
-  {:pre [(s/assert ::create-opts opts)]
-   :post [(s/assert ::mult.spec/editor %)]}
+  {:pre [(s/assert ::create-opts opts)]}
   (let [stateA (atom nil)
 
         cmd| (chan 10)
@@ -149,8 +147,6 @@
           (show-notification*
             [_ text]
             (.. vscode.window (showInformationMessage text)))
-
-
 
           (active-text-editor*
             [_]
@@ -190,15 +186,6 @@
                       edn (js->clj json)]
                   (println text))))
 
-          (init*
-            [_]
-            (go
-              (<! (cljs-self-hosting.core/init
-                   compiler
-                   {:path (.join path (.-extensionPath context) "./resources/out/mult-bootstrap")
-                    :load-on-init '#{cljctools.mult.vscode.main
-                                     clojure.core.async}}))))
-
           mult.protocols/Release
           (release*
             [_]
@@ -216,8 +203,14 @@
                     {::opts opts
                      ::cljs-self-hosting.spec/compiler compiler
                      ::mult.spec/cmd| cmd|}))
-    
-    editor))
+    (go
+      (<! (cljs-self-hosting.core/init
+           compiler
+           {:path (.join path (.-extensionPath context) "./resources/out/mult-bootstrap")
+            :load-on-init '#{cljctools.mult.vscode.main
+                             clojure.core.async}}))
+
+      editor)))
 
 (defn create-tab
   [context opts]

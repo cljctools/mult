@@ -23,7 +23,6 @@
   (active-text-editor* [_])
   (create-tab* [_ opts])
   (read-mult-edn* [_])
-  (init* [_] "creating editor is sync (for spec validation of return value), init* is async")
   #_Release
   #_IDeref)
 
