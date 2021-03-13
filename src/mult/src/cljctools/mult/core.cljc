@@ -37,8 +37,7 @@
 
 (defonce ^:private registryA (atom {}))
 
-(declare parse-ns
-         active-ns
+(declare active-ns
          send-data
          filepath->logical-repl-meta-ids)
 
@@ -116,7 +115,7 @@
                           ::mult.logical-repl/send|]} @logical-repl
                   connection (get connections  connection-meta-id)]
             :when connection]
-      (println ::tapping logical-repl-meta-id connection-meta-id)
+      #_(println ::tapping logical-repl-meta-id connection-meta-id)
       (tap (::recv|mult connection) recv|)
       (pipe send| (::send| connection) false))
 
@@ -162,14 +161,13 @@
                       logical-repl-meta-ids (filepath->logical-repl-meta-ids
                                              config
                                              filepath)
-                      first-logical-repl (get logical-repls (first logical-repl-meta-ids))]
-                  (println logical-repl-meta-ids)
-                  (<! (mult.protocols/eval*
-                       first-logical-repl
-                       {::mult.spec/code-string selection-string
-                        ::mult.spec/ns-symbol ns-symbol}))
+                      first-logical-repl (get logical-repls (first logical-repl-meta-ids))
+                      {:keys [value]} (<! (mult.protocols/eval*
+                                           first-logical-repl
+                                           {::mult.spec/code-string selection-string
+                                            ::mult.spec/ns-symbol ns-symbol}))]
                   (send-data tab {:op ::mult.spec/op-eval
-                                  ::mult.spec/eval-data selection-string}))))
+                                  ::mult.spec/eval-result value}))))
             (recur)))))
     cljctools-mult))
 

@@ -110,7 +110,7 @@
 (s/def ::op #{::op-ping
               ::op-eval})
 
-(s/def ::eval-data any?)
+(s/def ::eval-result (s/nilable string?))
 
 (s/def ::op-value (s/keys :req-un [::op]
                           :opt []))

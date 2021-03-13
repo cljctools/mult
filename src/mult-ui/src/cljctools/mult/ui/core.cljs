@@ -4,12 +4,13 @@
                                      pub sub unsub mult tap untap mix admix unmix pipe
                                      timeout to-chan  sliding-buffer dropping-buffer
                                      pipeline pipeline-async]]
+   [clojure.string]
+   [clojure.pprint :refer [pprint]]
    [cljs.core.async.impl.protocols :refer [closed?]]
    [cljs.core.async.interop :refer-macros [<p!]]
    [goog.string.format :as format]
    [goog.string :refer [format]]
    [goog.object]
-   [clojure.string :as str]
    [cljs.reader :refer [read-string]]
    [clojure.spec.alpha :as s]
 
@@ -65,7 +66,7 @@
          send-data)
 
 (def matchA (r/atom nil))
-(def stateA (r/atom nil))
+(def stateA (r/atom {::mult.spec/eval-result ""}))
 
 (defn create
   [{:as opts
@@ -103,8 +104,8 @@
                   (println ::ping value))
 
                 ::mult.spec/op-eval
-                (let [{:keys [::mult.spec/eval-data]} value]
-                  (println eval-data))))
+                (let [{:keys [::mult.spec/eval-result]} value]
+                  (swap! stateA assoc ::mult.spec/eval-result eval-result))))
             (recur)))))))
 
 (defn send-data
@@ -130,15 +131,25 @@
        [:p "Optional foo query param: " (:foo query)])]))
 
 (defn current-page [matchA]
-  [:div
-   [:ul
-    [:li [:a {:href (rfe/href ::frontpage)} "Frontpage"]]
-    [:li
-     [:a {:href (rfe/href ::item-list)} "Item list"]]]
-   (if @matchA
-     (let [view (:view (:data @matchA))]
-       [view @matchA]))
-   [:pre (with-out-str (fipp.edn/pprint @matchA))]])
+  (r/with-let
+    [eval-resultA (r/cursor stateA [::mult.spec/eval-result])]
+    [:<>
+     [:section
+      (with-out-str (pprint @eval-resultA))
+
+      #_(map-indexed (fn [i v]
+                       ^{:key i} [:pre {} (with-out-str (pprint v))])
+                     @eval-result)]])
+
+  #_[:div
+     [:ul
+      [:li [:a {:href (rfe/href ::frontpage)} "Frontpage"]]
+      [:li
+       [:a {:href (rfe/href ::item-list)} "Item list"]]]
+     (if @matchA
+       (let [view (:view (:data @matchA))]
+         [view @matchA]))
+     [:pre (with-out-str (fipp.edn/pprint @matchA))]])
 
 (defn log-fn [& params]
   (fn [_]
