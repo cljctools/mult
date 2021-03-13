@@ -1,44 +1,41 @@
 #:cljctools.mult.spec{:connection-metas
-            #{#:cljctools.mult.spec{:connection-meta-id :shadow-devserver
-                          :host "localhost"
-                          :port 8899
-                          :connection-type :nrepl}
-              #:cljctools.mult.spec{:connection-meta-id :foo
-                          :host "localhost"
-                          :port 4200
-                          :connection-type :nrepl}}
-            :logical-repl-metas
-            #{#:cljctools.mult.spec{:logical-repl-meta-id :mult
-                          :connection-meta-id :shadow-devserver
-                          :logical-repl-type :shadow-cljs
-                          :runtime :cljs
-                          :shadow-build-key :mult
-                          :include-file?
-                          (fn [filepath]
-                            (re-matches (re-pattern ".+\\.clj(s|c)") filepath))}
+                      #{#:cljctools.mult.spec{:connection-meta-id :shadow-devserver
+                                              :repl-protocol :nrepl
+                                              :connection-opts-type :cljctools.socket.spec/tcp-socket-opts
+                                              :connection-opts #:cljctools.socket.spec{:host "localhost"
+                                                                                       :port 8899}}}
+                      :logical-repl-metas
+                      #{#:cljctools.mult.spec{:logical-repl-meta-id :mult
+                                              :connection-meta-id :shadow-devserver
+                                              :logical-repl-type :shadow-cljs
+                                              :runtime :cljs
+                                              :shadow-build-key :mult
+                                              :include-file?
+                                              (fn [filepath]
+                                                (re-matches (re-pattern ".+\\.clj(s|c)") filepath))}
 
-              #:cljctools.mult.spec{:logical-repl-meta-id :mult-ui
-                          :connection-meta-id :shadow-devserver
-                          :logical-repl-type :shadow-cljs
-                          :runtime :cljs
-                          :shadow-build-key :mult-ui
-                          :include-file?
-                          (fn [filepath]
-                            (re-matches (re-pattern ".+\\.clj(s|c)") filepath))}
+                        #:cljctools.mult.spec{:logical-repl-meta-id :mult-ui
+                                              :connection-meta-id :shadow-devserver
+                                              :logical-repl-type :shadow-cljs
+                                              :runtime :cljs
+                                              :shadow-build-key :mult-ui
+                                              :include-file?
+                                              (fn [filepath]
+                                                (re-matches (re-pattern ".+\\.clj(s|c)") filepath))}
 
-              #:cljctools.mult.spec{:logical-repl-meta-id :shadow-devserver
-                          :connection-meta-id :shadow-devserver
-                          :logical-repl-type :shadow-cljs
-                          :runtime :clj
-                          :include-file?
-                          (fn [filepath]
-                            (re-matches (re-pattern ".+dev/shadow.clj") filepath))}}
+                        #:cljctools.mult.spec{:logical-repl-meta-id :shadow-devserver
+                                              :connection-meta-id :shadow-devserver
+                                              :logical-repl-type :shadow-cljs
+                                              :runtime :clj
+                                              :include-file?
+                                              (fn [filepath]
+                                                (re-matches (re-pattern ".+dev/shadow.clj") filepath))}}
 
-            :tab-metas
-            #{#:cljctools.mult.spec{:tab-meta-id :mult
-                          :logical-repl-meta-ids #{:mult :mult-ui}}
+                      :tab-metas
+                      #{#:cljctools.mult.spec{:tab-meta-id :mult
+                                              :logical-repl-meta-ids #{:mult :mult-ui}}
 
-              #:cljctools.mult.spec{:tab-meta-id :devserver
-                          :logical-repl-meta-ids #{:devserver}}}
-            :open-tabs #{:mult}
-            :active-tab :mult}
+                        #:cljctools.mult.spec{:tab-meta-id :devserver
+                                              :logical-repl-meta-ids #{:devserver}}}
+                      :open-tabs #{:mult}
+                      :active-tab :mult}

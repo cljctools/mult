@@ -60,6 +60,26 @@
               ::mult.spec/on-tab-message (fn [tab msg]
                                            (put! tab-recv| (read-string msg)))})
 
+        connections (persistent!
+                     (reduce (fn [result {:keys [::mult.spec/connection-opts
+                                                 ::mult.spec/connection-opts-type] :as connection-meta}]
+                               (assoc! result ::mult.spec/connection-meta-id
+                                       (merge
+                                        connection-meta
+                                        {::socket.spec/socket
+                                         (condp = connection-opts-type
+
+                                           ::socket.spec/tcp-socket-opts
+                                           (socket.core/open
+                                            (merge
+                                             (create-opts-net-socket connection-opts)
+                                             {::socket.spec/connect? true
+                                              ::socket.spec/reconnection-timeout 2000}))
+                                           (do (println ::connection-opts-type-not-supported)))
+                                         })))
+                             (transient {})
+                             (get config ::mult.spec/connection-metas)))
+
         cljctools-mult
         ^{:type ::mult.spec/cljctools-mult}
         (reify

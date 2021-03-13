@@ -1,7 +1,8 @@
 (ns cljctools.mult.spec
   (:require
    [clojure.spec.alpha :as s]
-   [cljctools.mult.protocols :as mult.protocols]))
+   [cljctools.mult.protocols :as mult.protocols]
+   [cljctools.socket.spec :as socket.spec]))
 
 (s/def ::tab-id string?)
 (s/def ::tab-title string?)
@@ -44,15 +45,18 @@
                           #?(:clj (satisfies? clojure.lang.IDeref %))
                           #?(:cljs (satisfies? cljs.core/IDeref %))))
 
-
-(s/def ::host string?)
-(s/def ::port int?)
 (s/def ::connection-meta-id keyword?)
-(s/def ::connection-type #{:nrepl})
+(s/def ::repl-protocol #{:nrepl})
+(s/def ::connection-opts-type #{::socket.spec/tcp-socket-opts
+                                ::socket.spec/websocket-opts})
+(s/def ::connection-opts (s/or
+                          ::socket.spec/tcp-socket-opts ::socket.spec/tcp-socket-opts
+                          ::socket.spec/websocket-opts ::socket.spec/websocket-opts))
+
 (s/def ::connection-meta (s/keys :req [::connection-meta-id
-                                       ::host
-                                       ::port
-                                       ::connection-type]))
+                                       ::repl-protocol
+                                       ::connection-opts
+                                       ::connection-opts-type]))
 
 (s/def ::connection-metas (s/coll-of ::connection-meta :into #{}))
 
