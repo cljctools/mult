@@ -15,9 +15,7 @@
 (s/def ::mult #?(:clj #(satisfies? clojure.core.async.Mult %)
                  :cljs #(satisfies? cljs.core.async/Mult %)))
 
-(s/def ::send| ::channel)
-(s/def ::recv| ::channel)
-(s/def ::recv|mult ::mult)
+
 
 
 (s/def ::on-tab-closed ifn?)

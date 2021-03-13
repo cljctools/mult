@@ -31,13 +31,16 @@
                                    ::socket.spec/create-opts-net-socket]
                              :opt [::socket.spec/create-opts-websocket]))
 
-(defonce ^:private registryA (atom {}))
+(s/def ::send| ::mult.spec/channel)
+(s/def ::recv| ::mult.spec/channel)
+(s/def ::recv|mult ::mult.spec/mult)
 
-(def ^:const NS_DECLARATION_LINE_RANGE 100)
+(defonce ^:private registryA (atom {}))
 
 (declare parse-ns
          active-ns
-         send-data)
+         send-data
+         filepath->logical-repl-meta-ids)
 
 (defn create
   [{:keys [::id
@@ -63,9 +66,10 @@
                                            (put! tab-recv| (read-string msg)))})
 
         connections (persistent!
-                     (reduce (fn [result {:keys [::mult.spec/connection-opts
+                     (reduce (fn [result {:keys [::mult.spec/connection-meta-id
+                                                 ::mult.spec/connection-opts
                                                  ::mult.spec/connection-opts-type] :as connection-meta}]
-                               (assoc! result ::mult.spec/connection-meta-id
+                               (assoc! result connection-meta-id
                                        (merge
                                         connection-meta
                                         (condp = connection-opts-type
@@ -77,37 +81,19 @@
                                                          {::socket.spec/connect? true
                                                           ::socket.spec/reconnection-timeout 2000}))]
                                             {::socket.spec/socket socket
-                                             ::mult.spec/send| (get @socket ::socket.spec/send|)
-                                             ::mult.spec/recv| (get @socket ::socket.spec/recv|)
-                                             ::mult.spec/recv|mult (get @socket ::socket.spec/recv|mult)})
-
+                                             ::send| (get @socket ::socket.spec/send|)
+                                             ::recv| (get @socket ::socket.spec/recv|)
+                                             ::recv|mult (get @socket ::socket.spec/recv|mult)})
                                           (do (println ::connection-opts-type-not-supported))))))
                              (transient {})
                              (get config ::mult.spec/connection-metas)))
 
         logical-repls (persistent!
-                       (reduce (fn [result {:keys [::mult.spec/connection-opts
-                                                   ::mult.spec/connection-opts-type] :as connection-meta}]
-                                 (assoc! result ::mult.spec/connection-meta-id
-                                         (merge
-                                          connection-meta
-                                          (condp = connection-opts-type
-
-                                            ::socket.spec/tcp-socket-opts
-                                            (let [socket (socket.core/open
-                                                          (merge
-                                                           (create-opts-net-socket connection-opts)
-                                                           {::socket.spec/connect? true
-                                                            ::socket.spec/reconnection-timeout 2000}))]
-                                              {::socket.spec/socket socket
-                                               ::mult.spec/send| (get @socket ::socket.spec/send|)
-                                               ::mult.spec/recv| (get @socket ::socket.spec/recv|)
-                                               ::mult.spec/recv|mult (get @socket ::socket.spec/recv|mult)})
-
-                                            (do (println ::connection-opts-type-not-supported))))))
+                       (reduce (fn [result {:keys [::mult.spec/logical-repl-meta-id] :as logical-repl-meta}]
+                                 (assoc! result logical-repl-meta-id
+                                         (mult.logical-repl/create logical-repl-meta)))
                                (transient {})
-                               (get config ::mult.spec/connection-metas)))
-
+                               (get config ::mult.spec/logical-repl-metas)))
 
         cljctools-mult
         ^{:type ::mult.spec/cljctools-mult}
@@ -123,6 +109,17 @@
           #?(:clj (deref [_] @stateA))
           #?(:cljs cljs.core/IDeref)
           #?(:cljs (-deref [_] @stateA)))]
+    
+    (doseq [[logical-repl-meta-id logical-repl] logical-repls
+            :let [{:keys [::mult.spec/connection-meta-id
+                          ::mult.logical-repl/recv|
+                          ::mult.logical-repl/send|]} @logical-repl
+                  connection (get connections  connection-meta-id)]
+            :when connection]
+      (println ::tapping logical-repl-meta-id connection-meta-id)
+      (tap (::recv|mult connection) recv|)
+      (pipe send| (::send| connection) false))
+
     (reset! stateA (merge
                     opts
                     {::opts opts
@@ -159,9 +156,20 @@
 
                 ::mult.spec/cmd-eval
                 (let [active-text-editor (mult.protocols/active-text-editor* editor)
-                      selection (mult.protocols/selection* active-text-editor)]
+                      {:keys [::mult.spec/filepath
+                              ::mult.spec/ns-symbol]} (active-ns editor)
+                      selection-string (mult.protocols/selection* active-text-editor)
+                      logical-repl-meta-ids (filepath->logical-repl-meta-ids
+                                             config
+                                             filepath)
+                      first-logical-repl (get logical-repls (first logical-repl-meta-ids))]
+                  (println logical-repl-meta-ids)
+                  (<! (mult.protocols/eval*
+                       first-logical-repl
+                       {::mult.spec/code-string selection-string
+                        ::mult.spec/ns-symbol ns-symbol}))
                   (send-data tab {:op ::mult.spec/op-eval
-                                  ::mult.spec/eval-data selection}))))
+                                  ::mult.spec/eval-data selection-string}))))
             (recur)))))
     cljctools-mult))
 
@@ -183,32 +191,38 @@
   {:pre [(s/assert ::mult.spec/op-value data)]}
   (mult.protocols/send* tab (pr-str data)))
 
-(defn parse-ns
-  "Safely tries to read the first form from the source text.
-   Returns ns name or nil"
-  [filepath text]
-  (try
-    (when (re-matches #".+\.clj(s|c)?" filepath)
-      (let [fform (read-string text)]
-        (when (= (first fform) 'ns)
-          (second fform))))
-    (catch js/Error error (do
-                            (println ::parse-ns filepath)
-                            (println error)))))
+#_(defn parse-ns
+    "Safely tries to read the first form from the source text.
+   Returns ns name or nil.
+   But: does not work if there are reader conditionals"
+    [filepath text]
+    (try
+      (when (re-matches #".+\.clj(s|c)?" filepath)
+        (let [fform (read-string text)]
+          (when (= (first fform) 'ns)
+            (second fform))))
+      (catch js/Error error (do
+                              (println ::parse-ns filepath)
+                              (println error)))))
 (defn active-ns
   [editor]
   (when-let [text-editor (mult.protocols/active-text-editor* editor)]
-    (let [range [[0 0] [NS_DECLARATION_LINE_RANGE 0]]
-          text (mult.protocols/text* text-editor range)
-          filepath (mult.protocols/filepath* text-editor)
-          ns-symbol (parse-ns filepath text)
+    (let [filepath (mult.protocols/filepath* text-editor)
+          range [0 0 1 0]
+          first-line (mult.protocols/text* text-editor range)
+          ns-string (subs first-line 4)
+          ns-symbol (symbol ns-string)
           data {::mult.spec/filepath filepath
                 ::mult.spec/ns-symbol ns-symbol}]
       data
       #_(prn active-text-editor.document.languageId))))
 
-
-(defn create-logical-repl
-  []
-  
-  )
+(defn filepath->logical-repl-meta-ids
+  [config filepath]
+  (into []
+        (comp
+         (filter (fn [{:keys [::mult.spec/logical-repl-meta-id
+                              ::mult.spec/include-file?]}]
+                   (include-file? filepath)))
+         (map ::mult.spec/logical-repl-meta-id))
+        (::mult.spec/logical-repl-metas config)))

@@ -29,7 +29,6 @@
 
 (do (clojure.spec.alpha/check-asserts true))
 
-
 (s/def ::id keyword?)
 
 (s/def ::create-opts (s/keys :req [::id]
@@ -131,12 +130,17 @@
         (reify
           mult.protocols/TextEditor
           (text*
-            [_ range]
-            (let [[line-start col-start line-end col-end] range
-                  range (vscode.Range.
-                         (vscode.Position. line-start col-start)
-                         (vscode.Position. line-end col-end))]
-              (.getText (.-activeTextEditor vscode) range)))
+            [_]
+            (when-let [vscode-active-text-editor (.. vscode -window -activeTextEditor)]
+              (.getText (.. vscode-active-text-editor -document))))
+          (text*
+           [_ range]
+           (when-let [vscode-active-text-editor (.. vscode -window -activeTextEditor)]
+             (let [[line-start col-start line-end col-end] range
+                   vscode-range (vscode.Range.
+                                 (vscode.Position. line-start col-start)
+                                 (vscode.Position. line-end col-end))]
+               (.getText (.. vscode-active-text-editor -document) vscode-range))))
 
           (selection*
             [_]
@@ -149,7 +153,8 @@
 
           (filepath*
             [_]
-            (.-fileName (.-document (.-activeTextEditor vscode)))))
+            (when-let [vscode-active-text-editor (.. vscode -window -activeTextEditor)]
+              (.. vscode-active-text-editor -document -fileName))))
 
         editor
         ^{:type ::mult.spec/editor}
@@ -219,6 +224,7 @@
            compiler
            {:path (.join path (.-extensionPath context) "./resources/out/mult-bootstrap")
             :load-on-init '#{cljctools.mult.vscode.main
+                             cljctools.mult.core
                              clojure.core.async}}))
 
       editor)))
