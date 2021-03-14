@@ -37,15 +37,15 @@
 (s/def ::recv| ::mult.spec/channel)
 (s/def ::recv|mult ::mult.spec/mult)
 
-(def ui-stateA (atom
-                ^{:type ::mult.spec/ui-state}
-                {}))
-
 (defonce ^:private registryA (atom {}))
 
 (declare read-ns-symbol
          send-data
          filepath->logical-repl-meta-ids)
+
+(defonce ui-stateA (atom
+                    ^{:type ::mult.spec/ui-state}
+                    {}))
 
 (defn create
   [{:keys [::id

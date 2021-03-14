@@ -65,10 +65,10 @@
          routes
          send-data)
 
-(def matchA (r/atom nil))
-(def ui-stateA (r/atom
-                ^{:type ::mult.spec/ui-state}
-                {}))
+(defonce matchA (r/atom nil))
+(defonce ui-stateA (r/atom
+                    ^{:type ::mult.spec/ui-state}
+                    {}))
 
 (defn create
   [{:as opts
