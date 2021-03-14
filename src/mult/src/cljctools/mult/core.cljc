@@ -11,7 +11,8 @@
    #?(:cljs [goog.string :refer [format]])
    [clojure.spec.alpha :as s]
 
-   
+   [sci.core :as sci]
+
    [cljctools.socket.spec :as socket.spec]
    [cljctools.socket.core :as socket.core]
 
@@ -27,7 +28,6 @@
 
 (s/def ::create-opts (s/keys :req [::id
                                    ::mult.spec/config
-                                   ::mult.spec/config-as-data
                                    ::mult.spec/editor
                                    ::socket.spec/create-opts-net-socket]
                              :opt [::socket.spec/create-opts-websocket]))
@@ -52,7 +52,6 @@
            ::socket.spec/create-opts-net-socket
            ::socket.spec/create-opts-websocket
            ::mult.spec/config
-           ::mult.spec/config-as-data
            ::mult.spec/editor] :as opts}]
   {:pre [(s/assert ::create-opts opts)]
    :post [(s/assert ::mult.spec/cljctools-mult %)]}
@@ -141,7 +140,7 @@
                                  ::mult.spec/ui-state new-state})))
     (do
       (mult.protocols/open* tab)
-      (swap! ui-stateA assoc ::mult.spec/config-as-data config-as-data))
+      (swap! ui-stateA assoc ::mult.spec/config config))
     (go
       (loop []
         (let [[value port] (alts! [tab-evt| cmd| op|])]
@@ -254,10 +253,13 @@
 
 (defn filepath->logical-repl-ids
   [config filepath]
-  (into []
-        (comp
-         (filter (fn [{:keys [::mult.spec/logical-repl-id
-                              ::mult.spec/include-file?]}]
-                   (include-file? filepath)))
-         (map ::mult.spec/logical-repl-id))
-        (::mult.spec/logical-repl-metas config)))
+  (let [opts {:namespaces {'foo.bar {'x 1}}}
+        sci-ctx (sci/init opts)]
+    (into []
+          (comp
+           (filter (fn [{:keys [::mult.spec/logical-repl-id
+                                ::mult.spec/include-file?]}]
+                     (let [include-file?-fn (sci/eval-string* sci-ctx (pr-str include-file?))]
+                       (include-file?-fn filepath))))
+           (map ::mult.spec/logical-repl-id))
+          (::mult.spec/logical-repl-metas config))))

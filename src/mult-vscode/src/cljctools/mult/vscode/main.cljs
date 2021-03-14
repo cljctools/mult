@@ -11,8 +11,6 @@
    [goog.string :refer [format]]
    [clojure.spec.alpha :as s]
 
-   [cljctools.cljs-self-hosting.spec :as cljs-self-hosting.spec]
-   [cljctools.cljs-self-hosting.core :as cljs-self-hosting.core]
    [clojure.walk]
 
    [cljctools.socket.spec :as socket.spec]
@@ -74,15 +72,9 @@
 (defn activate
   [context]
   (go
-    (let [editor (<! (create-editor context {::id ::editor}))
-          config-as-data (<! (mult.protocols/read-mult-edn* editor))
-          config (clojure.walk/postwalk
-                  (fn [form]
-                    (if (and (list? form) (= (first form) 'fn))
-                      (eval form)
-                      form))  config-as-data)
+    (let [editor (create-editor context {::id ::editor})
+          config (<! (mult.protocols/read-mult-edn* editor))
           cljctools-mult (mult.core/create {::mult.core/id ::mult
-                                            ::mult.spec/config-as-data config-as-data
                                             ::mult.spec/config config
                                             ::mult.spec/editor editor
                                             ::socket.spec/create-opts-net-socket socket.nodejs-net.core/create-opts})]
@@ -119,14 +111,13 @@
   [context
    {:as opts
     :keys [::id]}]
-  {:pre [(s/assert ::create-opts opts)]}
+  {:pre [(s/assert ::create-opts opts)]
+   :post [(s/assert ::mult.spec/editor %)]}
   (let [stateA (atom nil)
 
         cmd| (chan 10)
 
         op| (chan (sliding-buffer 10))
-
-        compiler (cljs-self-hosting.core/create-compiler)
 
         active-text-editor
         ^{:type ::mult.spec/text-editor}
@@ -224,18 +215,9 @@
     (reset! stateA (merge
                     opts
                     {::opts opts
-                     ::cljs-self-hosting.spec/compiler compiler
                      ::mult.spec/cmd| cmd|
                      ::mult.spec/op| op|}))
-    (go
-      (<! (cljs-self-hosting.core/init
-           compiler
-           {:path (.join path (.-extensionPath context) "./resources/out/mult-bootstrap")
-            :load-on-init '#{cljctools.mult.vscode.main
-                             cljctools.mult.core
-                             clojure.core.async}}))
-
-      editor)))
+    editor))
 
 (defn create-tab
   [context opts]
@@ -364,36 +346,3 @@
     panel))
 
 
-
-
-
-(comment
-
-  (type '(println 3))
-  (eval '(println 3))
-  (type '(let [x 3]
-           x))
-  (eval '(let [x 3]
-           x))
-
-  (take! (cljs-self-hosting.core/eval-str
-          (::cljs-self-hosting.spec/compiler  @(get @registryA ::editor))
-          {::cljs-self-hosting.spec/code-str
-           "
-            (do
-            
-            [(cljs.core/type cljs.core/type)
-            (type registryA)
-            ]
-            )
-            
-    "
-           ::cljs-self-hosting.spec/ns-symbol
-           'cljctools.mult.vscode.main})
-         (fn [data]
-           (prn data)
-           (prn (type (:value data)))))
-
-
- ;;
-  )

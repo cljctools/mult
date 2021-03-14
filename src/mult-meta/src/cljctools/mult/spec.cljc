@@ -105,8 +105,6 @@
                               ::open-logical-tab-ids
                               ::active-logical-tab-id]))
 
-(s/def ::config-as-data ::config)
-
 (s/def ::cmd| ::channel)
 (s/def ::cmd #{::cmd-open
                ::cmd-ping
@@ -129,7 +127,7 @@
                           :opt [::eval-result
                                 ::ns-symbol
                                 ::active-logical-tab-id
-                                ::config-as-data
+                                ::config
                                 ::logical-repl-id]))
 
 
