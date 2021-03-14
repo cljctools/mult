@@ -143,14 +143,14 @@
     [eval-resultA (r/cursor ui-stateA [::mult.spec/eval-result])
      config-as-dataA (r/cursor ui-stateA [::mult.spec/config-as-data])
      ns-symbolA (r/cursor ui-stateA [::mult.spec/ns-symbol])
-     active-logical-repl-meta-idA (r/cursor ui-stateA [::mult.spec/logical-repl-meta-id])]
-    (let [active-logical-repl-meta-id @active-logical-repl-meta-idA]
+     active-logical-repl-idA (r/cursor ui-stateA [::mult.spec/logical-repl-id])]
+    (let [active-logical-repl-id @active-logical-repl-idA]
       [:<>
        [:> AntRow
-        (map (fn [{:keys [::mult.spec/logical-repl-meta-id] :as logical-repl-meta}]
-               (let [color (if (= active-logical-repl-meta-id  logical-repl-meta-id) "black" "grey")]
-                 ^{:key  logical-repl-meta-id} [:> AntCol {:span 4}
-                                                [:div {:style {:color color}} logical-repl-meta-id]]))
+        (map (fn [{:keys [::mult.spec/logical-repl-id] :as logical-repl-meta}]
+               (let [color (if (= active-logical-repl-id  logical-repl-id) "black" "grey")]
+                 ^{:key  logical-repl-id} [:> AntCol {:span 4}
+                                                [:div {:style {:color color}} logical-repl-id]]))
              (::mult.spec/logical-repl-metas @config-as-dataA))]
        [:> AntRow
         [:div @ns-symbolA]]

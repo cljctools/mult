@@ -41,7 +41,7 @@
 
 (declare read-ns-symbol
          send-data
-         filepath->logical-repl-meta-ids)
+         filepath->logical-repl-ids)
 
 (defonce ui-stateA (atom
                     ^{:type ::mult.spec/ui-state}
@@ -73,10 +73,10 @@
                                            (put! tab-recv| (read-string msg)))})
 
         connections (persistent!
-                     (reduce (fn [result {:keys [::mult.spec/connection-meta-id
+                     (reduce (fn [result {:keys [::mult.spec/connection-id
                                                  ::mult.spec/connection-opts
                                                  ::mult.spec/connection-opts-type] :as connection-meta}]
-                               (assoc! result connection-meta-id
+                               (assoc! result connection-id
                                        (merge
                                         connection-meta
                                         (condp = connection-opts-type
@@ -96,8 +96,8 @@
                              (get config ::mult.spec/connection-metas)))
 
         logical-repls (persistent!
-                       (reduce (fn [result {:keys [::mult.spec/logical-repl-meta-id] :as logical-repl-meta}]
-                                 (assoc! result logical-repl-meta-id
+                       (reduce (fn [result {:keys [::mult.spec/logical-repl-id] :as logical-repl-meta}]
+                                 (assoc! result logical-repl-id
                                          (mult.logical-repl/create logical-repl-meta)))
                                (transient {})
                                (get config ::mult.spec/logical-repl-metas)))
@@ -117,13 +117,13 @@
           #?(:cljs cljs.core/IDeref)
           #?(:cljs (-deref [_] @stateA)))]
 
-    (doseq [[logical-repl-meta-id logical-repl] logical-repls
-            :let [{:keys [::mult.spec/connection-meta-id
+    (doseq [[logical-repl-id logical-repl] logical-repls
+            :let [{:keys [::mult.spec/connection-id
                           ::mult.logical-repl/recv|
                           ::mult.logical-repl/send|]} @logical-repl
-                  connection (get connections  connection-meta-id)]
+                  connection (get connections  connection-id)]
             :when connection]
-      #_(println ::tapping logical-repl-meta-id connection-meta-id)
+      #_(println ::tapping logical-repl-id connection-id)
       (tap (::recv|mult connection) recv|)
       (pipe send| (::send| connection) false))
 
@@ -157,14 +157,14 @@
                       filepath (mult.protocols/filepath* active-text-editor)]
                   (when filepath
                     (let [ns-symbol (read-ns-symbol active-text-editor filepath)
-                          logical-repl-meta-ids (filepath->logical-repl-meta-ids
+                          logical-repl-ids (filepath->logical-repl-ids
                                                  config
                                                  filepath)
-                          logical-repl (get logical-repls (first logical-repl-meta-ids))]
+                          logical-repl (get logical-repls (first logical-repl-ids))]
                       (when (and ns-symbol logical-repl)
                         (println ::op-did-change-active-text-editor)
                         (swap! ui-stateA merge {::mult.spec/ns-symbol ns-symbol
-                                                ::mult.spec/logical-repl-meta-id (::mult.spec/logical-repl-meta-id @logical-repl)})
+                                                ::mult.spec/logical-repl-id (::mult.spec/logical-repl-id @logical-repl)})
                         #_(<! (mult.protocols/on-activate* logical-repl ns-symbol)))))))
 
               tab-evt|
@@ -194,10 +194,10 @@
                   (when filepath
                     (let [ns-symbol (read-ns-symbol active-text-editor filepath)
                           selection-string (mult.protocols/selection* active-text-editor)
-                          logical-repl-meta-ids (filepath->logical-repl-meta-ids
+                          logical-repl-ids (filepath->logical-repl-ids
                                                  config
                                                  filepath)
-                          logical-repl (get logical-repls (first logical-repl-meta-ids))]
+                          logical-repl (get logical-repls (first logical-repl-ids))]
                       (when (and ns-symbol logical-repl)
                         (let [{:keys [value]} (<! (mult.protocols/eval*
                                                    logical-repl
@@ -248,12 +248,12 @@
         ns-symbol))
     #_(prn active-text-editor.document.languageId)))
 
-(defn filepath->logical-repl-meta-ids
+(defn filepath->logical-repl-ids
   [config filepath]
   (into []
         (comp
-         (filter (fn [{:keys [::mult.spec/logical-repl-meta-id
+         (filter (fn [{:keys [::mult.spec/logical-repl-id
                               ::mult.spec/include-file?]}]
                    (include-file? filepath)))
-         (map ::mult.spec/logical-repl-meta-id))
+         (map ::mult.spec/logical-repl-id))
         (::mult.spec/logical-repl-metas config)))

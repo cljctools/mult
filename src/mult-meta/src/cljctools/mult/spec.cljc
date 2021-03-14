@@ -57,7 +57,7 @@
                                               ::ns-symbol]))
 
 
-(s/def ::connection-meta-id keyword?)
+(s/def ::connection-id keyword?)
 (s/def ::repl-protocol #{:nrepl})
 (s/def ::connection-opts-type #{::socket.spec/tcp-socket-opts
                                 ::socket.spec/websocket-opts})
@@ -65,14 +65,14 @@
                           ::socket.spec/tcp-socket-opts ::socket.spec/tcp-socket-opts
                           ::socket.spec/websocket-opts ::socket.spec/websocket-opts))
 
-(s/def ::connection-meta (s/keys :req [::connection-meta-id
+(s/def ::connection-meta (s/keys :req [::connection-id
                                        ::repl-protocol
                                        ::connection-opts
                                        ::connection-opts-type]))
 
 (s/def ::connection-metas (s/coll-of ::connection-meta :into #{}))
 
-(s/def ::logical-repl-meta-id keyword?)
+(s/def ::logical-repl-id keyword?)
 (s/def ::logical-repl-type #{:shadow-cljs :nrepl})
 (s/def ::runtime #{:cljs :clj})
 (s/def ::shadow-build-key keyword?)
@@ -80,8 +80,8 @@
                         ::ifn? ifn?
                         ::list? list?))
 
-(s/def ::logical-repl-meta (s/keys :req [::logical-repl-meta-id
-                                         ::connection-meta-id
+(s/def ::logical-repl-meta (s/keys :req [::logical-repl-id
+                                         ::connection-id
                                          ::logical-repl-type
                                          ::runtime
                                          ::include-file?]
@@ -89,20 +89,21 @@
 
 (s/def ::logical-repl-metas (s/coll-of ::logical-repl-meta :into #{}))
 
-(s/def ::tab-meta-id keyword?)
-(s/def ::logical-repl-meta-ids (s/coll-of ::logical-repl-meta-id :into #{}))
+(s/def ::logical-tab-id keyword?)
+(s/def ::logical-repl-ids (s/coll-of ::logical-repl-id :into #{}))
 
-(s/def ::tab-meta (s/keys :req [::tab-meta-id
-                                   ::logical-repl-meta-ids]))
+(s/def ::logical-tab-meta (s/keys :req [::logical-tab-id
+                                        ::logical-repl-ids]))
+(s/def ::logical-tab-metas (s/coll-of ::logical-tab-meta :into #{}))
 
-(s/def ::open-tabs (s/coll-of ::tab-meta-id :into #{}))
-(s/def ::active-tab ::tab-meta-id)
+(s/def ::open-logical-tab-ids (s/coll-of ::logical-tab-id :into #{}))
+(s/def ::active-logical-tab-id ::logical-tab-id)
 
 (s/def ::config (s/keys :req [::connection-metas
                               ::logical-repl-metas
-                              ::tab-metas
-                              ::open-tabs
-                              ::active-tab]))
+                              ::logical-tab-metas
+                              ::open-logical-tab-ids
+                              ::active-logical-tab-id]))
 
 (s/def ::config-as-data ::config)
 
@@ -127,6 +128,6 @@
                           :opt [::eval-result
                                 ::ns-symbol
                                 ::config-as-data
-                                ::logical-repl-meta-id]))
+                                ::logical-repl-id]))
 
 
