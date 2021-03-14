@@ -36,6 +36,6 @@
                                               :logical-repl-ids #{:mult :mult-ui}}
 
                         #:cljctools.mult.spec{:logical-tab-id :devserver
-                                              :logical-repl-ids #{:devserver}}}
+                                              :logical-repl-ids #{:shadow-devserver}}}
                       :open-logical-tab-ids #{:mult}
                       :active-logical-tab-id :mult}

@@ -144,14 +144,36 @@
      config-as-dataA (r/cursor ui-stateA [::mult.spec/config-as-data])
      ns-symbolA (r/cursor ui-stateA [::mult.spec/ns-symbol])
      active-logical-repl-idA (r/cursor ui-stateA [::mult.spec/logical-repl-id])]
-    (let [active-logical-repl-id @active-logical-repl-idA]
+    (let [active-logical-repl-id @active-logical-repl-idA
+          config-as-data @config-as-dataA]
       [:<>
+       [:> AntRow]
        [:> AntRow
-        (map (fn [{:keys [::mult.spec/logical-repl-id] :as logical-repl-meta}]
-               (let [color (if (= active-logical-repl-id  logical-repl-id) "black" "grey")]
-                 ^{:key  logical-repl-id} [:> AntCol {:span 4}
-                                                [:div {:style {:color color}} logical-repl-id]]))
-             (::mult.spec/logical-repl-metas @config-as-dataA))]
+        [:> AntTabs {:size "small"
+                     :animated false
+                     :defaultActiveKey nil
+                     :onChange (fn [id] (println (keyword id)))}
+         (map (fn [{:keys [::mult.spec/logical-tab-id
+                           ::mult.spec/logical-repl-ids] :as logical-tab-meta}]
+                (let []
+                  ^{:key  logical-tab-id}
+                  [:> (.-TabPane AntTabs) {:tab (str logical-tab-id)
+                                           :key (str logical-tab-id)}
+                   (map (fn [{:keys [::mult.spec/logical-repl-id] :as logical-repl-meta}]
+                          (let [color (if (= active-logical-repl-id  logical-repl-id) "black" "grey")]
+                            ^{:key  logical-repl-id}
+                            [:div {:style {:color color}} logical-repl-id]))
+                        (into []
+                              (comp
+                               (filter (fn [{:keys [::mult.spec/logical-repl-id]}] (some #(= logical-repl-id %) logical-repl-ids))))
+                              (::mult.spec/logical-repl-metas @config-as-dataA)))]))
+              (::mult.spec/logical-tab-metas config-as-data))]]
+       #_[:> AntRow
+          (map (fn [{:keys [::mult.spec/logical-repl-id] :as logical-repl-meta}]
+                 (let [color (if (= active-logical-repl-id  logical-repl-id) "black" "grey")]
+                   ^{:key  logical-repl-id} [:> AntCol {:span 4}
+                                             [:div {:style {:color color}} logical-repl-id]]))
+               (::mult.spec/logical-repl-metas @config-as-dataA))]
        [:> AntRow
         [:div @ns-symbolA]]
        [:> AntRow

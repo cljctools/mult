@@ -116,7 +116,8 @@
 (s/def ::op #{::op-ping
               ::op-eval
               ::op-update-ui-state
-              ::op-did-change-active-text-editor})
+              ::op-did-change-active-text-editor
+              ::op-select-logical-tab})
 
 (s/def ::eval-result (s/nilable string?))
 
@@ -127,6 +128,7 @@
 (s/def ::ui-state (s/keys :req []
                           :opt [::eval-result
                                 ::ns-symbol
+                                ::active-logical-tab-id
                                 ::config-as-data
                                 ::logical-repl-id]))
 

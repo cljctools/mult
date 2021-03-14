@@ -158,14 +158,18 @@
                   (when filepath
                     (let [ns-symbol (read-ns-symbol active-text-editor filepath)
                           logical-repl-ids (filepath->logical-repl-ids
-                                                 config
-                                                 filepath)
+                                            config
+                                            filepath)
                           logical-repl (get logical-repls (first logical-repl-ids))]
                       (when (and ns-symbol logical-repl)
                         (println ::op-did-change-active-text-editor)
                         (swap! ui-stateA merge {::mult.spec/ns-symbol ns-symbol
                                                 ::mult.spec/logical-repl-id (::mult.spec/logical-repl-id @logical-repl)})
-                        #_(<! (mult.protocols/on-activate* logical-repl ns-symbol)))))))
+                        #_(<! (mult.protocols/on-activate* logical-repl ns-symbol))))))
+
+                ::mult.spec/op-select-logical-tab
+                (let [{:keys []} value]
+                  (println ::op-select-logical-tab)))
 
               tab-evt|
               (condp = (:op value)
@@ -195,8 +199,8 @@
                     (let [ns-symbol (read-ns-symbol active-text-editor filepath)
                           selection-string (mult.protocols/selection* active-text-editor)
                           logical-repl-ids (filepath->logical-repl-ids
-                                                 config
-                                                 filepath)
+                                            config
+                                            filepath)
                           logical-repl (get logical-repls (first logical-repl-ids))]
                       (when (and ns-symbol logical-repl)
                         (let [{:keys [value]} (<! (mult.protocols/eval*
