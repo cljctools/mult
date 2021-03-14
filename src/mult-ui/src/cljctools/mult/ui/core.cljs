@@ -40,6 +40,7 @@
    ["antd/lib/input" :default AntInput]
    ["antd/lib/tabs" :default AntTabs]
    ["antd/lib/table" :default AntTable]
+   ["antd/lib/tag" :default AntTag]
 
    ["antd/lib/checkbox" :default AntCheckbox]
 
@@ -159,14 +160,19 @@
                   ^{:key  logical-tab-id}
                   [:> (.-TabPane AntTabs) {:tab (str logical-tab-id)
                                            :key (str logical-tab-id)}
-                   (map (fn [{:keys [::mult.spec/logical-repl-id] :as logical-repl-meta}]
-                          (let [color (if (= active-logical-repl-id  logical-repl-id) "black" "grey")]
-                            ^{:key  logical-repl-id}
-                            [:div {:style {:color color}} logical-repl-id]))
-                        (into []
-                              (comp
-                               (filter (fn [{:keys [::mult.spec/logical-repl-id]}] (some #(= logical-repl-id %) logical-repl-ids))))
-                              (::mult.spec/logical-repl-metas @config-as-dataA)))]))
+                   [:span
+                    (map (fn [{:keys [::mult.spec/logical-repl-id] :as logical-repl-meta}]
+                           (let [active? (= active-logical-repl-id  logical-repl-id)]
+                             ^{:key  logical-repl-id}
+                             #_[:> (.-CheckableTag AntTag) {:key logical-repl-id
+                                                            :checked active?} logical-repl-id]
+                             [:span {:style {:cursor "pointer"
+                                             :margin-right 8
+                                             :color (if active? "black" "grey")}} (str logical-repl-id)]))
+                         (into []
+                               (comp
+                                (filter (fn [{:keys [::mult.spec/logical-repl-id]}] (some #(= logical-repl-id %) logical-repl-ids))))
+                               (::mult.spec/logical-repl-metas @config-as-dataA)))]]))
               (::mult.spec/logical-tab-metas config-as-data))]]
        #_[:> AntRow
           (map (fn [{:keys [::mult.spec/logical-repl-id] :as logical-repl-meta}]
