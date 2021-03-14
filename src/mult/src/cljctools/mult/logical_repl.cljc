@@ -174,6 +174,10 @@
         ^{:type ::mult.spec/logical-repl}
         (reify
           mult.protocols/LogicalRepl
+          (on-activate*
+            [_ ns-symbol]
+            {:pre [(s/assert ::mult.spec/ns-symbol ns-symbol)]}
+            (go))
           (eval*
             [_ {:as opts
                 :keys [::mult.spec/code-string

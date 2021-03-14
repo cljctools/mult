@@ -42,6 +42,7 @@
 
 (defprotocol LogicalRepl
   (eval* [_ opts])
+  (on-activate* [_ ns-symbol])
   #_Release
   #_IDeref)
 

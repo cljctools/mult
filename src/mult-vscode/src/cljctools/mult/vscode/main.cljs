@@ -75,22 +75,23 @@
   [context]
   (go
     (let [editor (<! (create-editor context {::id ::editor}))
-          {:keys [::mult.spec/cmd|]} @editor
-          config-data (<! (mult.protocols/read-mult-edn* editor))
+          config-as-data (<! (mult.protocols/read-mult-edn* editor))
           config (clojure.walk/postwalk
                   (fn [form]
                     (if (and (list? form) (= (first form) 'fn))
                       (eval form)
-                      form))  config-data)
+                      form))  config-as-data)
           cljctools-mult (mult.core/create {::mult.core/id ::mult
+                                            ::mult.spec/config-as-data config-as-data
                                             ::mult.spec/config config
                                             ::mult.spec/editor editor
-                                            ::socket.spec/create-opts-net-socket socket.nodejs-net.core/create-opts
-                                            ::mult.spec/cmd| cmd|})]
+                                            ::socket.spec/create-opts-net-socket socket.nodejs-net.core/create-opts})]
       (register-commands* editor {::cmds {::mult.spec/cmd-open {::cmd-id "mult.open"}
                                           ::mult.spec/cmd-ping {::cmd-id "mult.ping"}
                                           ::mult.spec/cmd-eval {::cmd-id "mult.eval"}}
-                                  ::mult.spec/cmd| cmd|})
+                                  ::mult.spec/cmd| (::mult.spec/cmd| @editor)})
+      (pipe (::mult.spec/cmd| @editor)  (::mult.spec/cmd| @cljctools-mult))
+      (pipe (::mult.spec/op| @editor)  (::mult.spec/op| @cljctools-mult))
       (swap! registryA assoc ::editor editor))))
 
 (defn deactivate
@@ -123,6 +124,8 @@
 
         cmd| (chan 10)
 
+        op| (chan (sliding-buffer 10))
+
         compiler (cljs-self-hosting.core/create-compiler)
 
         active-text-editor
@@ -134,13 +137,13 @@
             (when-let [vscode-active-text-editor (.. vscode -window -activeTextEditor)]
               (.getText (.. vscode-active-text-editor -document))))
           (text*
-           [_ range]
-           (when-let [vscode-active-text-editor (.. vscode -window -activeTextEditor)]
-             (let [[line-start col-start line-end col-end] range
-                   vscode-range (vscode.Range.
-                                 (vscode.Position. line-start col-start)
-                                 (vscode.Position. line-end col-end))]
-               (.getText (.. vscode-active-text-editor -document) vscode-range))))
+            [_ range]
+            (when-let [vscode-active-text-editor (.. vscode -window -activeTextEditor)]
+              (let [[line-start col-start line-end col-end] range
+                    vscode-range (vscode.Range.
+                                  (vscode.Position. line-start col-start)
+                                  (vscode.Position. line-end col-end))]
+                (.getText (.. vscode-active-text-editor -document) vscode-range))))
 
           (selection*
             [_]
@@ -214,11 +217,16 @@
 
           cljs.core/IDeref
           (-deref [_] @stateA))]
+
+    (do
+      (.onDidChangeActiveTextEditor (.-window vscode) (fn [text-editor]
+                                                        (put! op| {:op ::mult.spec/op-did-change-active-text-editor}))))
     (reset! stateA (merge
                     opts
                     {::opts opts
                      ::cljs-self-hosting.spec/compiler compiler
-                     ::mult.spec/cmd| cmd|}))
+                     ::mult.spec/cmd| cmd|
+                     ::mult.spec/op| op|}))
     (go
       (<! (cljs-self-hosting.core/init
            compiler

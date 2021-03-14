@@ -66,7 +66,9 @@
          send-data)
 
 (def matchA (r/atom nil))
-(def stateA (r/atom {::mult.spec/eval-result ""}))
+(def ui-stateA (r/atom
+                ^{:type ::mult.spec/ui-state}
+                {}))
 
 (defn create
   [{:as opts
@@ -103,9 +105,15 @@
                 (let []
                   (println ::ping value))
 
+                ::mult.spec/op-update-ui-state
+                (let [{:keys [::mult.spec/ui-state]} value]
+                  (println ::op-update-ui-state)
+                  (reset! ui-stateA ui-state))
+
                 ::mult.spec/op-eval
                 (let [{:keys [::mult.spec/eval-result]} value]
-                  (swap! stateA assoc ::mult.spec/eval-result eval-result))))
+                  (println ::op-eval)
+                  #_(swap! stateA assoc ::mult.spec/eval-result eval-result))))
             (recur)))))))
 
 (defn send-data
@@ -132,14 +140,27 @@
 
 (defn current-page [matchA]
   (r/with-let
-    [eval-resultA (r/cursor stateA [::mult.spec/eval-result])]
-    [:<>
-     [:section
-      (with-out-str (pprint @eval-resultA))
+    [eval-resultA (r/cursor ui-stateA [::mult.spec/eval-result])
+     config-as-dataA (r/cursor ui-stateA [::mult.spec/config-as-data])
+     ns-symbolA (r/cursor ui-stateA [::mult.spec/ns-symbol])
+     active-logical-repl-meta-idA (r/cursor ui-stateA [::mult.spec/logical-repl-meta-id])]
+    (let [active-logical-repl-meta-id @active-logical-repl-meta-idA]
+      [:<>
+       [:> AntRow
+        (map (fn [{:keys [::mult.spec/logical-repl-meta-id] :as logical-repl-meta}]
+               (let [color (if (= active-logical-repl-meta-id  logical-repl-meta-id) "black" "grey")]
+                 ^{:key  logical-repl-meta-id} [:> AntCol {:span 4}
+                                                [:div {:style {:color color}} logical-repl-meta-id]]))
+             (::mult.spec/logical-repl-metas @config-as-dataA))]
+       [:> AntRow
+        [:div @ns-symbolA]]
+       [:> AntRow
+        [:section
+         (with-out-str (pprint @eval-resultA))
 
-      #_(map-indexed (fn [i v]
-                       ^{:key i} [:pre {} (with-out-str (pprint v))])
-                     @eval-result)]])
+         #_(map-indexed (fn [i v]
+                          ^{:key i} [:pre {} (with-out-str (pprint v))])
+                        @eval-result)]]]))
 
   #_[:div
      [:ul

@@ -24,35 +24,43 @@
 
 (s/def ::id  (s/or :keyword keyword? :string string?))
 
+
 (s/def ::create-opts (s/keys :req [::id
                                    ::mult.spec/config
+                                   ::mult.spec/config-as-data
                                    ::mult.spec/editor
-                                   ::mult.spec/cmd|
                                    ::socket.spec/create-opts-net-socket]
                              :opt [::socket.spec/create-opts-websocket]))
+
 
 (s/def ::send| ::mult.spec/channel)
 (s/def ::recv| ::mult.spec/channel)
 (s/def ::recv|mult ::mult.spec/mult)
 
+(def ui-stateA (atom
+                ^{:type ::mult.spec/ui-state}
+                {}))
+
 (defonce ^:private registryA (atom {}))
 
-(declare active-ns
+(declare read-ns-symbol
          send-data
          filepath->logical-repl-meta-ids)
 
 (defn create
   [{:keys [::id
-           ::mult.spec/cmd|
            ::socket.spec/create-opts-net-socket
            ::socket.spec/create-opts-websocket
            ::mult.spec/config
+           ::mult.spec/config-as-data
            ::mult.spec/editor] :as opts}]
   {:pre [(s/assert ::create-opts opts)]
    :post [(s/assert ::mult.spec/cljctools-mult %)]}
   (let [stateA (atom nil)
         tab-recv| (chan 10)
         tab-evt| (chan 10)
+        op| (chan 10)
+        cmd| (chan 10)
 
         tab (mult.protocols/create-tab*
              editor
@@ -108,7 +116,7 @@
           #?(:clj (deref [_] @stateA))
           #?(:cljs cljs.core/IDeref)
           #?(:cljs (-deref [_] @stateA)))]
-    
+
     (doseq [[logical-repl-meta-id logical-repl] logical-repls
             :let [{:keys [::mult.spec/connection-meta-id
                           ::mult.logical-repl/recv|
@@ -123,14 +131,41 @@
                     opts
                     {::opts opts
                      ::mult.spec/editor editor
-                     ::mult.spec/tab tab}))
+                     ::mult.spec/tab tab
+                     ::mult.spec/op| op|
+                     ::mult.spec/cmd| cmd|}))
     (swap! registryA assoc id)
-    (mult.protocols/open* tab)
+    (add-watch ui-stateA ::ui-state
+               (fn [k refA old-state new-state]
+                 (send-data tab {:op ::mult.spec/op-update-ui-state
+                                 ::mult.spec/ui-state new-state})))
+    (do
+      (mult.protocols/open* tab)
+      (swap! ui-stateA assoc ::mult.spec/config-as-data config-as-data))
     (go
       (loop []
-        (let [[value port] (alts! [tab-evt| cmd|])]
+        (let [[value port] (alts! [tab-evt| cmd| op|])]
           (when value
             (condp = port
+
+              op|
+              (condp = (:op value)
+
+                ::mult.spec/op-did-change-active-text-editor
+                (let [{:keys []} value
+                      active-text-editor (mult.protocols/active-text-editor* editor)
+                      filepath (mult.protocols/filepath* active-text-editor)]
+                  (when filepath
+                    (let [ns-symbol (read-ns-symbol active-text-editor filepath)
+                          logical-repl-meta-ids (filepath->logical-repl-meta-ids
+                                                 config
+                                                 filepath)
+                          logical-repl (get logical-repls (first logical-repl-meta-ids))]
+                      (when (and ns-symbol logical-repl)
+                        (println ::op-did-change-active-text-editor)
+                        (swap! ui-stateA merge {::mult.spec/ns-symbol ns-symbol
+                                                ::mult.spec/logical-repl-meta-id (::mult.spec/logical-repl-meta-id @logical-repl)})
+                        #_(<! (mult.protocols/on-activate* logical-repl ns-symbol)))))))
 
               tab-evt|
               (condp = (:op value)
@@ -155,19 +190,20 @@
 
                 ::mult.spec/cmd-eval
                 (let [active-text-editor (mult.protocols/active-text-editor* editor)
-                      {:keys [::mult.spec/filepath
-                              ::mult.spec/ns-symbol]} (active-ns editor)
-                      selection-string (mult.protocols/selection* active-text-editor)
-                      logical-repl-meta-ids (filepath->logical-repl-meta-ids
-                                             config
-                                             filepath)
-                      first-logical-repl (get logical-repls (first logical-repl-meta-ids))
-                      {:keys [value]} (<! (mult.protocols/eval*
-                                           first-logical-repl
-                                           {::mult.spec/code-string selection-string
-                                            ::mult.spec/ns-symbol ns-symbol}))]
-                  (send-data tab {:op ::mult.spec/op-eval
-                                  ::mult.spec/eval-result value}))))
+                      filepath (mult.protocols/filepath* active-text-editor)]
+                  (when filepath
+                    (let [ns-symbol (read-ns-symbol active-text-editor filepath)
+                          selection-string (mult.protocols/selection* active-text-editor)
+                          logical-repl-meta-ids (filepath->logical-repl-meta-ids
+                                                 config
+                                                 filepath)
+                          logical-repl (get logical-repls (first logical-repl-meta-ids))]
+                      (when (and ns-symbol logical-repl)
+                        (let [{:keys [value]} (<! (mult.protocols/eval*
+                                                   logical-repl
+                                                   {::mult.spec/code-string selection-string
+                                                    ::mult.spec/ns-symbol ns-symbol}))]
+                          (swap! ui-stateA assoc ::mult.spec/eval-result value))))))))
             (recur)))))
     cljctools-mult))
 
@@ -202,18 +238,15 @@
       (catch js/Error error (do
                               (println ::parse-ns filepath)
                               (println error)))))
-(defn active-ns
-  [editor]
-  (when-let [text-editor (mult.protocols/active-text-editor* editor)]
-    (let [filepath (mult.protocols/filepath* text-editor)
-          range [0 0 1 0]
-          first-line (mult.protocols/text* text-editor range)
-          ns-string (subs first-line 4)
-          ns-symbol (symbol ns-string)
-          data {::mult.spec/filepath filepath
-                ::mult.spec/ns-symbol ns-symbol}]
-      data
-      #_(prn active-text-editor.document.languageId))))
+(defn read-ns-symbol
+  [text-editor filepath]
+  (let [range [0 0 1 0]
+        first-line (mult.protocols/text* text-editor range)]
+    (when first-line
+      (let [ns-string (subs first-line 4)
+            ns-symbol (symbol ns-string)]
+        ns-symbol))
+    #_(prn active-text-editor.document.languageId)))
 
 (defn filepath->logical-repl-meta-ids
   [config filepath]

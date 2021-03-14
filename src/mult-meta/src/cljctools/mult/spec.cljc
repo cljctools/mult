@@ -76,7 +76,9 @@
 (s/def ::logical-repl-type #{:shadow-cljs :nrepl})
 (s/def ::runtime #{:cljs :clj})
 (s/def ::shadow-build-key keyword?)
-(s/def ::include-file? ifn?)
+(s/def ::include-file? (s/or
+                        ::ifn? ifn?
+                        ::list? list?))
 
 (s/def ::logical-repl-meta (s/keys :req [::logical-repl-meta-id
                                          ::connection-meta-id
@@ -102,17 +104,29 @@
                               ::open-tabs
                               ::active-tab]))
 
+(s/def ::config-as-data ::config)
+
 (s/def ::cmd| ::channel)
 (s/def ::cmd #{::cmd-open
                ::cmd-ping
                ::cmd-eval})
 
+(s/def ::op| ::channel)
 (s/def ::op #{::op-ping
-              ::op-eval})
+              ::op-eval
+              ::op-update-ui-state
+              ::op-did-change-active-text-editor})
 
 (s/def ::eval-result (s/nilable string?))
 
 (s/def ::op-value (s/keys :req-un [::op]
                           :opt []))
+
+
+(s/def ::ui-state (s/keys :req []
+                          :opt [::eval-result
+                                ::ns-symbol
+                                ::config-as-data
+                                ::logical-repl-meta-id]))
 
 
