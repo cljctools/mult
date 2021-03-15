@@ -17,6 +17,13 @@
    [cljctools.socket.core :as socket.core]
    [cljctools.socket.nodejs-net.core :as socket.nodejs-net.core]
 
+   [cljctools.mult.editor.protocols :as mult.editor.protocols]
+   [cljctools.mult.editor.spec :as mult.editor.spec]
+
+   [cljctools.mult.fmt.protocols :as mult.fmt.protocols]
+   [cljctools.mult.fmt.spec :as mult.fmt.spec]
+   [cljctools.mult.fmt.core :as mult.fmt.core]
+
    [cljctools.mult.protocols :as mult.protocols]
    [cljctools.mult.spec :as mult.spec]
    [cljctools.mult.core :as mult.core]))
@@ -37,8 +44,8 @@
 (s/def ::tab-view-column some?)
 (s/def ::on-tab-state-change ifn?)
 
-(s/def ::create-tab-opts (s/keys :req [::mult.spec/tab-id]
-                                 :opt [::mult.spec/tab-title]))
+(s/def ::create-tab-opts (s/keys :req [::mult.editor.spec/tab-id]
+                                 :opt [::mult.editor.spec/tab-title]))
 
 (s/def ::create-webview-panel-opts (s/and
                                     ::create-tab-opts
@@ -52,10 +59,17 @@
 
 (s/def ::cmd-id string?)
 (s/def ::cmd (s/keys :req [::cmd-id]))
-(s/def ::cmds (s/map-of ::mult.spec/cmd ::cmd))
+
+(s/def ::cmds (s/or
+               :mult-cmds
+               (s/map-of ::mult.spec/cmd ::cmd)
+
+               :mult-fmt-cmds
+               (s/map-of ::mult.fmt.spec/cmd ::cmd)))
+
 
 (s/def ::register-commands-opts (s/keys :req [::cmds
-                                              ::mult.spec/cmd|]
+                                              ::cmd|]
                                         :opt []))
 
 (defprotocol Vscode
@@ -68,22 +82,28 @@
 
 (defonce ^:private registryA (atom {}))
 
-
 (defn activate
   [context]
   (go
     (let [editor (create-editor context {::id ::editor})
-          config (<! (mult.protocols/read-mult-edn* editor))
+          config (<! (mult.editor.protocols/read-mult-edn* editor))
+          fmt (mult.fmt.core/create {::mult.fmt.core/id ::mult-fmt
+                                     ::mult.editor.spec/editor editor})
           cljctools-mult (mult.core/create {::mult.core/id ::mult
+                                            ::mult.fmt.spec/fmt fmt
                                             ::mult.spec/config config
-                                            ::mult.spec/editor editor
+                                            ::mult.editor.spec/editor editor
                                             ::socket.spec/create-opts-net-socket socket.nodejs-net.core/create-opts})]
-      (register-commands* editor {::cmds {::mult.spec/cmd-open {::cmd-id "mult.open"}
-                                          ::mult.spec/cmd-ping {::cmd-id "mult.ping"}
-                                          ::mult.spec/cmd-eval {::cmd-id "mult.eval"}}
-                                  ::mult.spec/cmd| (::mult.spec/cmd| @editor)})
-      (pipe (::mult.spec/cmd| @editor)  (::mult.spec/cmd| @cljctools-mult))
-      (pipe (::mult.spec/op| @editor)  (::mult.spec/op| @cljctools-mult))
+      (register-commands* editor {::cmds {::mult.spec/cmd-open {::cmd-id "cljctools.mult.open"}
+                                          ::mult.spec/cmd-ping {::cmd-id "cljctools.mult.ping"}
+                                          ::mult.spec/cmd-eval {::cmd-id "cljctools.mult.eval"}}
+                                  ::cmd| (::mult.editor.spec/cmd| @editor)})
+      (register-commands* editor {::cmds {::mult.fmt.spec/cmd-format-current-form {::cmd-id "cljctools.mult.fmt.format-current-form"}}
+                                  ::cmd| (::mult.editor.spec/cmd| @editor)})
+      (tap (::mult.editor.spec/cmd|mult @editor) (::mult.spec/cmd| @cljctools-mult))
+      (tap (::mult.editor.spec/evt|mult @editor) (::mult.spec/op| @cljctools-mult))
+      (tap (::mult.editor.spec/cmd|mult @editor) (::mult.fmt.spec/cmd| @fmt))
+      (tap (::mult.editor.spec/evt|mult @editor) (::mult.fmt.spec/op| @fmt))
       (swap! registryA assoc ::editor editor))))
 
 (defn deactivate
@@ -91,9 +111,9 @@
   (go
     (when-let [editor (get @registryA ::editor)]
       (mult.core/release ::mult)
+      (mult.fmt.core/release ::mult-fmt)
       (mult.protocols/release* editor)
       (swap! registryA dissoc ::editor))))
-
 
 (def exports #js {:activate (fn [context]
                               (println ::activate)
@@ -112,17 +132,19 @@
    {:as opts
     :keys [::id]}]
   {:pre [(s/assert ::create-opts opts)]
-   :post [(s/assert ::mult.spec/editor %)]}
+   :post [(s/assert ::mult.editor.spec/editor %)]}
   (let [stateA (atom nil)
 
         cmd| (chan 10)
+        cmd|mult (mult cmd|)
 
-        op| (chan (sliding-buffer 10))
+        evt| (chan (sliding-buffer 10))
+        evt|mult (mult evt|)
 
         active-text-editor
-        ^{:type ::mult.spec/text-editor}
+        ^{:type ::mult.editor.spec/text-editor}
         (reify
-          mult.protocols/TextEditor
+          mult.editor.protocols/TextEditor
           (text*
             [_]
             (when-let [vscode-active-text-editor (.. vscode -window -activeTextEditor)]
@@ -151,9 +173,9 @@
               (.. vscode-active-text-editor -document -fileName))))
 
         editor
-        ^{:type ::mult.spec/editor}
+        ^{:type ::mult.editor.spec/editor}
         (reify
-          mult.protocols/Editor
+          mult.editor.protocols/Editor
           (show-notification*
             [_ text]
             (.. vscode.window (showInformationMessage text)))
@@ -196,7 +218,7 @@
                       edn (js->clj json)]
                   (println text))))
 
-          mult.protocols/Release
+          mult.editor.protocols/Release
           (release*
             [_]
             (close! cmd|))
@@ -211,61 +233,63 @@
 
     (do
       (.onDidChangeActiveTextEditor (.-window vscode) (fn [text-editor]
-                                                        (put! op| {:op ::mult.spec/op-did-change-active-text-editor}))))
+                                                        (put! evt| {:op ::mult.editor.spec/evt-did-change-active-text-editor}))))
     (reset! stateA (merge
                     opts
                     {::opts opts
-                     ::mult.spec/cmd| cmd|
-                     ::mult.spec/op| op|}))
+                     ::mult.editor.spec/cmd| cmd|
+                     ::mult.editor.spec/cmd|mult cmd|mult
+                     ::mult.editor.spec/evt| evt|
+                     ::mult.editor.spec/evt|mult evt|mult}))
     editor))
 
 (defn create-tab
   [context opts]
   {:pre [(s/assert ::create-tab-opts opts)]
-   :post [(s/assert ::mult.spec/tab %)]}
+   :post [(s/assert ::mult.editor.spec/tab %)]}
   (let [stateA (atom {})
 
         tab
-        ^{:type ::mult.spec/tab}
+        ^{:type ::mult.editor.spec/tab}
         (reify
-          mult.protocols/Tab
+          mult.editor.protocols/Tab
 
-          mult.protocols/Open
+          mult.editor.protocols/Open
           (open*
             [_]
             (when-not (get @stateA ::panel)
               (let [on-tab-closed
                     (fn on-tab-closed
                       []
-                      (when (::mult.spec/on-tab-closed opts)
-                        ((::mult.spec/on-tab-closed opts)))
+                      (when (::mult.editor.spec/on-tab-closed opts)
+                        ((::mult.editor.spec/on-tab-closed opts)))
                       (mult.protocols/release* _))
                     panel (create-webview-panel context
                                                 (merge
                                                  opts
-                                                 {::mult.spec/on-tab-closed on-tab-closed}))]
+                                                 {::mult.editor.spec/on-tab-closed on-tab-closed}))]
                 (swap! stateA assoc ::panel panel))))
 
-          mult.protocols/Close
+          mult.editor.protocols/Close
           (close*
             [_]
             (when-let [panel (get @stateA ::panel)]
               (.dispose panel)
               (swap! stateA dissoc ::panel)))
-          mult.protocols/Send
+          mult.editor.protocols/Send
           (send*
             [_ data]
             (when-let [panel (get @stateA ::panel)]
               (.postMessage (.-webview panel) data)))
-          mult.protocols/Active?
+          mult.editor.protocols/Active?
           (active?*
             [_]
             (when-let [panel (get @stateA ::panel)]
               (.-active panel)))
-          mult.protocols/Release
+          mult.editor.protocols/Release
           (release*
             [_]
-            (mult.protocols/close* _))
+            (mult.editor.protocols/close* _))
           cljs.core/IDeref
           (-deref [_] @stateA))]
     (reset! stateA (merge
@@ -278,23 +302,23 @@
   [context
    {:as opts
     :keys [::cmds
-           ::mult.spec/cmd|]}]
+           ::cmd|]}]
   {:pre [(s/assert ::register-commands-opts opts)]}
-  (doseq [[mult-cmd {:keys [::cmd-id] :as cmd}] cmds]
+  (doseq [[cmd-spec-key {:keys [::cmd-id] :as cmd}] cmds]
     (let [disposable (.. vscode.commands
                          (registerCommand
                           cmd-id
                           (fn [& args]
-                            (put! cmd| {:op mult-cmd}))))]
+                            (put! cmd| {:op cmd-spec-key}))))]
       (.. context.subscriptions (push disposable)))))
 
 (defn create-webview-panel
   [context
     {:as opts
-    :keys [::mult.spec/tab-id
-           ::mult.spec/tab-title
-           ::mult.spec/on-tab-closed
-           ::mult.spec/on-tab-message
+    :keys [::mult.editor.spec/tab-id
+           ::mult.editor.spec/tab-title
+           ::mult.editor.spec/on-tab-closed
+           ::mult.editor.spec/on-tab-message
            ::on-tab-state-change
            ::tab-view-column
            ::tab-html-filepath

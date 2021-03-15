@@ -13,16 +13,15 @@
 
    [sci.core :as sci]
 
-   [clojure.walk]
-
-   [rewrite-clj.zip :as z]
-   [rewrite-clj.parser :as p]
-   [rewrite-clj.node :as n]
-   [rewrite-clj.paredit]
-   #_[cljfmt.core]
-
    [cljctools.socket.spec :as socket.spec]
    [cljctools.socket.core :as socket.core]
+
+   [cljctools.mult.editor.spec :as mult.editor.spec]
+   [cljctools.mult.editor.protocols :as mult.editor.protocols]
+
+   [cljctools.mult.fmt.spec :as mult.fmt.spec]
+   [cljctools.mult.fmt.protocols :as mult.fmt.protocols]
+   [cljctools.mult.fmt.core :as mult.fmt.core]
 
    [cljctools.mult.spec :as mult.spec]
    [cljctools.mult.protocols :as mult.protocols]
@@ -36,7 +35,7 @@
 
 (s/def ::create-opts (s/keys :req [::id
                                    ::mult.spec/config
-                                   ::mult.spec/editor
+                                   ::mult.editor.spec/editor
                                    ::socket.spec/create-opts-net-socket]
                              :opt [::socket.spec/create-opts-websocket]))
 
@@ -60,7 +59,7 @@
            ::socket.spec/create-opts-net-socket
            ::socket.spec/create-opts-websocket
            ::mult.spec/config
-           ::mult.spec/editor] :as opts}]
+           ::mult.editor.spec/editor] :as opts}]
   {:pre [(s/assert ::create-opts opts)]
    :post [(s/assert ::mult.spec/cljctools-mult %)]}
   (let [stateA (atom nil)
@@ -69,15 +68,14 @@
         op| (chan 10)
         cmd| (chan 10)
 
-        tab (mult.protocols/create-tab*
+        tab (mult.editor.protocols/create-tab*
              editor
-             {::mult.spec/tab-id "mult-tab"
-              ::mult.spec/tab-title "mult"
-              ::mult.spec/on-tab-closed (fn [tab]
-                                          (put! tab-evt| {:op ::tab-closed
-                                                          ::mult.spec/tab tab}))
-              ::mult.spec/on-tab-message (fn [tab msg]
-                                           (put! tab-recv| (read-string msg)))})
+             {::mult.editor.spec/tab-id "mult-tab"
+              ::mult.editor.spec/tab-title "mult"
+              ::mult.editor.spec/on-tab-closed (fn [tab]
+                                                 (put! tab-evt| {:op ::mult.editor.spec/on-tab-closed}))
+              ::mult.editor.spec/on-tab-message (fn [tab msg]
+                                                  (put! tab-recv| (read-string msg)))})
 
         connections (persistent!
                      (reduce (fn [result {:keys [::mult.spec/connection-id
@@ -116,7 +114,7 @@
           mult.protocols/Release
           (release*
             [_]
-            (mult.protocols/release* tab)
+            (mult.editor.protocols/release* tab)
             (close! tab-evt|)
             (close! tab-recv|))
           #?(:clj clojure.lang.IDeref)
@@ -137,8 +135,8 @@
     (reset! stateA (merge
                     opts
                     {::opts opts
-                     ::mult.spec/editor editor
-                     ::mult.spec/tab tab
+                     ::mult.editor.spec/editor editor
+                     ::mult.editor.spec/tab tab
                      ::mult.spec/op| op|
                      ::mult.spec/cmd| cmd|}))
     (swap! registryA assoc id)
@@ -147,7 +145,7 @@
                  (send-data tab {:op ::mult.spec/op-update-ui-state
                                  ::mult.spec/ui-state new-state})))
     (do
-      (mult.protocols/open* tab)
+      (mult.editor.protocols/open* tab)
       (swap! ui-stateA assoc ::mult.spec/config config))
     (go
       (loop []
@@ -158,19 +156,19 @@
               op|
               (condp = (:op value)
 
-                ::mult.spec/op-did-change-active-text-editor
+                ::mult.editor.spec/evt-did-change-active-text-editor
                 (let [{:keys []} value
-                      active-text-editor (mult.protocols/active-text-editor* editor)
-                      filepath (mult.protocols/filepath* active-text-editor)]
+                      active-text-editor (mult.editor.protocols/active-text-editor* editor)
+                      filepath (mult.editor.protocols/filepath* active-text-editor)]
                   (when filepath
-                    (let [ns-symbol (read-ns-symbol active-text-editor filepath)
+                    (let [ns-symbol (mult.fmt.core/text->ns-symbol active-text-editor filepath)
                           logical-repl-ids (filepath->logical-repl-ids
                                             config
                                             filepath)
                           logical-repl (get logical-repls (first logical-repl-ids))]
                       (when (and ns-symbol logical-repl)
-                        (println ::op-did-change-active-text-editor)
-                        (swap! ui-stateA merge {::mult.spec/ns-symbol ns-symbol
+                        (println ::evt-did-change-active-text-editor)
+                        (swap! ui-stateA merge {::mult.fmt.spec/ns-symbol ns-symbol
                                                 ::mult.spec/logical-repl-id (::mult.spec/logical-repl-id @logical-repl)})
                         #_(<! (mult.protocols/on-activate* logical-repl ns-symbol))))))
 
@@ -181,8 +179,8 @@
               tab-evt|
               (condp = (:op value)
 
-                ::tab-closed
-                (let [{:keys [::mult.spec/tab]} value]
+                ::mult.editor.spec/on-tab-closed
+                (let [{:keys []} value]
                   (println ::tab-disposed)))
 
               cmd|
@@ -191,20 +189,20 @@
                 ::mult.spec/cmd-open
                 (let []
                   (println ::cmd-open)
-                  (mult.protocols/open* tab))
+                  (mult.editor.protocols/open* tab))
 
                 ::mult.spec/cmd-ping
                 (let []
                   (println ::cmd-ping)
-                  (mult.protocols/show-notification* editor (str ::cmd-ping))
-                  (mult.protocols/send* tab (pr-str {:op ::mult.spec/op-ping})))
+                  (mult.editor.protocols/show-notification* editor (str ::cmd-ping))
+                  (mult.editor.protocols/send* tab (pr-str {:op ::mult.spec/op-ping})))
 
                 ::mult.spec/cmd-eval
-                (let [active-text-editor (mult.protocols/active-text-editor* editor)
-                      filepath (mult.protocols/filepath* active-text-editor)]
+                (let [active-text-editor (mult.editor.protocols/active-text-editor* editor)
+                      filepath (mult.editor.protocols/filepath* active-text-editor)]
                   (when filepath
-                    (let [ns-symbol (read-ns-symbol active-text-editor filepath)
-                          selection-string (mult.protocols/selection* active-text-editor)
+                    (let [ns-symbol (mult.fmt.core/text->ns-symbol active-text-editor filepath)
+                          selection-string (mult.editor.protocols/selection* active-text-editor)
                           logical-repl-ids (filepath->logical-repl-ids
                                             config
                                             filepath)
@@ -213,7 +211,7 @@
                         (let [{:keys [value]} (<! (mult.protocols/eval*
                                                    logical-repl
                                                    {::mult.spec/code-string selection-string
-                                                    ::mult.spec/ns-symbol ns-symbol}))]
+                                                    ::mult.fmt.spec/ns-symbol ns-symbol}))]
                           (swap! ui-stateA assoc ::mult.spec/eval-result value))))))))
             (recur)))))
     cljctools-mult))
@@ -234,34 +232,7 @@
 (defn send-data
   [tab data]
   {:pre [(s/assert ::mult.spec/op-value data)]}
-  (mult.protocols/send* tab (pr-str data)))
-
-#_(defn parse-ns
-    "Safely tries to read the first form from the source text.
-   Returns ns name or nil.
-   But: does not work if there are reader conditionals"
-    [filepath text]
-    (try
-      (when (re-matches #".+\.clj(s|c)?" filepath)
-        (let [fform (read-string text)]
-          (when (= (first fform) 'ns)
-            (second fform))))
-      (catch js/Error error (do
-                              (println ::parse-ns filepath)
-                              (println error)))))
-(defn read-ns-symbol
-  [text-editor filepath]
-  (let [range [0 0 100 0]
-        text (mult.protocols/text* text-editor range)
-        node (p/parse-string text)
-        zloc (z/of-string (n/string node))
-        ns-symbol (-> zloc z/down z/right z/sexpr)]
-    ns-symbol
-    #_(when first-line
-        (let [ns-string (subs first-line 4)
-              ns-symbol (symbol ns-string)]
-          ns-symbol))
-    #_(prn active-text-editor.document.languageId)))
+  (mult.editor.protocols/send* tab (pr-str data)))
 
 (defn filepath->logical-repl-ids
   [config filepath]

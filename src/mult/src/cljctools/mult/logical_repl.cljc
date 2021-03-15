@@ -13,6 +13,7 @@
 
    [cljctools.nrepl-client.core :as nrepl-client.core]
    [cljctools.mult.spec :as mult.spec]
+   [cljctools.mult.fmt.spec :as mult.fmt.spec]
    [cljctools.mult.protocols :as mult.protocols]))
 
 (s/def ::recv| ::mult.spec/channel)
@@ -100,7 +101,7 @@
           (eval*
             [_ {:as opts
                 :keys [::mult.spec/code-string
-                       ::mult.spec/ns-symbol]}]
+                       ::mult.fmt.spec/ns-symbol]}]
             {:pre [(s/assert ::mult.spec/logical-repl-eval-opts opts)]}
             (go
               (when-not (get @stateA ::nrepl-client.core/session)
@@ -176,25 +177,25 @@
           mult.protocols/LogicalRepl
           (on-activate*
             [_ ns-symbol]
-            {:pre [(s/assert ::mult.spec/ns-symbol ns-symbol)]}
+            {:pre [(s/assert ::mult.fmt.spec/ns-symbol ns-symbol)]}
             (go))
           (eval*
-            [_ {:as opts
-                :keys [::mult.spec/code-string
-                       ::mult.spec/ns-symbol]}]
-            {:pre [(s/assert ::mult.spec/logical-repl-eval-opts opts)]}
-            (go
-              (when-not (get @stateA ::nrepl-client.core/session)
-                (<! (init-fn)))
-              (<! (back-to-clj-fn))
-              (<! (select-build-fn))
-              (let [code-string-formatted
-                    (format
-                     "(binding [*ns* (find-ns '%s)]
+           [_ {:as opts
+               :keys [::mult.spec/code-string
+                      ::mult.fmt.spec/ns-symbol]}]
+           {:pre [(s/assert ::mult.spec/logical-repl-eval-opts opts)]}
+           (go
+             (when-not (get @stateA ::nrepl-client.core/session)
+               (<! (init-fn)))
+             (<! (back-to-clj-fn))
+             (<! (select-build-fn))
+             (let [code-string-formatted
+                   (format
+                    "(binding [*ns* (find-ns '%s)]
                       %s
                       )"
-                     ns-symbol code-string)]
-                (<! (eval-fn code-string-formatted)))))
+                    ns-symbol code-string)]
+               (<! (eval-fn code-string-formatted)))))
           mult.protocols/Release
           (release*
             [_]

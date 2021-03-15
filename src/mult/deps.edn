@@ -12,10 +12,7 @@
                              :sha "05f2fe44445d9b21cb0b50d6bac455ca5eea90ec"
                              :tag "v0.2.4"}
 
-        cljfmt/cljfmt {:mvn/version "0.7.0"}
-        github.clj-commons/rewrite-clj {:git/url "https://github.com/clj-commons/rewrite-clj"
-                                        :sha "db337b393ac527abe4015854d706ece2a9daeed2"
-                                        :tag "v1.0.579-alpha"}
-
         github.cljctools/mult-meta {:local/root  "../mult-meta"}
-        github.cljctools/mult-config {:local/root  "../mult-config"}}}
+        github.cljctools/mult-fmt-meta {:local/root  "../mult-fmt-meta"}
+        github.cljctools/mult-editor-meta {:local/root  "../mult-editor-meta"}
+        github.cljctools/mult-fmt {:local/root  "../mult-fmt"}}}

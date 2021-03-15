@@ -2,44 +2,14 @@
   (:require
    [clojure.spec.alpha :as s]
    [cljctools.mult.protocols :as mult.protocols]
+   [cljctools.mult.fmt.spec :as mult.fmt.spec]
    [cljctools.socket.spec :as socket.spec]))
-
-(s/def ::tab-id string?)
-(s/def ::tab-title string?)
-
-(s/def ::filepath string?)
-(s/def ::ns-symbol symbol?)
 
 (s/def ::channel #?(:clj #(instance? clojure.core.async.impl.channels.ManyToManyChannel %)
                     :cljs #(instance? cljs.core.async.impl.channels/ManyToManyChannel %)))
 (s/def ::mult #?(:clj #(satisfies? clojure.core.async.Mult %)
                  :cljs #(satisfies? cljs.core.async/Mult %)))
 
-
-
-
-(s/def ::on-tab-closed ifn?)
-(s/def ::on-tab-message ifn?)
-
-(s/def ::editor #(and
-                  (satisfies? mult.protocols/Editor %)
-                  (satisfies? mult.protocols/Release %)
-                  #?(:clj (satisfies? clojure.lang.IDeref %))
-                  #?(:cljs (satisfies? cljs.core/IDeref %))))
-
-(s/def ::text-editor #(satisfies? mult.protocols/TextEditor %))
-
-(s/def ::range (s/tuple int? int? int? int?))
-
-(s/def ::tab #(and
-               (satisfies? mult.protocols/Tab %)
-               (satisfies? mult.protocols/Open %)
-               (satisfies? mult.protocols/Close %)
-               (satisfies? mult.protocols/Send %)
-               (satisfies? mult.protocols/Active? %)
-               (satisfies? mult.protocols/Release %)
-               #?(:clj (satisfies? clojure.lang.IDeref %))
-               #?(:cljs (satisfies? cljs.core/IDeref %))))
 
 (s/def ::cljctools-mult #(and
                           (satisfies? mult.protocols/CljctoolsMult %)
@@ -55,7 +25,6 @@
 (s/def ::code-string string?)
 (s/def ::logical-repl-eval-opts (s/keys :req [::code-string
                                               ::ns-symbol]))
-
 
 (s/def ::connection-id keyword?)
 (s/def ::repl-protocol #{:nrepl})
@@ -122,10 +91,9 @@
 (s/def ::op-value (s/keys :req-un [::op]
                           :opt []))
 
-
 (s/def ::ui-state (s/keys :req []
                           :opt [::eval-result
-                                ::ns-symbol
+                                ::mult.fmt.spec/ns-symbol
                                 ::active-logical-tab-id
                                 ::config
                                 ::logical-repl-id]))

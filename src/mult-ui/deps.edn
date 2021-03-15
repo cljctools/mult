@@ -12,4 +12,5 @@
         ;; Just for pretty printting the match
         fipp {:mvn/version "0.6.23"}
 
-        github.cljctools/mult-meta {:local/root  "../mult-meta"}}}
+        github.cljctools/mult-meta {:local/root  "../mult-meta"}
+        github.cljctools/mult-fmt-meta {:local/root  "../mult-fmt-meta"}}}

@@ -10,7 +10,7 @@
 	},
 	"activationEvents": [
 		"onLanguage:clojure",
-		"onCommand:mult.open"
+		"onCommand:cljctools.mult.open"
 	],
 	"main": "./resources/out/mult/main.js",
 	"scripts": {
@@ -29,30 +29,39 @@
 	"contributes": {
 		"commands": [
 			{
-				"command": "mult.open",
-				"title": "mult.open"
+				"command": ":cljctools.mult.spec/cmd-open",
+				"title": "Open mult"
 			},
 			{
-				"command": "mult.ping",
-				"title": "mult.ping"
+				"command": ":cljctools.mult.spec/cmd-ping",
+				"title": "ping"
 			},
 			{
-				"command": "mult.eval",
-				"title": "mult.eval"
+				"command": ":cljctools.mult.spec/cmd-eval",
+				"title": "Eval current form"
+			},
+			{
+				"command": ":cljctools.mult.fmt.spec/format-current-form",
+				"title": "Format current form"
 			}
 		],
 		"keybindings": [
 			{
-				"command": "mult.open",
+				"command": ":cljctools.mult.spec/cmd-open",
 				"key": "ctrl+alt+m ctrl+alt+o"
 			},
 			{
-				"command": "mult.ping",
+				"command": ":cljctools.mult.spec/cmd-ping",
 				"key": "ctrl+alt+m ctrl+alt+p"
 			},
 			{
-				"command": "mult.eval",
+				"command": ":cljctools.mult.spec/cmd-eval",
 				"key": "alt+w"
+			},
+			{
+				"command": ":cljctools.mult.fmt.spec/format-current-form",
+				"key": "tab",
+				"when" : "editorTextFocus && editorLangId == 'clojure' && !editorReadOnly && !hasOtherSuggestions && !inSnippetMode && !suggestWidgetVisible"
 			}
 		],
 		"languages": [
