@@ -20,14 +20,7 @@
 (s/def ::cmd|mult ::mult)
 (s/def ::evt|mult ::mult)
 
-(s/def ::evt #{::evt-did-change-active-text-editor})
-
-(s/def ::op (s/or
-             ::evt ::evt))
-
-(s/def ::op-value (s/keys :req-un [::op]
-                          :opt []))
-
+(s/def ::op #{::evt-did-change-active-text-editor})
 
 (s/def ::on-tab-closed ifn?)
 (s/def ::on-tab-message ifn?)

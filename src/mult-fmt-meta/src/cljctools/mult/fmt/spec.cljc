@@ -23,6 +23,3 @@
 
 (s/def ::op| ::channel)
 (s/def ::op #{})
-
-(s/def ::op-value (s/keys :req-un [::op]
-                          :opt []))

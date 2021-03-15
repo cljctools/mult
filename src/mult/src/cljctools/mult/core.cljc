@@ -175,7 +175,6 @@
                 ::mult.spec/op-select-logical-tab
                 (let [{:keys []} value]
                   (println ::op-select-logical-tab))
-
                 (do ::ignore-other-ops))
 
               tab-evt|
@@ -235,7 +234,7 @@
 
 (defn send-data
   [tab data]
-  {:pre [(s/assert ::mult.spec/op-value data)]}
+  {:pre [(s/assert ::mult.spec/op (:op data))]}
   (mult.editor.protocols/send* tab (pr-str data)))
 
 (defn filepath->logical-repl-ids

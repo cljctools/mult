@@ -120,7 +120,7 @@
 
 (defn send-data
   [send| data]
-  {:pre [(s/assert ::mult.spec/op-value data)]}
+  {:pre [(s/assert ::mult.spec/op (:op data))]}
   (put! send| (pr-str data)))
 
 (defn home-page []

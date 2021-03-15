@@ -91,8 +91,7 @@
                 ::mult.fmt.spec/cmd-format-current-form
                 (let []
                   (println ::cmd-format-current-form))
-
-                (do ::ignore-other-commands)))
+                (do ::ignore-other-cmds)))
             (recur)))))
     fmt))
 

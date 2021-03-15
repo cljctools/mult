@@ -88,8 +88,6 @@
 
 (s/def ::eval-result (s/nilable string?))
 
-(s/def ::op-value (s/keys :req-un [::op]
-                          :opt []))
 
 (s/def ::ui-state (s/keys :req []
                           :opt [::eval-result
