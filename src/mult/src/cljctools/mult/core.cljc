@@ -252,7 +252,7 @@
 (defn read-ns-symbol
   [text-editor filepath]
   (let [range [0 0 100 0]
-        text (mult.protocols/text* _ range)
+        text (mult.protocols/text* text-editor range)
         node (p/parse-string text)
         zloc (z/of-string (n/string node))
         ns-symbol (-> zloc z/down z/right z/sexpr)]
