@@ -81,7 +81,8 @@
 
                 ::mult.editor.spec/evt-did-change-active-text-editor
                 (let [{:keys []} value]
-                  (println ::evt-did-change-active-text-editor)))
+                  (println ::evt-did-change-active-text-editor))
+                (do ::ignore-other-ops))
 
 
               cmd|
@@ -89,7 +90,9 @@
 
                 ::mult.fmt.spec/cmd-format-current-form
                 (let []
-                  (println ::cmd-format-current-form))))
+                  (println ::cmd-format-current-form))
+
+                (do ::ignore-other-commands)))
             (recur)))))
     fmt))
 

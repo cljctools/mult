@@ -174,7 +174,9 @@
 
                 ::mult.spec/op-select-logical-tab
                 (let [{:keys []} value]
-                  (println ::op-select-logical-tab)))
+                  (println ::op-select-logical-tab))
+
+                (do ::ignore-other-ops))
 
               tab-evt|
               (condp = (:op value)
@@ -212,7 +214,9 @@
                                                    logical-repl
                                                    {::mult.spec/code-string selection-string
                                                     ::mult.fmt.spec/ns-symbol ns-symbol}))]
-                          (swap! ui-stateA assoc ::mult.spec/eval-result value))))))))
+                          (swap! ui-stateA assoc ::mult.spec/eval-result value))))))
+
+                (do ::ignore-other-cmds)))
             (recur)))))
     cljctools-mult))
 
