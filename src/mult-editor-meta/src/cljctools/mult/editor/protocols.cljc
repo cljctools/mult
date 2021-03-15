@@ -26,7 +26,8 @@
 (defprotocol TextEditor
   (text* [_] [_ range])
   (filepath* [_])
-  (selection* [_]))
+  (selection* [_])
+  (replace* [_ text]))
 
 (defprotocol Tab
   #_Open

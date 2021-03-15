@@ -19,7 +19,7 @@
    [rewrite-clj.parser :as p]
    [rewrite-clj.node :as n]
    [rewrite-clj.paredit]
-   #_[cljfmt.core]
+   [cljfmt.core]
 
    [cljctools.mult.editor.spec :as mult.editor.spec]
    [cljctools.mult.editor.protocols :as mult.editor.protocols]
@@ -89,7 +89,10 @@
               (condp = (:op value)
 
                 ::mult.fmt.spec/cmd-format-current-form
-                (let []
+                (let [text-editor (mult.editor.protocols/active-text-editor* editor)
+                      text (mult.editor.protocols/text* text-editor)
+                      text-formatted (cljfmt.core/reformat-string text)]
+                  (<! (mult.editor.protocols/replace* text-editor text-formatted))
                   (println ::cmd-format-current-form))
                 (do ::ignore-other-cmds)))
             (recur)))))

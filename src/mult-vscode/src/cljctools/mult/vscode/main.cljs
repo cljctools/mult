@@ -170,7 +170,29 @@
           (filepath*
             [_]
             (when-let [vscode-active-text-editor (.. vscode -window -activeTextEditor)]
-              (.. vscode-active-text-editor -document -fileName))))
+              (.. vscode-active-text-editor -document -fileName)))
+
+          (replace*
+            [_ text]
+            (when-let [vscode-active-text-editor (.. vscode -window -activeTextEditor)]
+              (let [document (.. vscode-active-text-editor -document)
+                    full-text (mult.editor.protocols/text* _)
+                    full-range (vscode.Range.
+                                (.positionAt document 0)
+                                (.positionAt document (count full-text))
+                                #_(.positionAt document (- (count full-text) 1)))
+                    result| (chan 1)]
+                (->
+                 (.edit vscode-active-text-editor
+                        (fn [edit-builder]
+                          (doto edit-builder
+                            (.delete  (.validateRange document full-range))
+                            (.insert (.positionAt document 0) text)
+                            #_(.replace full-range text))))
+                 (.then (fn [could-be-applied?]
+                          (put! result| could-be-applied?)
+                          (close! result|))))
+                result|))))
 
         editor
         ^{:type ::mult.editor.spec/editor}
