@@ -15,7 +15,7 @@
                                     :recompile-dependents true
                                     :source-maps true
                                         ;;  :verbose true
-                                    }
+                                    :warnings {:fn-deprecated false}}
                  :devtools {:repl-init-ns cljctools.mult.vscode.main
                             :repl-pprint true
                             :autobuild true
@@ -29,7 +29,8 @@
                     :modules {:main {:entries [cljctools.mult.vscode.ui.main]}}
                     :compiler-options {:infer-externs   false #_:auto
                                        :closure-warnings {:global-this :off}
-                                       :closure-defines  {"mult.impl.tabapp._some_val_"         true}}
+                                       :closure-defines  {"mult.impl.tabapp._some_val_"         true}
+                                       :warnings {:fn-deprecated false}}
                     :devtools {:repl-init-ns cljctools.mult.vscode.ui.main
                                :repl-pprint true
                                :autobuild true
