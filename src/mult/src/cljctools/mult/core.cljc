@@ -13,6 +13,14 @@
 
    [sci.core :as sci]
 
+   [clojure.walk]
+
+   [rewrite-clj.zip :as z]
+   [rewrite-clj.parser :as p]
+   [rewrite-clj.node :as n]
+   [rewrite-clj.paredit]
+   #_[cljfmt.core]
+
    [cljctools.socket.spec :as socket.spec]
    [cljctools.socket.core :as socket.core]
 
@@ -243,12 +251,16 @@
                               (println error)))))
 (defn read-ns-symbol
   [text-editor filepath]
-  (let [range [0 0 1 0]
-        first-line (mult.protocols/text* text-editor range)]
-    (when first-line
-      (let [ns-string (subs first-line 4)
-            ns-symbol (symbol ns-string)]
-        ns-symbol))
+  (let [range [0 0 100 0]
+        text (mult.protocols/text* _ range)
+        node (p/parse-string text)
+        zloc (z/of-string (n/string node))
+        ns-symbol (-> zloc z/down z/right z/sexpr)]
+    ns-symbol
+    #_(when first-line
+        (let [ns-string (subs first-line 4)
+              ns-symbol (symbol ns-string)]
+          ns-symbol))
     #_(prn active-text-editor.document.languageId)))
 
 (defn filepath->logical-repl-ids
