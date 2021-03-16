@@ -1,7 +1,7 @@
 {
 	"name": "mult",
-	"description": "cljc repl for vscode",
-	"version": "0.1.0",
+	"description": "clojure/script extension",
+	"version": "0.0.0",
 	"license": "MIT",
 	"publisher": "github-cljctools-mult",
 	"repository": "https://github.com/cljctools/mult",
