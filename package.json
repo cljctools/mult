@@ -3,8 +3,8 @@
 	"description": "cljc repl for vscode",
 	"version": "0.1.0",
 	"license": "MIT",
-	"publisher": "https://github.com/clojuretools/mult",
-	"repository": "https://github.com/clojuretools/mult",
+	"publisher": "github-cljctools-mult",
+	"repository": "https://github.com/cljctools/mult",
 	"engines": {
 		"vscode": "^1.30.0"
 	},
@@ -17,14 +17,15 @@
 		"postinstall": "node ./node_modules/vscode/bin/install"
 	},
 	"dependencies": {
-		"antd": "4.9.2",
-		"bencode": "2.0.1",
-		"react": "17.0.1",
-		"react-dom": "17.0.1",
-		"vscode": "1.1.37"
+		"bencode": "2.0.1"
 	},
 	"devDependencies": {
-		"shadow-cljs": "2.11.7"
+		"antd": "4.9.2",
+		"react": "17.0.1",
+		"react-dom": "17.0.1",
+		"shadow-cljs": "2.11.7",
+		"vscode": "1.1.37",
+		"vsce": "1.87.0"
 	},
 	"contributes": {
 		"commands": [
@@ -61,7 +62,7 @@
 			{
 				"command": ":cljctools.mult.fmt.spec/format-current-form",
 				"key": "tab",
-				"when" : "editorTextFocus && editorLangId == 'clojure' && !editorReadOnly && !hasOtherSuggestions && !inSnippetMode && !suggestWidgetVisible"
+				"when": "editorTextFocus && editorLangId == 'clojure' && !editorReadOnly && !hasOtherSuggestions && !inSnippetMode && !suggestWidgetVisible"
 			}
 		],
 		"languages": [

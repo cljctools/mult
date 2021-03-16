@@ -31,8 +31,9 @@ compile(){
 }
 
 release(){
+    rm -rf resources/out
     npm i
-    shadow -A:dev release :mult-ui
+    shadow -A:dev release :mult :mult-ui
 }
 
 tree(){
@@ -45,6 +46,11 @@ cljs_compile(){
     clj -A:dev:self-hosted-cljs -m cljs.main -co cljs-build.edn -c
     #  clj -A:dev -m cljs.main -co cljs-build.edn -v -c # -r
 }
+
+vsix(){
+  npx vsce package
+}
+
 
 repl(){
 

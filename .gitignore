@@ -23,3 +23,5 @@ resources/public/js-out
 resources/out/
 tmp/
 .user
+
+*.vsix

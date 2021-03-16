@@ -3,12 +3,12 @@
          :port #shadow/env ["SHADOWCLJS_NREPL_PORT" :as :int :default 8899]}
  :http {:port #shadow/env ["SHADOWCLJS_HTTP_PORT" :as :int :default 9630]
         :host "0.0.0.0"}
- :builds {:mult {;;       :target :node-library
-                 :target :node-script
+ :builds {:mult {:target :node-library
+                ;;  :target :node-script
                  :main cljctools.mult.vscode.main/main
                  :exports-var cljctools.mult.vscode.main/exports
                  :output-to "resources/out/mult/main.js"
-                 :compiler-options {:optimizations :simple
+                 :compiler-options {:optimizations #_:advanced :simple
                                         ;;  :dump-core false
                                     :stable-names true
                                     :infer-externs   false #_:auto
