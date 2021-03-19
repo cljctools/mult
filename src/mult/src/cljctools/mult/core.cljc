@@ -16,8 +16,9 @@
    [cljctools.mult.editor.spec :as mult.editor.spec]
    [cljctools.mult.editor.protocols :as mult.editor.protocols]
 
-   [cljctools.mult.nrepl.spec :as mult.nrepl.spec]
    [cljctools.mult.nrepl.protocols :as mult.nrepl.protocols]
+   [cljctools.mult.nrepl.spec :as mult.nrepl.spec]
+   [cljctools.mult.nrepl.core :as mult.nrepl.core]
 
    [cljctools.mult.fmt.spec :as mult.fmt.spec]
    [cljctools.mult.fmt.protocols :as mult.fmt.protocols]
@@ -56,7 +57,6 @@
 
 (defn create
   [{:keys [::id
-           ::mult.nrepl.spec/create-nrepl-connection
            ::mult.spec/config
            ::mult.editor.spec/editor] :as opts}]
   {:pre [(s/assert ::create-opts opts)]
@@ -81,9 +81,10 @@
         (persistent!
          (reduce (fn [result {:keys [::mult.spec/connection-id
                                      ::mult.spec/connection-opts] :as connection-meta}]
-                   (assoc! result connection-id
-                           (create-nrepl-connection
-                            connection-opts)))
+                   result
+                   #_(assoc! result connection-id
+                             (mult.nrepl.core/create-nrepl-connection
+                              connection-opts)))
                  (transient {})
                  (into #{}
                        (comp
@@ -114,15 +115,15 @@
           #?(:cljs cljs.core/IDeref)
           #?(:cljs (-deref [_] @stateA)))]
 
-    (doseq [[logical-repl-id logical-repl] logical-repls
-            :let [{:keys [::mult.spec/connection-id
-                          ::mult.logical-repl/recv|
-                          ::mult.logical-repl/send|]} @logical-repl
-                  nrepl-connection (get nrepl-connections  connection-id)]
-            :when nrepl-connection]
-      #_(println ::tapping logical-repl-id connection-id)
-      (tap (::recv|mult nrepl-connection) recv|)
-      (pipe send| (::send| nrepl-connection) false))
+    #_(doseq [[logical-repl-id logical-repl] logical-repls
+              :let [{:keys [::mult.spec/connection-id
+                            ::mult.logical-repl/recv|
+                            ::mult.logical-repl/send|]} @logical-repl
+                    nrepl-connection (get nrepl-connections  connection-id)]
+              :when nrepl-connection]
+        #_(println ::tapping logical-repl-id connection-id)
+        (tap (::recv|mult nrepl-connection) recv|)
+        (pipe send| (::send| nrepl-connection) false))
 
     (reset! stateA (merge
                     opts

@@ -1,10 +1,8 @@
-(ns cljctools.mult.editor.spec
+(ns cljctools.mult.nrepl.spec
   (:require
    [clojure.spec.alpha :as s]
    [cljctools.mult.nrepl.protocols :as mult.nrepl.protocols]))
 
-(s/def ::host string?)
-(s/def ::port int?)
 
 (s/def ::channel #?(:clj #(instance? clojure.core.async.impl.channels.ManyToManyChannel %)
                     :cljs #(instance? cljs.core.async.impl.channels/ManyToManyChannel %)))
@@ -18,6 +16,26 @@
 (s/def ::cmd|mult ::mult)
 (s/def ::evt|mult ::mult)
 
+(s/def ::nrepl-id keyword?)
+(s/def ::host string?)
+(s/def ::port int?)
+(s/def ::nrepl-type #{:shadow-cljs :nrepl})
+(s/def ::runtime #{:cljs :clj})
+(s/def ::shadow-build-key keyword?)
+(s/def ::include-file? (s/or
+                        ::ifn? ifn?
+                        ::list? list?))
+
+(s/def ::nrepl-meta (s/keys :req [::nrepl-id
+                                  ::host
+                                  ::port
+                                  ::nrepl-type
+                                  ::runtime
+                                  ::include-file?]
+                            :opt [::shadow-build-key]))
+
+(s/def ::nrepl-metas (s/coll-of ::nrepl-meta :into #{}))
+
 (s/def ::op #{})
 
 (s/def ::nrepl-connection #(and
@@ -28,14 +46,6 @@
 
 (s/def ::create-nrepl-connection ifn?)
 
-(s/def ::connect-opts (s/keys :req [::host
-                                    ::port]
-                              :opt []))
-
-(s/def ::create-nrepl-connection-opts (s/and
-                                       ::connect-opts
-                                       (s/keys :req []
-                                               :opt [])))
 
 (s/def ::session-id string?)
 (s/def ::code-string string?)

@@ -11,7 +11,9 @@
    #?(:cljs [goog.string :refer [format]])
    [clojure.spec.alpha :as s]
 
-   [cljctools.nrepl-client.core :as nrepl-client.core]
+   [cljctools.mult.nrepl.spec :as mult.nrepl.spec]
+   [cljctools.mult.nrepl.protocols :as mult.nrepl.protocols]
+
    [cljctools.mult.spec :as mult.spec]
    [cljctools.mult.fmt.spec :as mult.fmt.spec]
    [cljctools.mult.protocols :as mult.protocols]))
@@ -79,20 +81,22 @@
         eval-fn
         (fn eval-fn
           [code-string]
-          (nrepl-client.core/eval
-           {::nrepl-client.core/send| send|
-            ::nrepl-client.core/recv|mult recv|mult
-            ::nrepl-client.core/session (get @stateA ::nrepl-client.core/session)
-            ::nrepl-client.core/code code-string}))
+          (mult.nrepl.protocols/eval*
+           nil
+           {::mult.nrepl.spec/send| send|
+            ::mult.nrepl.spec/recv|mult recv|mult
+            ::mult.nrepl.spec/session (get @stateA ::mult.nrepl.spec/session)
+            ::mult.nrepl.spec/code code-string}))
 
         init-fn
         (fn init-fn
           []
           (go
-            (let [{:keys [new-session]} (<! (nrepl-client.core/clone-session
-                                             {::nrepl-client.core/send| send|
-                                              ::nrepl-client.core/recv|mult recv|mult}))]
-              (swap! stateA assoc ::nrepl-client.core/session new-session))))
+            (let [{:keys [new-session]} (<! (mult.nrepl.protocols/clone*
+                                             nil
+                                             {::mult.nrepl.spec/send| send|
+                                              ::mult.nrepl.spec/recv|mult recv|mult}))]
+              (swap! stateA assoc ::mult.nrepl.spec/session new-session))))
 
         logical-repl
         ^{:type ::mult.spec/logical-repl}
@@ -104,7 +108,7 @@
                        ::mult.fmt.spec/ns-symbol]}]
             {:pre [(s/assert ::mult.spec/logical-repl-eval-opts opts)]}
             (go
-              (when-not (get @stateA ::nrepl-client.core/session)
+              (when-not (get @stateA ::mult.nrepl.spec/session)
                 (<! (init-fn)))
               (let [code-string-formatted
                     (format
@@ -121,7 +125,7 @@
           #?(:cljs (-deref [_] @stateA)))]
     (reset! stateA (merge opts
                           {::opts opts
-                           ::nrepl-client.core/session nil
+                           ::mult.nrepl.spec/session nil
                            ::recv| recv|
                            ::recv|mult (mult recv|)
                            ::send| send|}))
@@ -141,20 +145,22 @@
         eval-fn
         (fn eval-fn
           [code-string]
-          (nrepl-client.core/eval
-           {::nrepl-client.core/send| send|
-            ::nrepl-client.core/recv|mult recv|mult
-            ::nrepl-client.core/session (get @stateA ::nrepl-client.core/session)
-            ::nrepl-client.core/code code-string}))
+          (mult.nrepl.protocols/eval*
+           nil
+           {::mult.nrepl.spec/send| send|
+            ::mult.nrepl.spec/recv|mult recv|mult
+            ::mult.nrepl.spec/session (get @stateA ::mult.nrepl.spec/session)
+            ::mult.nrepl.spec/code code-string}))
 
         init-fn
         (fn init-fn
           []
           (go
-            (let [{:keys [new-session] :as response} (<! (nrepl-client.core/clone-session
-                                                          {::nrepl-client.core/send| send|
-                                                           ::nrepl-client.core/recv|mult recv|mult}))]
-              (swap! stateA assoc ::nrepl-client.core/session new-session))))
+            (let [{:keys [new-session] :as response} (<! (mult.nrepl.protocols/clone*
+                                                          nil
+                                                          {::mult.nrepl.spec/send| send|
+                                                           ::mult.nrepl.spec/recv|mult recv|mult}))]
+              (swap! stateA assoc ::mult.nrepl.spec/session new-session))))
 
         back-to-clj-fn
         (fn back-to-clj-fn
@@ -185,7 +191,7 @@
                       ::mult.fmt.spec/ns-symbol]}]
            {:pre [(s/assert ::mult.spec/logical-repl-eval-opts opts)]}
            (go
-             (when-not (get @stateA ::nrepl-client.core/session)
+             (when-not (get @stateA ::mult.nrepl.spec/session)
                (<! (init-fn)))
              (<! (back-to-clj-fn))
              (<! (select-build-fn))
@@ -208,7 +214,7 @@
     (reset! stateA (merge
                     opts
                     {::opts opts
-                     ::nrepl-client.core/session nil
+                     ::mult.nrepl.spec/session nil
                      ::recv| recv|
                      ::recv|mult (mult recv|)
                      ::send| send|}))

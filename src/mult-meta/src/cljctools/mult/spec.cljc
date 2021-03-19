@@ -16,61 +16,21 @@
                           #?(:clj (satisfies? clojure.lang.IDeref %))
                           #?(:cljs (satisfies? cljs.core/IDeref %))))
 
-(s/def ::logical-repl #(and
-                        (satisfies? mult.protocols/LogicalRepl %)
-                        (satisfies? mult.protocols/Release %)
-                        #?(:clj (satisfies? clojure.lang.IDeref %))
-                        #?(:cljs (satisfies? cljs.core/IDeref %))))
+(s/def ::tab-id keyword?)
+(s/def ::nrepl-ids (s/coll-of ::mult.nrepl.spec/nrepl-id :into #{}))
 
-(s/def ::code-string string?)
-(s/def ::logical-repl-eval-opts (s/keys :req [::code-string
-                                              ::ns-symbol]))
+(s/def ::tab-meta (s/keys :req [::tab-id
+                                        ::nrepl-ids]))
+(s/def ::tab-metas (s/coll-of ::tab-meta :into #{}))
 
-(s/def ::connection-id keyword?)
-(s/def ::repl-protocol #{:nrepl :http-repl})
-
-(s/def ::connection-opts (s/or
-                          :nrepl ::mult.nrepl.spec/connect-opts
-                          :http-repl map?))
-
-(s/def ::connection-meta (s/keys :req [::connection-id
-                                       ::repl-protocol
-                                       ::connection-opts]))
-
-(s/def ::connection-metas (s/coll-of ::connection-meta :into #{}))
-
-(s/def ::logical-repl-id keyword?)
-(s/def ::logical-repl-type #{:shadow-cljs :nrepl})
-(s/def ::runtime #{:cljs :clj})
-(s/def ::shadow-build-key keyword?)
-(s/def ::include-file? (s/or
-                        ::ifn? ifn?
-                        ::list? list?))
-
-(s/def ::logical-repl-meta (s/keys :req [::logical-repl-id
-                                         ::connection-id
-                                         ::logical-repl-type
-                                         ::runtime
-                                         ::include-file?]
-                                   :opt [::shadow-build-key]))
-
-(s/def ::logical-repl-metas (s/coll-of ::logical-repl-meta :into #{}))
-
-(s/def ::logical-tab-id keyword?)
-(s/def ::logical-repl-ids (s/coll-of ::logical-repl-id :into #{}))
-
-(s/def ::logical-tab-meta (s/keys :req [::logical-tab-id
-                                        ::logical-repl-ids]))
-(s/def ::logical-tab-metas (s/coll-of ::logical-tab-meta :into #{}))
-
-(s/def ::open-logical-tab-ids (s/coll-of ::logical-tab-id :into #{}))
-(s/def ::active-logical-tab-id ::logical-tab-id)
+(s/def ::open-tab-ids (s/coll-of ::tab-id :into #{}))
+(s/def ::active-tab-id ::tab-id)
 
 (s/def ::config (s/keys :req [::connection-metas
-                              ::logical-repl-metas
-                              ::logical-tab-metas
-                              ::open-logical-tab-ids
-                              ::active-logical-tab-id]))
+                              ::mult.nrepl.spec/nrepl-metas
+                              ::tab-metas
+                              ::open-tab-ids
+                              ::active-tab-id]))
 
 (s/def ::cmd| ::channel)
 (s/def ::cmd #{::cmd-open
@@ -82,7 +42,7 @@
               ::op-eval
               ::op-update-ui-state
               ::op-did-change-active-text-editor
-              ::op-select-logical-tab})
+              ::op-select-tab})
 
 (s/def ::eval-result (s/nilable string?))
 
@@ -90,8 +50,8 @@
 (s/def ::ui-state (s/keys :req []
                           :opt [::eval-result
                                 ::mult.fmt.spec/ns-symbol
-                                ::active-logical-tab-id
+                                ::active-tab-id
                                 ::config
-                                ::logical-repl-id]))
+                                ::nrepl-id]))
 
 
