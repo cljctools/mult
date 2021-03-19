@@ -1,40 +1,37 @@
-#:cljctools.mult.spec{:connection-metas
-                      #{#:cljctools.mult.spec{:connection-id :shadow-devserver
-                                              :repl-protocol :nrepl #_:http-repl
+#:cljctools.mult.spec{:nrepl-metas
+                      #{#:cljctools.mult.spec{:nrepl-id :mult
                                               :connection-opts #:cljctools.mult.nrepl.spec{:host "localhost"
-                                                                                           :port 8899}}}
-                      :logical-repl-metas
-                      #{#:cljctools.mult.spec{:logical-repl-id :mult
-                                              :connection-id :shadow-devserver
-                                              :logical-repl-type :shadow-cljs
+                                                                                           :port 8899}
+                                              :nrepl-type :shadow-cljs
                                               :runtime :cljs
                                               :shadow-build-key :mult
                                               :include-file?
                                               (fn [filepath]
                                                 (re-matches (re-pattern ".+\\.clj(s|c)") filepath))}
-
-                        #:cljctools.mult.spec{:logical-repl-id :mult-ui
-                                              :connection-id :shadow-devserver
-                                              :logical-repl-type :shadow-cljs
+                        #:cljctools.mult.spec{:nrepl-id :mult-ui
+                                              :connection-opts #:cljctools.mult.nrepl.spec{:host "localhost"
+                                                                                           :port 8899}
+                                              :nrepl-type :shadow-cljs
                                               :runtime :cljs
                                               :shadow-build-key :mult-ui
                                               :include-file?
                                               (fn [filepath]
                                                 (re-matches (re-pattern ".+\\.clj(s|c)") filepath))}
 
-                        #:cljctools.mult.spec{:logical-repl-id :shadow-devserver
-                                              :connection-id :shadow-devserver
-                                              :logical-repl-type :shadow-cljs
+                        #:cljctools.mult.spec{:nrepl-id :shadow-devserver
+                                              :connection-opts #:cljctools.mult.nrepl.spec{:host "localhost"
+                                                                                           :port 8899}
+                                              :nrepl-type :shadow-cljs
                                               :runtime :clj
                                               :include-file?
                                               (fn [filepath]
-                                                (re-matches (re-pattern ".+dev/shadow.clj") filepath))}}
+                                                (re-matches (re-pattern ".+\\.clj(s|c)") filepath))}}
 
-                      :logical-tab-metas
-                      #{#:cljctools.mult.spec{:logical-tab-id :mult
-                                              :logical-repl-ids #{:mult :mult-ui}}
+                      :tab-metas
+                      #{#:cljctools.mult.spec{:tab-id :mult
+                                              :nrepl-ids #{:mult :mult-ui}}
 
-                        #:cljctools.mult.spec{:logical-tab-id :devserver
-                                              :logical-repl-ids #{:shadow-devserver}}}
-                      :open-logical-tab-ids #{:mult}
-                      :active-logical-tab-id :mult}
+                        #:cljctools.mult.spec{:tab-id :devserver
+                                              :nrepl-ids #{:shadow-devserver}}}
+                      :open-tab-ids #{:mult}
+                      :active-tab-id :mult}
