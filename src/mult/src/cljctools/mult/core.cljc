@@ -25,9 +25,7 @@
    [cljctools.mult.fmt.core :as mult.fmt.core]
 
    [cljctools.mult.spec :as mult.spec]
-   [cljctools.mult.protocols :as mult.protocols]
-
-   [cljctools.mult.logical-repl :as mult.logical-repl]))
+   [cljctools.mult.protocols :as mult.protocols]))
 
 (do (clojure.spec.alpha/check-asserts true))
 
@@ -92,14 +90,6 @@
                                   (= (::mult.spec/repl-protocol connection-meta) :nrepl))))
                        (get config ::mult.spec/connection-metas))))
 
-        logical-repls
-        (persistent!
-         (reduce (fn [result {:keys [::mult.spec/logical-repl-id] :as logical-repl-meta}]
-                   (assoc! result logical-repl-id
-                           (mult.logical-repl/create logical-repl-meta)))
-                 (transient {})
-                 (get config ::mult.spec/logical-repl-metas)))
-
         cljctools-mult
         ^{:type ::mult.spec/cljctools-mult}
         (reify
@@ -116,9 +106,7 @@
           #?(:cljs (-deref [_] @stateA)))]
 
     #_(doseq [[logical-repl-id logical-repl] logical-repls
-              :let [{:keys [::mult.spec/connection-id
-                            ::mult.logical-repl/recv|
-                            ::mult.logical-repl/send|]} @logical-repl
+              :let [{:keys [::mult.spec/connection-id]} @logical-repl
                     nrepl-connection (get nrepl-connections  connection-id)]
               :when nrepl-connection]
         #_(println ::tapping logical-repl-id connection-id)
@@ -211,6 +199,15 @@
                 (do ::ignore-other-cmds)))
             (recur)))))
     cljctools-mult))
+
+#_(format
+   "(do (in-ns '%s) %s)" ns-symbol code-string)
+
+#_(format
+   "(binding [*ns* (find-ns '%s)]
+                      %s
+                      )"
+   ns-symbol code-string)
 
 (defmulti release
   "Releases cljctools-mult instance"

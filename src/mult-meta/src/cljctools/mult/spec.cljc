@@ -16,6 +16,7 @@
                           #?(:clj (satisfies? clojure.lang.IDeref %))
                           #?(:cljs (satisfies? cljs.core/IDeref %))))
 
+
 (s/def ::tab-id keyword?)
 (s/def ::nrepl-ids (s/coll-of ::mult.nrepl.spec/nrepl-id :into #{}))
 
@@ -54,4 +55,6 @@
                                 ::config
                                 ::nrepl-id]))
 
+
+(s/def ::ns-symbol symbol?)
 
