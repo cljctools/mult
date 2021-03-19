@@ -47,6 +47,11 @@
 (s/def ::create-tab-opts (s/keys :req [::mult.editor.spec/tab-id]
                                  :opt [::mult.editor.spec/tab-title]))
 
+(s/def ::vscode-text-editor (s/nilable some?))
+
+(s/def ::create-text-editor-opts (s/keys :req []
+                                         :opt [::vscode-text-editor]))
+
 (s/def ::create-webview-panel-opts (s/and
                                     ::create-tab-opts
                                     (s/keys :req []
@@ -56,6 +61,9 @@
                                                   ::tab-html-filepath
                                                   ::tab-html-replacements
                                                   ::tab-view-column])))
+
+
+
 
 (s/def ::cmd-id string?)
 (s/def ::cmd (s/keys :req [::cmd-id]))
@@ -74,6 +82,9 @@
 
 (defprotocol Vscode
   (register-commands* [_ opts]))
+
+(defprotocol TextEditor
+  (set-vscode-text-editor* [_ text-editor]))
 
 (declare create-editor
          create-tab
@@ -142,57 +153,8 @@
         evt|mult (mult evt|)
 
         active-text-editor
-        ^{:type ::mult.editor.spec/text-editor}
-        (reify
-          mult.editor.protocols/TextEditor
-          (text*
-            [_]
-            (when-let [vscode-active-text-editor (.. vscode -window -activeTextEditor)]
-              (.getText (.. vscode-active-text-editor -document))))
-          (text*
-            [_ range]
-            (when-let [vscode-active-text-editor (.. vscode -window -activeTextEditor)]
-              (let [[line-start col-start line-end col-end] range
-                    vscode-range (vscode.Range.
-                                  (vscode.Position. line-start col-start)
-                                  (vscode.Position. line-end col-end))]
-                (.getText (.. vscode-active-text-editor -document) vscode-range))))
-
-          (selection*
-            [_]
-            (when-let [vscode-active-text-editor (.. vscode -window -activeTextEditor)]
-              (let [start (.. vscode-active-text-editor -selection -start)
-                    end (.. vscode-active-text-editor -selection -end)
-                    range (vscode.Range. start end)
-                    text (.getText (.. vscode-active-text-editor -document) range)]
-                text)))
-
-          (filepath*
-            [_]
-            (when-let [vscode-active-text-editor (.. vscode -window -activeTextEditor)]
-              (.. vscode-active-text-editor -document -fileName)))
-
-          (replace*
-            [_ text]
-            (when-let [vscode-active-text-editor (.. vscode -window -activeTextEditor)]
-              (let [document (.. vscode-active-text-editor -document)
-                    full-text (mult.editor.protocols/text* _)
-                    full-range (vscode.Range.
-                                (.positionAt document 0)
-                                (.positionAt document (count full-text))
-                                #_(.positionAt document (- (count full-text) 1)))
-                    result| (chan 1)]
-                (->
-                 (.edit vscode-active-text-editor
-                        (fn [edit-builder]
-                          (doto edit-builder
-                            (.delete  (.validateRange document full-range))
-                            (.insert (.positionAt document 0) text)
-                            #_(.replace full-range text))))
-                 (.then (fn [could-be-applied?]
-                          (put! result| could-be-applied?)
-                          (close! result|))))
-                result|))))
+        (create-text-editor
+         {::vscode-text-editor (.. vscode -window -activeTextEditor)})
 
         editor
         ^{:type ::mult.editor.spec/editor}
@@ -255,6 +217,8 @@
 
     (do
       (.onDidChangeActiveTextEditor (.-window vscode) (fn [text-editor]
+                                                        (set-vscode-text-editor* active-text-editor text-editor)
+                                                        #_(set-vscode-text-editor* active-text-editor (.. vscode -window -activeTextEditor))
                                                         (put! evt| {:op ::mult.editor.spec/evt-did-change-active-text-editor}))))
     (reset! stateA (merge
                     opts
@@ -264,6 +228,75 @@
                      ::mult.editor.spec/evt| evt|
                      ::mult.editor.spec/evt|mult evt|mult}))
     editor))
+
+
+(defn create-text-editor
+  [{:as opts
+    :keys [::vscode-text-editor]}]
+  {:pre [(s/assert ::create-text-editor-opts opts)]
+   :post [(s/assert ::mult.editor.spec/text-editor %)]}
+  (let [stateA (atom nil)
+
+        text-editor
+        ^{:type ::mult.editor.spec/text-editor}
+        (reify
+          mult.editor.protocols/TextEditor
+          (text*
+            [_]
+            (when-let [vscode-active-text-editor (get @stateA ::vscode-text-editor)]
+              (.getText (.. vscode-active-text-editor -document))))
+          (text*
+            [_ range]
+            (when-let [vscode-active-text-editor (get @stateA ::vscode-text-editor)]
+              (let [[line-start col-start line-end col-end] range
+                    vscode-range (vscode.Range.
+                                  (vscode.Position. line-start col-start)
+                                  (vscode.Position. line-end col-end))]
+                (.getText (.. vscode-active-text-editor -document) vscode-range))))
+
+          (selection*
+            [_]
+            (when-let [vscode-active-text-editor (get @stateA ::vscode-text-editor)]
+              (let [start (.. vscode-active-text-editor -selection -start)
+                    end (.. vscode-active-text-editor -selection -end)
+                    range (vscode.Range. start end)
+                    text (.getText (.. vscode-active-text-editor -document) range)]
+                text)))
+
+          (filepath*
+            [_]
+            (when-let [vscode-active-text-editor (get @stateA ::vscode-text-editor)]
+              (.. vscode-active-text-editor -document -fileName)))
+
+          (replace*
+            [_ text]
+            (when-let [vscode-active-text-editor (get @stateA ::vscode-text-editor)]
+              (let [document (.. vscode-active-text-editor -document)
+                    full-text (mult.editor.protocols/text* _)
+                    full-range (vscode.Range.
+                                (.positionAt document 0)
+                                (.positionAt document (count full-text))
+                                #_(.positionAt document (- (count full-text) 1)))
+                    result| (chan 1)]
+                (->
+                 (.edit vscode-active-text-editor
+                        (fn [edit-builder]
+                          (doto edit-builder
+                            (.delete  (.validateRange document full-range))
+                            (.insert (.positionAt document 0) text)
+                            #_(.replace full-range text))))
+                 (.then (fn [could-be-applied?]
+                          (put! result| could-be-applied?)
+                          (close! result|))))
+                result|)))
+          TextEditor
+          (set-vscode-text-editor*
+            [_ text-editor]
+            (swap! stateA assoc ::vscode-text-editor text-editor)))]
+    (reset! stateA (merge
+                    opts
+                    {}))
+    text-editor))
 
 (defn create-tab
   [context opts]
