@@ -26,6 +26,8 @@
                             #?(:clj (satisfies? clojure.lang.IDeref %))
                             #?(:cljs (satisfies? cljs.core/IDeref %))))
 
+(s/def ::create-nrepl-connection ifn?)
+
 (s/def ::connect-opts (s/keys :req [::host
                                     ::port]
                               :opt []))

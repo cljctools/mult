@@ -13,11 +13,11 @@
 
    [sci.core :as sci]
 
-   [cljctools.socket.spec :as socket.spec]
-   [cljctools.socket.core :as socket.core]
-
    [cljctools.mult.editor.spec :as mult.editor.spec]
    [cljctools.mult.editor.protocols :as mult.editor.protocols]
+
+   [cljctools.mult.nrepl.spec :as mult.nrepl.spec]
+   [cljctools.mult.nrepl.protocols :as mult.nrepl.protocols]
 
    [cljctools.mult.fmt.spec :as mult.fmt.spec]
    [cljctools.mult.fmt.protocols :as mult.fmt.protocols]
@@ -36,8 +36,8 @@
 (s/def ::create-opts (s/keys :req [::id
                                    ::mult.spec/config
                                    ::mult.editor.spec/editor
-                                   ::socket.spec/create-opts-net-socket]
-                             :opt [::socket.spec/create-opts-websocket]))
+                                   ::mult.nrepl.spec/create-nrepl-connection]
+                             :opt []))
 
 
 (s/def ::send| ::mult.spec/channel)
@@ -56,8 +56,7 @@
 
 (defn create
   [{:keys [::id
-           ::socket.spec/create-opts-net-socket
-           ::socket.spec/create-opts-websocket
+           ::mult.nrepl.spec/create-nrepl-connection
            ::mult.spec/config
            ::mult.editor.spec/editor] :as opts}]
   {:pre [(s/assert ::create-opts opts)]
@@ -68,44 +67,37 @@
         op| (chan 10)
         cmd| (chan 10)
 
-        tab (mult.editor.protocols/create-tab*
-             editor
-             {::mult.editor.spec/tab-id "mult-tab"
-              ::mult.editor.spec/tab-title "mult"
-              ::mult.editor.spec/on-tab-closed (fn [tab]
-                                                 (put! tab-evt| {:op ::mult.editor.spec/on-tab-closed}))
-              ::mult.editor.spec/on-tab-message (fn [tab msg]
-                                                  (put! tab-recv| (read-string msg)))})
+        tab
+        (mult.editor.protocols/create-tab*
+         editor
+         {::mult.editor.spec/tab-id "mult-tab"
+          ::mult.editor.spec/tab-title "mult"
+          ::mult.editor.spec/on-tab-closed (fn [tab]
+                                             (put! tab-evt| {:op ::mult.editor.spec/on-tab-closed}))
+          ::mult.editor.spec/on-tab-message (fn [tab msg]
+                                              (put! tab-recv| (read-string msg)))})
 
-        connections (persistent!
-                     (reduce (fn [result {:keys [::mult.spec/connection-id
-                                                 ::mult.spec/connection-opts
-                                                 ::mult.spec/connection-opts-type] :as connection-meta}]
-                               (assoc! result connection-id
-                                       (merge
-                                        connection-meta
-                                        (condp = connection-opts-type
+        nrepl-connections
+        (persistent!
+         (reduce (fn [result {:keys [::mult.spec/connection-id
+                                     ::mult.spec/connection-opts] :as connection-meta}]
+                   (assoc! result connection-id
+                           (create-nrepl-connection
+                            connection-opts)))
+                 (transient {})
+                 (into #{}
+                       (comp
+                        (filter (fn [connection-meta]
+                                  (= (::mult.spec/repl-protocol connection-meta) :nrepl))))
+                       (get config ::mult.spec/connection-metas))))
 
-                                          ::socket.spec/tcp-socket-opts
-                                          (let [socket (socket.core/open
-                                                        (merge
-                                                         (create-opts-net-socket connection-opts)
-                                                         {::socket.spec/connect? true
-                                                          ::socket.spec/reconnection-timeout 2000}))]
-                                            {::socket.spec/socket socket
-                                             ::send| (get @socket ::socket.spec/send|)
-                                             ::recv| (get @socket ::socket.spec/recv|)
-                                             ::recv|mult (get @socket ::socket.spec/recv|mult)})
-                                          (do (println ::connection-opts-type-not-supported))))))
-                             (transient {})
-                             (get config ::mult.spec/connection-metas)))
-
-        logical-repls (persistent!
-                       (reduce (fn [result {:keys [::mult.spec/logical-repl-id] :as logical-repl-meta}]
-                                 (assoc! result logical-repl-id
-                                         (mult.logical-repl/create logical-repl-meta)))
-                               (transient {})
-                               (get config ::mult.spec/logical-repl-metas)))
+        logical-repls
+        (persistent!
+         (reduce (fn [result {:keys [::mult.spec/logical-repl-id] :as logical-repl-meta}]
+                   (assoc! result logical-repl-id
+                           (mult.logical-repl/create logical-repl-meta)))
+                 (transient {})
+                 (get config ::mult.spec/logical-repl-metas)))
 
         cljctools-mult
         ^{:type ::mult.spec/cljctools-mult}
@@ -126,11 +118,11 @@
             :let [{:keys [::mult.spec/connection-id
                           ::mult.logical-repl/recv|
                           ::mult.logical-repl/send|]} @logical-repl
-                  connection (get connections  connection-id)]
-            :when connection]
+                  nrepl-connection (get nrepl-connections  connection-id)]
+            :when nrepl-connection]
       #_(println ::tapping logical-repl-id connection-id)
-      (tap (::recv|mult connection) recv|)
-      (pipe send| (::send| connection) false))
+      (tap (::recv|mult nrepl-connection) recv|)
+      (pipe send| (::send| nrepl-connection) false))
 
     (reset! stateA (merge
                     opts

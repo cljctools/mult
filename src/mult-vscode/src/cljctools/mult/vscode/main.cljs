@@ -13,10 +13,6 @@
 
    [clojure.walk]
 
-   [cljctools.socket.spec :as socket.spec]
-   [cljctools.socket.core :as socket.core]
-   [cljctools.socket.nodejs-net.core :as socket.nodejs-net.core]
-
    [cljctools.mult.editor.protocols :as mult.editor.protocols]
    [cljctools.mult.editor.spec :as mult.editor.spec]
 
@@ -105,8 +101,7 @@
           cljctools-mult (mult.core/create {::mult.core/id ::mult
                                             ::mult.fmt.spec/fmt fmt
                                             ::mult.spec/config config
-                                            ::mult.editor.spec/editor editor
-                                            ::socket.spec/create-opts-net-socket socket.nodejs-net.core/create-opts})]
+                                            ::mult.editor.spec/editor editor})]
       (register-commands* editor {::cmds {::mult.spec/cmd-open {::cmd-id ":cljctools.mult.spec/cmd-open"}
                                           ::mult.spec/cmd-ping {::cmd-id ":cljctools.mult.spec/cmd-ping"}
                                           ::mult.spec/cmd-eval {::cmd-id ":cljctools.mult.spec/cmd-eval"}}

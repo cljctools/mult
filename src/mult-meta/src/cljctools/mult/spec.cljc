@@ -3,7 +3,7 @@
    [clojure.spec.alpha :as s]
    [cljctools.mult.protocols :as mult.protocols]
    [cljctools.mult.fmt.spec :as mult.fmt.spec]
-   [cljctools.socket.spec :as socket.spec]))
+   [cljctools.mult.nrepl.spec :as mult.nrepl.spec]))
 
 (s/def ::channel #?(:clj #(instance? clojure.core.async.impl.channels.ManyToManyChannel %)
                     :cljs #(instance? cljs.core.async.impl.channels/ManyToManyChannel %)))
@@ -27,17 +27,15 @@
                                               ::ns-symbol]))
 
 (s/def ::connection-id keyword?)
-(s/def ::repl-protocol #{:nrepl})
-(s/def ::connection-opts-type #{::socket.spec/tcp-socket-opts
-                                ::socket.spec/websocket-opts})
+(s/def ::repl-protocol #{:nrepl :http-repl})
+
 (s/def ::connection-opts (s/or
-                          ::socket.spec/tcp-socket-opts ::socket.spec/tcp-socket-opts
-                          ::socket.spec/websocket-opts ::socket.spec/websocket-opts))
+                          :nrepl ::mult.nrepl.spec/connect-opts
+                          :http-repl map?))
 
 (s/def ::connection-meta (s/keys :req [::connection-id
                                        ::repl-protocol
-                                       ::connection-opts
-                                       ::connection-opts-type]))
+                                       ::connection-opts]))
 
 (s/def ::connection-metas (s/coll-of ::connection-meta :into #{}))
 
