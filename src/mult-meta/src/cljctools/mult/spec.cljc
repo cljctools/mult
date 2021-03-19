@@ -27,6 +27,9 @@
 (s/def ::open-tab-ids (s/coll-of ::tab-id :into #{}))
 (s/def ::active-tab-id ::tab-id)
 
+(s/def ::nrepl-meta ::mult.nrepl.spec/create-nrepl-connection-opts)
+(s/def ::nrepl-metas (s/coll-of ::nrepl-meta :into #{}))
+
 (s/def ::config (s/keys :req [::connection-metas
                               ::mult.nrepl.spec/nrepl-metas
                               ::tab-metas

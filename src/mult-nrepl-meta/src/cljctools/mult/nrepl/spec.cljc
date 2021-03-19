@@ -26,15 +26,8 @@
                         ::ifn? ifn?
                         ::list? list?))
 
-(s/def ::nrepl-meta (s/keys :req [::nrepl-id
-                                  ::host
-                                  ::port
-                                  ::nrepl-type
-                                  ::runtime
-                                  ::include-file?]
-                            :opt [::shadow-build-key]))
 
-(s/def ::nrepl-metas (s/coll-of ::nrepl-meta :into #{}))
+
 
 (s/def ::op #{})
 
@@ -44,8 +37,13 @@
                             #?(:clj (satisfies? clojure.lang.IDeref %))
                             #?(:cljs (satisfies? cljs.core/IDeref %))))
 
-(s/def ::create-nrepl-connection ifn?)
-
+(s/def ::create-nrepl-connection-opts (s/keys :req [::nrepl-id
+                                                    ::host
+                                                    ::port
+                                                    ::nrepl-type
+                                                    ::runtime
+                                                    ::include-file?]
+                                              :opt [::shadow-build-key]))
 
 (s/def ::session-id string?)
 (s/def ::code-string string?)

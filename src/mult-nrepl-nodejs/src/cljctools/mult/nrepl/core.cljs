@@ -28,7 +28,7 @@
            ::mult.nrepl.spec/nrepl-type
            ::mult.nrepl.spec/shadow-build-key
            ::mult.nrepl.spec/runtime]}]
-  {:pre [(s/assert ::mult.nrepl.spec/nrepl-meta opts)]
+  {:pre [(s/assert ::mult.nrepl.spec/create-nrepl-connection-opts opts)]
    :post [(s/assert ::mult.nrepl.spec/nrepl-connection %)]}
   (let [stateA (atom nil)
 
