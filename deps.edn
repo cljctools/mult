@@ -1,42 +1,51 @@
 {:paths ["src" "resources"]
  :mvn/repos {"central" {:url "https://repo1.maven.org/maven2/"}
              "clojars" {:url "https://clojars.org/repo/"}}
- :deps {github.cljctools/mult-vscode {:local/root "./src/mult-vscode"}
-        github.cljctools/mult-vscode-ui {:local/root "./src/mult-vscode-ui"}}
- :aliases {;  :cljs {:extra-deps {github.com/cljctools.self-hosting  {:local/root "../../cljctools/self-hosting/cljs"}}}
-          ;  :shadow {:extra-deps {github.com/cljctools.self-hosting  {:local/root "../../cljctools/self-hosting/shadow"}}}
-           :cljs-self-hosting-cljs {:extra-deps
-                                    {github.cljctools/cljs-self-hosting-meta
-                                     {:local/root "../cljs-self-hosting/src/cljs-self-hosting-meta"}
-                                     github.cljctools/cljs-self-hosting-cljs
-                                     {:local/root "../cljs-self-hosting/src/cljs-self-hosting-cljs"}}}
+ :deps
+ {}
 
-           :cljs-self-hosting-shadow-nodejs {:extra-deps
-                                             {github.cljctools/cljs-self-hosting-meta
-                                              {:local/root "../cljs-self-hosting/src/cljs-self-hosting-meta"}
-                                              github.cljctools/cljs-self-hosting-shadow-nodejs
-                                              {:local/root "../cljs-self-hosting/src/cljs-self-hosting-shadow-nodejs"}}}
+ :aliases
+ {:core
+  {:extra-deps {org.clojure/clojure         {:mvn/version "1.10.3"}
+                org.clojure/clojurescript {:mvn/version "1.10.758"}
+                org.clojure/spec.alpha {:mvn/version "0.2.187"}
+                org.clojure/core.async {:mvn/version "1.1.587"}}}
 
-           :dev {:extra-deps {thheller/shadow-cljs {:mvn/version "2.11.7"
-                                                    :exclusions [nrepl
-                                                                 cider/piggieback
-                                                                 org.clojure/clojure
-                                                                 org.clojure/clojurescript
-                                                                 org.clojure/core.async
-                                                                 #_thheller/shadow-client]}
-                              #_thheller/shadow-client #_{:git/url "https://github.com/sergeiudris/shadow"
-                                                          :sha "320ea4abd28b18d7a576183a8df37446f9716e52"
-                                                          :exclusions [org.clojure/clojurescript
-                                                                       org.clojure/core.async]}
-                              nrepl/nrepl {:mvn/version "0.6.0"}
-                              cider/cider-nrepl {:mvn/version "0.24.0"}
-                              cider/piggieback {:mvn/version "0.4.2"}}}
-           :local {:extra-deps {;; org.clojure/clojurescript {:local/root "../../clojurescript"}
-                                ;; thheller/shadow-cljs-local {:local/root "../code/shadow-cljs"
-                                ;;                             :exclusions [nrepl
-                                ;;                                          cider/piggieback
-                                ;;                                          org.clojure/clojure
-                                ;;                                          org.clojure/clojurescript
-                                ;;                                          org.clojure/core.async
-                                ;;                                          thheller/shadow-client]}
-                                }}}}
+  :mult-vscode
+  {:extra-deps {github.cljctools/mult-vscode {:local/root "./src/mult-vscode"}}}
+
+  :mult-vscode-ui
+  {:extra-deps {github.cljctools/mult-vscode-ui {:local/root "./src/mult-vscode-ui"}}}
+
+  :shadow-cljs
+  {:extra-deps {thheller/shadow-cljs {:mvn/version "2.11.7"}
+
+                nrepl/nrepl {:mvn/version "0.8.3"}
+                cider/cider-nrepl {:mvn/version "0.25.5"}
+                cider/piggieback {:mvn/version "0.5.2"}}}
+
+  :clj-test-runner
+  {:extra-deps {github.cognitect-labs/test-runner {:git/url "https://github.com/cognitect-labs/test-runner"
+                                                   :sha "b6b3193fcc42659d7e46ecd1884a228993441182"}}
+   :main-opts ["-m" "cognitect.test-runner"
+               "-d" "src/socket-test"
+               "-n" "cljctools.socket.java-net-test"]}
+
+  :cljs-test-runner
+  {:extra-deps {github.Olical/cljs-test-runner {:git/url "https://github.com/Olical/cljs-test-runner"
+                                                :sha "a9cc21916f32fb6caa9f54e349e7cc32b199b0c2"
+                                                :tag "v3.8.0"}}
+   :main-opts ["-m" "cljs-test-runner.main"
+               "-d" "src/socket-test"]}
+
+  :repl
+  {:extra-deps {github.cljctools/deps-repl {:git/url "https://github.com/cljctools/deps-repl"
+                                            :sha "08283d3841c5948b0b9d36a977ebfdad111cdb2f"
+                                            :tag "v2.0.1"}
+                nrepl/nrepl {:mvn/version "0.8.3"}
+                cider/cider-nrepl {:mvn/version "0.25.5"}}
+   :main-opts ["-m" "lambdaisland.nrepl.main"
+               "--init-ns" "cljctools.socket.java-net-test"
+               "--port" "7788"
+               "--bind" "0.0.0.0"
+               "--middleware" "cider.nrepl/cider-middleware"]}}}
