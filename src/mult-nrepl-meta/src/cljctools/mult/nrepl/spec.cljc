@@ -36,3 +36,17 @@
                                        ::connect-opts
                                        (s/keys :req []
                                                :opt [])))
+
+(s/def ::session-id string?)
+(s/def ::code-string string?)
+(s/def ::ns-symbol symbol?)
+
+(s/def ::eval-opts (s/keys :req [::session-id
+                                 ::code-string
+                                 ::ns-symbol]
+                           :opt []))
+
+(s/def ::clone-opts (s/keys :req []
+                            :opt [::session-id]))
+
+
