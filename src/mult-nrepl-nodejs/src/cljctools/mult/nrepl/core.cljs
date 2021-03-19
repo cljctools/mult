@@ -97,13 +97,18 @@
             {:pre [(s/assert ::mult.nrepl.spec/eval-opts opts)]}
             (let [nrepl-client (get @stateA ::nrepl-client)
                   result| (chan 1)]
-              (.eval nrepl-client code-string session-id
-                     (fn [err responses]
-                       (if err
-                         (do (println ::err err)
-                             (put! result| err))
-                         (put! result| (reponses->value-string responses)))))
-
+              (go
+                ;; lazy connect on eval, making it http request/response like
+                ;; if user wants to eval and app down, the response will be 'not connected'
+                ;; once the app is up, evals will work
+                ;; so no need for reconnecting socket, the request-lazy connect-response is better
+                (<! (mult.nrepl.protocols/connect* this))
+                (.eval nrepl-client code-string session-id
+                       (fn [err responses]
+                         (if err
+                           (do (println ::err err)
+                               (put! result| err))
+                           (put! result| (reponses->value-string responses))))))
               result|))
 
           (clone*
@@ -122,8 +127,9 @@
 
           (connect*
             [this]
-            (when (get @stateA ::nrepl-client)
-              (mult.nrepl.protocols/disconnect* this))
+            (if (and (get @stateA ::nrepl-client)
+                     (= (.. nrepl-client -readyState) "open"))
+              (go true))
             (go
               (let [nrepl-client (.connect NreplClient
                                            (->
@@ -134,6 +140,9 @@
                     {:keys [::mult.nrepl.spec/nrepl-type
                             ::mult.nrepl.spec/runtime]} @stateA
                     init-fn (get init-fns [nrepl-type runtime])]
+                (doto nrepl-client
+                  (.on "close" (fn [code reason]
+                                 (mult.nrepl.protocols/disconnect* this))))
                 (swap! stateA assoc ::nrepl-client nrepl-client)
                 (<! (init-session-fn this))
                 (<!  (init-fn this)))))
