@@ -1,9 +1,8 @@
 #:cljctools.mult.spec{:connection-metas
                       #{#:cljctools.mult.spec{:connection-id :shadow-devserver
-                                              :repl-protocol :nrepl
-                                              :connection-opts-type :cljctools.socket.spec/tcp-socket-opts
-                                              :connection-opts #:cljctools.socket.spec{:host "localhost"
-                                                                                       :port 8899}}}
+                                              :repl-protocol :nrepl #_:http-repl
+                                              :connection-opts #:cljctools.mult.nrepl.spec{:host "localhost"
+                                                                                           :port 8899}}}
                       :logical-repl-metas
                       #{#:cljctools.mult.spec{:logical-repl-id :mult
                                               :connection-id :shadow-devserver
