@@ -4,8 +4,16 @@ clojure(script) extension for vscode
 
 ## content
 
-- [rationale](./docs/design.md#rationale)
+- [goal](./docs/design.md#goal)
 - [development](#install-from-source)
+
+## goal
+
+- multiple apps, multiple repls: seamlessly switches connections for evaluation as we navigate files in source tree
+- config driven: no connection sequence combos, jack-ins, jack-ass - define repls in mult.edn file, open extension, it does the rest
+- simply namespace and repls: tab shows current namespace and repls we can evalutate in
+- tabs like browser pages: it's one tab app, but we can open multiple, just like in the browser
+- listen to Jesus and move the mountain: drive development of http-repl - remote evaluation should be an HTTP server https://github.com/cljctools/http-repl
 
 ## development
 
