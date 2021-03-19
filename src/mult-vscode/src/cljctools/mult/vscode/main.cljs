@@ -24,6 +24,9 @@
    [cljctools.mult.fmt.spec :as mult.fmt.spec]
    [cljctools.mult.fmt.core :as mult.fmt.core]
 
+   [cljctools.mult.nrepl.protocols :as mult.nrepl.protocols]
+   [cljctools.mult.nrepl.spec :as mult.nrepl.spec]
+
    [cljctools.mult.protocols :as mult.protocols]
    [cljctools.mult.spec :as mult.spec]
    [cljctools.mult.core :as mult.core]))
@@ -31,6 +34,7 @@
 (def fs (js/require "fs"))
 (def path (js/require "path"))
 (def vscode (js/require "vscode"))
+(def nrepl-client (js/require "nrepl-client"))
 
 (do (clojure.spec.alpha/check-asserts true))
 
@@ -62,9 +66,6 @@
                                                   ::tab-html-replacements
                                                   ::tab-view-column])))
 
-
-
-
 (s/def ::cmd-id string?)
 (s/def ::cmd (s/keys :req [::cmd-id]))
 
@@ -80,13 +81,14 @@
                                               ::cmd|]
                                         :opt []))
 
-(defprotocol Vscode
+(defprotocol Editor
   (register-commands* [_ opts]))
 
 (defprotocol TextEditor
   (set-vscode-text-editor* [_ text-editor]))
 
 (declare create-editor
+         create-text-editor
          create-tab
          register-commands
          create-webview-panel)
@@ -207,13 +209,13 @@
             [_]
             (close! cmd|))
 
-          Vscode
+          cljs.core/IDeref
+          (-deref [_] @stateA)
+
+          Editor
           (register-commands*
             [_ opts]
-            (register-commands context opts))
-
-          cljs.core/IDeref
-          (-deref [_] @stateA))]
+            (register-commands context opts)))]
 
     (do
       (.onDidChangeActiveTextEditor (.-window vscode) (fn [text-editor]
@@ -289,14 +291,62 @@
                           (put! result| could-be-applied?)
                           (close! result|))))
                 result|)))
+
+          mult.editor.protocols/Release
+          (release*
+            [_]
+            (do nil))
+          cljs.core/IDeref
+          (-deref [_] @stateA)
+
           TextEditor
           (set-vscode-text-editor*
             [_ text-editor]
             (swap! stateA assoc ::vscode-text-editor text-editor)))]
+
     (reset! stateA (merge
                     opts
-                    {}))
+                    {::opts opts}))
     text-editor))
+
+(defn create-nrepl-connection
+  [{:as opts
+    :keys [::mult.nrepl.spec/host
+           ::mult.nrepl.spec/port]}]
+  {:pre [(s/assert ::mult.nrepl.spec/create-nrepl-connection-opts opts)]
+   :post [(s/assert ::mult.nrepl.spec/nrepl-connection %)]}
+  (let [stateA (atom nil)
+
+        nrepl-connection
+        ^{:type ::mult.nrepl.spec/nrepl-connection}
+        (reify
+          mult.nrepl.protocols/NreplConnection
+          (eval*
+            [_ opts])
+
+          (connect*
+            [_])
+          (connect*
+           [_ {:keys [::mult.nrepl.spec/host
+                      ::mult.nrepl.spec/port] :as opts}]
+           {:pre [(s/assert ::mult.nrepl.spec/connect-opts opts)]}
+           (swap! stateA update ::opts merge opts))
+
+          (disconnect*
+            [_])
+
+          mult.nrepl.protocols/Release
+          (release*
+            [_]
+            (do nil))
+
+          cljs.core/IDeref
+          (-deref [_] @stateA))]
+    (reset! stateA (merge
+                    opts
+                    {::opts opts}))
+    nrepl-connection))
+
 
 (defn create-tab
   [context opts]

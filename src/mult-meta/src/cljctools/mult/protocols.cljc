@@ -8,8 +8,9 @@
   #_IDeref)
 
 (defprotocol LogicalRepl
-  (eval* [_ opts])
   (on-activate* [_ ns-symbol])
+  (eval* [_ opts])
   #_Release
   #_IDeref)
+
 

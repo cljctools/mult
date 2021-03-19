@@ -4,10 +4,6 @@
         org.clojure/spec.alpha {:mvn/version "0.2.187"}
         org.clojure/core.async {:mvn/version "1.1.587"}
 
-        github.cljctools/nrepl-client {:local/root "../../../nrepl-client"}
-        github.cljctools/socket {:local/root "../../../socket"}
-        github.cljctools/socket-nodejs-net {:local/root "../../../socket/src/socket-nodejs-net"}
-
         github.borkdude/sci {:git/url "https://github.com/borkdude/sci"
                              :sha "05f2fe44445d9b21cb0b50d6bac455ca5eea90ec"
                              :tag "v0.2.4"}
@@ -15,4 +11,5 @@
         github.cljctools/mult-meta {:local/root  "../mult-meta"}
         github.cljctools/mult-fmt-meta {:local/root  "../mult-fmt-meta"}
         github.cljctools/mult-editor-meta {:local/root  "../mult-editor-meta"}
+        github.cljctools/mult-nrepl-meta {:local/root  "../mult-nrepl-meta"}
         github.cljctools/mult-fmt {:local/root  "../mult-fmt"}}}
