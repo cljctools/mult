@@ -174,3 +174,24 @@ one mult.edn, use .vscode/mult.edn or use workspace.json to specify where https:
 ## transports: extension should understand channels instead of connections
 
 - https://github.com/sergeiudris/deathstar.lab/blob/d848b3c7fa249570d24489030cc64625556a6918/docs/design/design.md#what-if-actual-browser-page-is-game-eval-environment
+
+
+## namespaces, tabs like browser pages: no need for logical tabs
+
+- when we navigate in the source tree of repos, we navigate *namespace* - this is key
+- grouping namespaces into groups (tabs) makes not sense - what we want is not to think about connections and when in ns, be able to evaluate
+- every ns can be evaluated in 0 or more runtimes (because shared/cljc namespaces etc)
+- **design of mult tab**:
+  - a tab shows on top the currect namespace we're in
+  - and a list of runtimes (logical repls, nrepls or http-repl) that we can (according to mult.edn) evaluate this ns
+  - one repl is picked by default - first or priority in config
+  - we can click - and *pin*/*unpin* - one of the repls if we want
+  - there is *one mult tab app*, but as with browser - we can open multiple instances of it
+  - evaluation is simple: *always against the active tab*
+- this way we open a tab and navigate ALL namespaces and can eval in this tab
+- but, if we want we can open another copy (because we want to see the eval result) - like in browser, if we read docs and want to open multiple copies of page to switch
+- ns switching and eval always go into active tab (it's like a browser page that requested data and other pages are inactive, their state does not change)
+- to emphasize:
+  - no need for tabs, in mult.edn or anywhere, they are about nothing -  **namespaces** instead
+  - tabs are copies, are *equal*, just like browser pages
+  - mult alwyas and *only* talks to the active tab
