@@ -6,6 +6,9 @@
 (defprotocol Active?
   (active?* [_]))
 
+(defprotocol Visible?
+  (visible?* [_]))
+
 (defprotocol Send
   (send* [_ msg]))
 
@@ -34,5 +37,6 @@
   #_Close
   #_Send
   #_Active?
+  #_Visible?
   #_Release
   #_IDeref)

@@ -81,7 +81,7 @@
 
                 ::mult.editor.spec/evt-did-change-active-text-editor
                 (let [{:keys []} value]
-                  (println ::evt-did-change-active-text-editor))
+                  (do nil))
                 (do ::ignore-other-ops))
 
 

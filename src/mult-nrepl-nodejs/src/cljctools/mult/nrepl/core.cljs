@@ -22,8 +22,7 @@
 
 (defn create-nrepl-connection
   [{:as opts
-    :keys [::mult.nrepl.spec/nrepl-id
-           ::mult.nrepl.spec/host
+    :keys [::mult.nrepl.spec/host
            ::mult.nrepl.spec/port
            ::mult.nrepl.spec/nrepl-type
            ::mult.nrepl.spec/shadow-build-key
@@ -41,8 +40,8 @@
                   {:keys [:new-session] :as value} (read-string value-string)]
               (println ::value-string value-string)
               (println ::value value)
-              (swap! stateA assoc ::mult.nrepl.spec/session-id new-session))
-            new-session))
+              (swap! stateA assoc ::mult.nrepl.spec/session-id new-session)
+              new-session)))
 
         init-fns {[:nrepl :clj]
                   (fn init-fn
@@ -128,7 +127,7 @@
           (connect*
             [this]
             (if (and (get @stateA ::nrepl-client)
-                     (= (.. nrepl-client -readyState) "open"))
+                     (= (.. (get @stateA ::nrepl-client) -readyState) "open"))
               (go true))
             (go
               (let [nrepl-client (.connect NreplClient

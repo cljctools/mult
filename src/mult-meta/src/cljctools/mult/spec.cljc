@@ -16,25 +16,22 @@
                           #?(:clj (satisfies? clojure.lang.IDeref %))
                           #?(:cljs (satisfies? cljs.core/IDeref %))))
 
+(s/def ::nrepl-id keyword?)
 
-(s/def ::tab-id keyword?)
-(s/def ::nrepl-ids (s/coll-of ::mult.nrepl.spec/nrepl-id :into #{}))
+(s/def ::include-file? (s/or
+                        ::ifn? ifn?
+                        ::list? list?))
 
-(s/def ::tab-meta (s/keys :req [::tab-id
-                                        ::nrepl-ids]))
-(s/def ::tab-metas (s/coll-of ::tab-meta :into #{}))
+(s/def ::nrepl-meta (s/merge
+                     ::mult.nrepl.spec/create-nrepl-connection-opts
+                     (s/keys :req [::nrepl-id
+                                   ::include-file?])))
 
-(s/def ::open-tab-ids (s/coll-of ::tab-id :into #{}))
-(s/def ::active-tab-id ::tab-id)
-
-(s/def ::nrepl-meta ::mult.nrepl.spec/create-nrepl-connection-opts)
 (s/def ::nrepl-metas (s/coll-of ::nrepl-meta :into #{}))
 
-(s/def ::config (s/keys :req [::connection-metas
-                              ::mult.nrepl.spec/nrepl-metas
-                              ::tab-metas
-                              ::open-tab-ids
-                              ::active-tab-id]))
+(s/def ::open-n-tabs-on-start int?)
+(s/def ::config (s/keys :req [::nrepl-metas
+                              ::open-n-tabs-on-start]))
 
 (s/def ::cmd| ::channel)
 (s/def ::cmd #{::cmd-open
@@ -50,14 +47,14 @@
 
 (s/def ::eval-result (s/nilable string?))
 
-
 (s/def ::ui-state (s/keys :req []
                           :opt [::eval-result
                                 ::mult.fmt.spec/ns-symbol
-                                ::active-tab-id
                                 ::config
                                 ::nrepl-id]))
 
-
 (s/def ::ns-symbol symbol?)
+
+
+
 

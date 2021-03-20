@@ -36,7 +36,7 @@
 (defn activate
   [context]
   (go
-    (let [editor (mult.editor.core/create-editor context {::id ::editor})
+    (let [editor (mult.editor.core/create-editor context {::mult.editor.core/id ::editor})
           config (<! (mult.editor.protocols/read-mult-edn* editor))
           fmt (mult.fmt.core/create {::mult.fmt.core/id ::mult-fmt
                                      ::mult.editor.spec/editor editor})
@@ -46,14 +46,14 @@
                                             ::mult.editor.spec/editor editor})]
       (mult.editor.core/register-commands*
        editor
-       {::cmds {::mult.spec/cmd-open {::cmd-id ":cljctools.mult.spec/cmd-open"}
-                ::mult.spec/cmd-ping {::cmd-id ":cljctools.mult.spec/cmd-ping"}
-                ::mult.spec/cmd-eval {::cmd-id ":cljctools.mult.spec/cmd-eval"}}
-        ::cmd| (::mult.editor.spec/cmd| @editor)})
+       {::mult.editor.core/cmds {::mult.spec/cmd-open {::mult.editor.core/cmd-id ":cljctools.mult.spec/cmd-open"}
+                                 ::mult.spec/cmd-ping {::mult.editor.core/cmd-id ":cljctools.mult.spec/cmd-ping"}
+                                 ::mult.spec/cmd-eval {::mult.editor.core/cmd-id ":cljctools.mult.spec/cmd-eval"}}
+        ::mult.editor.spec/cmd| (::mult.editor.spec/cmd| @editor)})
       (mult.editor.core/register-commands*
        editor
-       {::cmds {::mult.fmt.spec/cmd-format-current-form {::cmd-id ":cljctools.mult.fmt.spec/format-current-form"}}
-        ::cmd| (::mult.editor.spec/cmd| @editor)})
+       {::mult.editor.core/cmds {::mult.fmt.spec/cmd-format-current-form {::mult.editor.core/cmd-id ":cljctools.mult.fmt.spec/format-current-form"}}
+        ::mult.editor.spec/cmd| (::mult.editor.spec/cmd| @editor)})
       (tap (::mult.editor.spec/cmd|mult @editor) (::mult.spec/cmd| @cljctools-mult))
       (tap (::mult.editor.spec/evt|mult @editor) (::mult.spec/op| @cljctools-mult))
       (tap (::mult.editor.spec/cmd|mult @editor) (::mult.fmt.spec/cmd| @fmt))

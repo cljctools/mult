@@ -63,7 +63,7 @@
 
 
 (s/def ::register-commands-opts (s/keys :req [::cmds
-                                              ::cmd|]
+                                              ::mult.editor.spec/cmd|]
                                         :opt []))
 
 
@@ -72,6 +72,12 @@
 
 (defprotocol TextEditor
   (set-vscode-text-editor* [_ text-editor]))
+
+(declare
+ create-text-editor
+ create-tab
+ create-webview-panel
+ register-commands)
 
 (defn create-editor
   [context
@@ -149,7 +155,7 @@
           (register-commands*
             [_ opts]
             (register-commands context opts)))]
-
+    
     (do
       (.onDidChangeActiveTextEditor (.-window vscode) (fn [text-editor]
                                                         (set-vscode-text-editor* active-text-editor text-editor)
@@ -285,6 +291,11 @@
             [_]
             (when-let [panel (get @stateA ::panel)]
               (.-active panel)))
+          mult.editor.protocols/Visible?
+          (visible?*
+            [_]
+            (when-let [panel (get @stateA ::panel)]
+              (.-visible panel)))
           mult.editor.protocols/Release
           (release*
             [_]
@@ -301,7 +312,7 @@
   [context
    {:as opts
     :keys [::cmds
-           ::cmd|]}]
+           ::mult.editor.spec/cmd|]}]
   {:pre [(s/assert ::register-commands-opts opts)]}
   (doseq [[cmd-spec-key {:keys [::cmd-id] :as cmd}] cmds]
     (let [disposable (.. vscode.commands

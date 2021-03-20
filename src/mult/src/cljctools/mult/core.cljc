@@ -34,8 +34,7 @@
 
 (s/def ::create-opts (s/keys :req [::id
                                    ::mult.spec/config
-                                   ::mult.editor.spec/editor
-                                   ::mult.nrepl.spec/create-nrepl-connection]
+                                   ::mult.editor.spec/editor]
                              :opt []))
 
 
@@ -43,15 +42,13 @@
 (s/def ::recv| ::mult.spec/channel)
 (s/def ::recv|mult ::mult.spec/mult)
 
+(s/def ::tabs (s/coll-of ::mult.editor.spec/tab :into #{}))
+
 (defonce ^:private registryA (atom {}))
 
 (declare read-ns-symbol
          send-data
-         filepath->logical-repl-ids)
-
-(defonce ui-stateA (atom
-                    ^{:type ::mult.spec/ui-state}
-                    {}))
+         filepath->nrepl-ids)
 
 (defn create
   [{:keys [::id
@@ -65,15 +62,29 @@
         op| (chan 10)
         cmd| (chan 10)
 
-        tab
-        (mult.editor.protocols/create-tab*
-         editor
-         {::mult.editor.spec/tab-id "mult-tab"
-          ::mult.editor.spec/tab-title "mult"
-          ::mult.editor.spec/on-tab-closed (fn [tab]
-                                             (put! tab-evt| {:op ::mult.editor.spec/on-tab-closed}))
-          ::mult.editor.spec/on-tab-message (fn [tab msg]
-                                              (put! tab-recv| (read-string msg)))})
+        create-tab
+        (fn create-tab
+          []
+          (let [tab-id (str (random-uuid))
+                tab (mult.editor.protocols/create-tab*
+                     editor
+                     {::mult.editor.spec/tab-id tab-id
+                      ::mult.editor.spec/tab-title "mult"
+                      ::mult.editor.spec/on-tab-closed (fn [tab]
+                                                         (put! tab-evt| {:op ::mult.editor.spec/on-tab-closed
+                                                                         ::mult.editor.spec/tab-id tab-id}))
+                      ::mult.editor.spec/on-tab-message (fn [tab msg]
+                                                          (put! tab-recv| (read-string msg)))})]
+            (mult.editor.protocols/open* tab)
+            (send-data tab {:op ::mult.spec/op-update-ui-state
+                            ::mult.spec/config config})
+            (swap! stateA update ::tabs assoc tab-id tab)))
+
+        release-tab
+        (fn release-tab
+          [tab-id tab]
+          (mult.editor.protocols/release* tab)
+          (swap! stateA update ::tabs dissoc tab-id))
 
         nrepl-connections
         (persistent!
@@ -97,7 +108,9 @@
           mult.protocols/Release
           (release*
             [_]
-            (mult.editor.protocols/release* tab)
+            (doseq [[tab-id tab] (get @stateA ::tabs)]
+              (mult.editor.protocols/release* tab)
+              (swap! stateA update ::tabs dissoc tab-id))
             (close! tab-evt|)
             (close! tab-recv|))
           #?(:clj clojure.lang.IDeref)
@@ -117,17 +130,22 @@
                     opts
                     {::opts opts
                      ::mult.editor.spec/editor editor
-                     ::mult.editor.spec/tab tab
+                     ::tabs {}
                      ::mult.spec/op| op|
                      ::mult.spec/cmd| cmd|}))
     (swap! registryA assoc id)
-    (add-watch ui-stateA ::ui-state
-               (fn [k refA old-state new-state]
-                 (send-data tab {:op ::mult.spec/op-update-ui-state
-                                 ::mult.spec/ui-state new-state})))
-    (do
-      (mult.editor.protocols/open* tab)
-      (swap! ui-stateA assoc ::mult.spec/config config))
+    #_(add-watch ui-stateA ::ui-state
+                 (fn [k refA old-state new-state]
+                   (println (count (get @stateA ::tabs)))
+                   (doseq [[tab-id tab] (get @stateA ::tabs)]
+                     (println tab-id)
+                     (when (mult.editor.protocols/active? tab)
+                       (println ::tab-is-active)
+                       (send-data tab {:op ::mult.spec/op-update-ui-state
+                                       ::mult.spec/ui-state new-state})))))
+    (doseq [_ (range 0 (::mult.spec/open-n-tabs-on-start config))]
+      (create-tab))
+    
     (go
       (loop []
         (let [[value port] (alts! [tab-evt| cmd| op|])]
@@ -143,15 +161,16 @@
                       filepath (mult.editor.protocols/filepath* active-text-editor)]
                   (when filepath
                     (let [ns-symbol (mult.fmt.core/text->ns-symbol active-text-editor filepath)
-                          logical-repl-ids (filepath->logical-repl-ids
-                                            config
-                                            filepath)
-                          logical-repl (get logical-repls (first logical-repl-ids))]
-                      (when (and ns-symbol logical-repl)
-                        (println ::evt-did-change-active-text-editor)
-                        (swap! ui-stateA merge {::mult.fmt.spec/ns-symbol ns-symbol
-                                                ::mult.spec/logical-repl-id (::mult.spec/logical-repl-id @logical-repl)})
-                        #_(<! (mult.protocols/on-activate* logical-repl ns-symbol))))))
+                          nrepl-ids (filepath->nrepl-ids
+                                     config
+                                     filepath)
+                          nrepl-id (first nrepl-ids)]
+                      (when ns-symbol
+                        (doseq [[tab-id tab] (get @stateA ::tabs)]
+                          (when (mult.editor.protocols/visible?* tab)
+                            (send-data tab {:op ::mult.spec/op-update-ui-state
+                                            ::mult.fmt.spec/ns-symbol ns-symbol
+                                            ::mult.spec/nrepl-id  nrepl-id})))))))
 
                 ::mult.spec/op-select-logical-tab
                 (let [{:keys []} value]
@@ -162,7 +181,8 @@
               (condp = (:op value)
 
                 ::mult.editor.spec/on-tab-closed
-                (let [{:keys []} value]
+                (let [{:keys [::mult.editor.spec/tab-id]} value]
+                  (swap! stateA update ::tabs dissoc tab-id)
                   (println ::tab-disposed)))
 
               cmd|
@@ -170,31 +190,30 @@
 
                 ::mult.spec/cmd-open
                 (let []
-                  (println ::cmd-open)
-                  (mult.editor.protocols/open* tab))
+                  (println ::cmd-open))
 
                 ::mult.spec/cmd-ping
                 (let []
                   (println ::cmd-ping)
                   (mult.editor.protocols/show-notification* editor (str ::cmd-ping))
-                  (mult.editor.protocols/send* tab (pr-str {:op ::mult.spec/op-ping})))
+                  #_(mult.editor.protocols/send* tab (pr-str {:op ::mult.spec/op-ping})))
 
                 ::mult.spec/cmd-eval
                 (let [active-text-editor (mult.editor.protocols/active-text-editor* editor)
                       filepath (mult.editor.protocols/filepath* active-text-editor)]
-                  (when filepath
-                    (let [ns-symbol (mult.fmt.core/text->ns-symbol active-text-editor filepath)
-                          selection-string (mult.editor.protocols/selection* active-text-editor)
-                          logical-repl-ids (filepath->logical-repl-ids
-                                            config
-                                            filepath)
-                          logical-repl (get logical-repls (first logical-repl-ids))]
-                      (when (and ns-symbol logical-repl)
-                        (let [{:keys [value]} (<! (mult.protocols/eval*
-                                                   logical-repl
-                                                   {::mult.spec/code-string selection-string
-                                                    ::mult.fmt.spec/ns-symbol ns-symbol}))]
-                          (swap! ui-stateA assoc ::mult.spec/eval-result value))))))
+                  #_(when filepath
+                      (let [ns-symbol (mult.fmt.core/text->ns-symbol active-text-editor filepath)
+                            selection-string (mult.editor.protocols/selection* active-text-editor)
+                            logical-repl-ids (filepath->logical-repl-ids
+                                              config
+                                              filepath)
+                            logical-repl (get logical-repls (first logical-repl-ids))]
+                        (when (and ns-symbol logical-repl)
+                          (let [{:keys [value]} (<! (mult.protocols/eval*
+                                                     logical-repl
+                                                     {::mult.spec/code-string selection-string
+                                                      ::mult.fmt.spec/ns-symbol ns-symbol}))]
+                            (swap! ui-stateA assoc ::mult.spec/eval-result value))))))
 
                 (do ::ignore-other-cmds)))
             (recur)))))
@@ -227,15 +246,15 @@
   {:pre [(s/assert ::mult.spec/op (:op data))]}
   (mult.editor.protocols/send* tab (pr-str data)))
 
-(defn filepath->logical-repl-ids
+(defn filepath->nrepl-ids
   [config filepath]
   (let [opts {:namespaces {'foo.bar {'x 1}}}
         sci-ctx (sci/init opts)]
     (into []
           (comp
-           (filter (fn [{:keys [::mult.spec/logical-repl-id
+           (filter (fn [{:keys [::mult.spec/nrepl-id
                                 ::mult.spec/include-file?]}]
                      (let [include-file?-fn (sci/eval-string* sci-ctx (pr-str include-file?))]
                        (include-file?-fn filepath))))
-           (map ::mult.spec/logical-repl-id))
-          (::mult.spec/logical-repl-metas config))))
+           (map ::mult.spec/nrepl-id))
+          (::mult.spec/nrepl-metas config))))

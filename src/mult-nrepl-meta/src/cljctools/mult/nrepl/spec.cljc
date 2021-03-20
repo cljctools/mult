@@ -16,18 +16,12 @@
 (s/def ::cmd|mult ::mult)
 (s/def ::evt|mult ::mult)
 
-(s/def ::nrepl-id keyword?)
+
 (s/def ::host string?)
 (s/def ::port int?)
 (s/def ::nrepl-type #{:shadow-cljs :nrepl})
 (s/def ::runtime #{:cljs :clj})
 (s/def ::shadow-build-key keyword?)
-(s/def ::include-file? (s/or
-                        ::ifn? ifn?
-                        ::list? list?))
-
-
-
 
 (s/def ::op #{})
 
@@ -37,12 +31,10 @@
                             #?(:clj (satisfies? clojure.lang.IDeref %))
                             #?(:cljs (satisfies? cljs.core/IDeref %))))
 
-(s/def ::create-nrepl-connection-opts (s/keys :req [::nrepl-id
-                                                    ::host
+(s/def ::create-nrepl-connection-opts (s/keys :req [::host
                                                     ::port
                                                     ::nrepl-type
-                                                    ::runtime
-                                                    ::include-file?]
+                                                    ::runtime]
                                               :opt [::shadow-build-key]))
 
 (s/def ::session-id string?)

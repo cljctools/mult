@@ -1,43 +1,31 @@
-#:cljctools.mult.spec{:nrepl-metas
-                      #{#:cljctools.mult.nrepl.spec
-                         {:nrepl-id :mult
-                          :host "localhost"
-                          :port 8899
-                          :nrepl-type :shadow-cljs
-                          :runtime :cljs
-                          :shadow-build-key :mult
-                          :include-file?
-                          (fn [filepath]
-                            (re-matches (re-pattern ".+\\.clj(s|c)") filepath))}
+{:cljctools.mult.spec/nrepl-metas
+ #{{:cljctools.mult.spec/nrepl-id :mult
+    :cljctools.mult.spec/include-file?
+    (fn [filepath]
+      (re-matches (re-pattern ".+\\.clj(s|c)") filepath))
+    :cljctools.mult.nrepl.spec/host "localhost"
+    :cljctools.mult.nrepl.spec/port 8899
+    :cljctools.mult.nrepl.spec/nrepl-type :shadow-cljs
+    :cljctools.mult.nrepl.spec/runtime :cljs
+    :cljctools.mult.nrepl.spec/shadow-build-key :mult}
 
-                        #:cljctools.mult.nrepl.spec
-                         {:nrepl-id :mult-ui
-                          :host "localhost"
-                          :port 8899
-                          :nrepl-type :shadow-cljs
-                          :runtime :cljs
-                          :shadow-build-key :mult-ui
-                          :include-file?
-                          (fn [filepath]
-                            (re-matches (re-pattern ".+\\.clj(s|c)") filepath))}
+   {:cljctools.mult.spec/nrepl-id :mult-ui
+    :cljctools.mult.spec/include-file?
+    (fn [filepath]
+      (re-matches (re-pattern ".+\\.clj(s|c)") filepath))
+    :cljctools.mult.nrepl.spec/host "localhost"
+    :cljctools.mult.nrepl.spec/port 8899
+    :cljctools.mult.nrepl.spec/nrepl-type :shadow-cljs
+    :cljctools.mult.nrepl.spec/runtime :cljs
+    :cljctools.mult.nrepl.spec/shadow-build-key :mult-ui}
 
-                        #:cljctools.mult.nrepl.spec
-                         {:nrepl-id :shadow-devserver
-                          :host "localhost"
-                          :port 8899
-                          :nrepl-type :shadow-cljs
-                          :runtime :clj
-                          :include-file?
-                          (fn [filepath]
-                            (re-matches (re-pattern ".+\\.clj(s|c)") filepath))}}
+   {:cljctools.mult.spec/nrepl-id :shadow-devserver
+    :cljctools.mult.spec/include-file?
+    (fn [filepath]
+      (re-matches (re-pattern ".+\\.clj(s|c)") filepath))
+    :cljctools.mult.nrepl.spec/host "localhost"
+    :cljctools.mult.nrepl.spec/port 8899
+    :cljctools.mult.nrepl.spec/nrepl-type :shadow-cljs
+    :cljctools.mult.nrepl.spec/runtime :clj}}
 
-                      :tab-metas
-                      #{#:cljctools.mult.spec
-                         {:tab-id :mult
-                          :nrepl-ids #{:mult :mult-ui}}
-
-                        #:cljctools.mult.spec
-                         {:tab-id :devserver
-                          :nrepl-ids #{:shadow-devserver}}}
-                      :open-tab-ids #{:mult}
-                      :active-tab-id :mult}
+ :cljctools.mult.spec/open-n-tabs-on-start 2}

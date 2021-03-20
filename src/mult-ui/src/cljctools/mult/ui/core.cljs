@@ -52,7 +52,8 @@
    ["@ant-design/icons/ReloadOutlined" :default AntIconReloadOutlined]
 
    [cljctools.mult.spec :as mult.spec]
-   [cljctools.mult.fmt.spec :as mult.fmt.spec]))
+   [cljctools.mult.fmt.spec :as mult.fmt.spec]
+   [cljctools.mult.nrepl.spec :as mult.nrepl.spec]))
 
 (do (clojure.spec.alpha/check-asserts true))
 
@@ -108,9 +109,9 @@
                   (println ::ping value))
 
                 ::mult.spec/op-update-ui-state
-                (let [{:keys [::mult.spec/ui-state]} value]
-                  (println ::op-update-ui-state)
-                  (reset! ui-stateA ui-state))
+                (let [{:keys []} value]
+                  #_(println ::op-update-ui-state)
+                  (swap! ui-stateA merge value))
 
                 ::mult.spec/op-eval
                 (let [{:keys [::mult.spec/eval-result]} value]
@@ -145,42 +146,20 @@
     [eval-resultA (r/cursor ui-stateA [::mult.spec/eval-result])
      configA (r/cursor ui-stateA [::mult.spec/config])
      ns-symbolA (r/cursor ui-stateA [::mult.fmt.spec/ns-symbol])
-     active-logical-repl-idA (r/cursor ui-stateA [::mult.spec/logical-repl-id])]
-    (let [active-logical-repl-id @active-logical-repl-idA
+     active-nrepl-idA (r/cursor ui-stateA [::mult.spec/nrepl-id])]
+    (let [active-nrepl-id @active-nrepl-idA
           config @configA]
       [:<>
        [:> AntRow]
        [:> AntRow
-        [:> AntTabs {:size "small"
-                     :animated false
-                     :defaultActiveKey nil
-                     :onChange (fn [id] (println (keyword id)))}
-         (map (fn [{:keys [::mult.spec/logical-tab-id
-                           ::mult.spec/logical-repl-ids] :as logical-tab-meta}]
-                (let []
-                  ^{:key  logical-tab-id}
-                  [:> (.-TabPane AntTabs) {:tab (str logical-tab-id)
-                                           :key (str logical-tab-id)}
-                   [:span
-                    (map (fn [{:keys [::mult.spec/logical-repl-id] :as logical-repl-meta}]
-                           (let [active? (= active-logical-repl-id  logical-repl-id)]
-                             ^{:key  logical-repl-id}
-                             #_[:> (.-CheckableTag AntTag) {:key logical-repl-id
-                                                            :checked active?} logical-repl-id]
-                             [:span {:style {:cursor "pointer"
-                                             :margin-right 8
-                                             :color (if active? "black" "grey")}} (str logical-repl-id)]))
-                         (into []
-                               (comp
-                                (filter (fn [{:keys [::mult.spec/logical-repl-id]}] (some #(= logical-repl-id %) logical-repl-ids))))
-                               (::mult.spec/logical-repl-metas config)))]]))
-              (::mult.spec/logical-tab-metas config))]]
-       #_[:> AntRow
-          (map (fn [{:keys [::mult.spec/logical-repl-id] :as logical-repl-meta}]
-                 (let [color (if (= active-logical-repl-id  logical-repl-id) "black" "grey")]
-                   ^{:key  logical-repl-id} [:> AntCol {:span 4}
-                                             [:div {:style {:color color}} logical-repl-id]]))
-               (::mult.spec/logical-repl-metas config))]
+        [:span
+         (map (fn [{:keys [::mult.spec/nrepl-id] :as nrepl-meta}]
+                (let [active? (= active-nrepl-id  nrepl-id)]
+                  ^{:key nrepl-id}
+                  [:span {:style {:cursor "pointer"
+                                  :margin-right 8
+                                  :color (if active? "black" "grey")}} (str nrepl-id)]))
+              (::mult.spec/nrepl-metas config))]]
        [:> AntRow
         [:div @ns-symbolA]]
        [:> AntRow
