@@ -21,18 +21,16 @@
 (s/def ::create-opts (s/keys :req [::id]
                              :opt []))
 
-
 (def jar-event-emitter (vscode.EventEmitter.))
 (def contents-request (lsp.RequestType. "clojure/dependencyContents"))
-(def clientA (atom nil))
-
+(def language-clientA (atom nil))
 
 (defn activate
   [context]
   (go
     (println ::activate)
     (let [server-options
-          {:run {:command "bash" :args ["-c" "clojure-lsp"]}
+          {:run  {:command "bash" :args ["-c" "clojure-lsp"]}
            :debug {:command "bash" :args ["-c" "clojure-lsp"]}}
 
           client-options
@@ -41,23 +39,31 @@
                          :fileEvents (.. vscode -workspace (createFileSystemWatcher "**/.clientrc"))}
            :initializationOptions {"dependency-scheme" "jar"}}
 
+          language-client (lsp.LanguageClient.
+                           "clojure-lsp"
+                           "Clojure Language Client"
+                           (clj->js server-options)
+                           (clj->js client-options))
 
-          client (lsp.LanguageClient.
-                  "clojure-lsp"
-                  "Clojure Language Client"
-                  (clj->js server-options)
-                  (clj->js client-options))]
+          provider {:onDidChange (. jar-event-emitter -event)
+                    :provideTextDocumentContent (fn [uri token]
+                                                  (-> (.sendRequest language-client
+                                                                    contents-request
+                                                                    (clj->js {:uri (js/decodeURIComponent (.toString uri))}) token)
+                                                      (.then (fn [v]
+                                                               (or v "")))))}]
 
-      (.. context -subscriptions (push (.start client)))
-      (reset! clientA client))))
+      (.. context -subscriptions (push (.start language-client)))
+      (.. context -subscriptions (push (.. vscode -workspace (registerTextDocumentContentProvider "jar" provider))))
+      (reset! language-clientA language-client))))
 
 (defn deactivate
   []
   (go
     (println ::deactivate)
-    (when-let [client @clientA]
-      (.stop client)
-      (reset! clientA nil))))
+    (when-let [language-client @language-clientA]
+      (.stop language-client)
+      (reset! language-clientA nil))))
 
 (def exports #js {:activate (fn [context]
                               (println ::activate)

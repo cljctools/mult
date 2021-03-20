@@ -25,3 +25,5 @@ tmp/
 .user
 
 *.vsix
+
+/.lsp
