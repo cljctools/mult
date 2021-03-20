@@ -31,16 +31,68 @@
    :post [(s/assert ::mult.nrepl.spec/nrepl-connection %)]}
   (let [stateA (atom nil)
 
+        reponses->map
+        (fn reponses->map
+          [responses]
+          (let [data (->>
+                      (reduce
+                       (fn [result response]
+                         (if (:value response)
+                           (assoc result :value (clojure.string/join "" [(:value result) (:value response)]))
+                           (merge result response)))
+                       {}
+                       (js->clj responses :keywordize-keys true)))]
+            data))
+
+        connected?
+        (fn connected?
+          []
+          (and (get @stateA ::nrepl-client)
+               (= (.. (get @stateA ::nrepl-client) -readyState) "open")))
+
+        eval-fn
+        (fn eval-fn
+          [{:as opts
+            :keys [::mult.nrepl.spec/session-id
+                   ::mult.nrepl.spec/ns-symbol
+                   ::mult.nrepl.spec/code-string]}]
+          (let [nrepl-client (get @stateA ::nrepl-client)
+                result| (chan 1)]
+            (let [session-id (or session-id (get @stateA ::mult.nrepl.spec/session-id))]
+              (.eval nrepl-client code-string (str ns-symbol) session-id
+                     (fn [err responses]
+                       (println :eval-err (js->clj err :keywordize-keys true))
+                       (println :eval-responses (js->clj responses :keywordize-keys true))
+                       (if err
+                         (do (println ::err err)
+                             (put! result| err))
+                         (put! result| (reponses->map responses))))))
+            result|))
+
+        clone-fn
+        (fn clone-fn
+          [{:as opts
+            :keys [::mult.nrepl.spec/session-id]}]
+          (let [nrepl-client (get @stateA ::nrepl-client)
+                result| (chan 1)]
+            (let [session-id (or session-id (get @stateA ::mult.nrepl.spec/session-id))]
+              (.clone nrepl-client session-id
+                      (fn [err responses]
+                        (if err
+                          (do (println ::err err)
+                              (put! result| err))
+                          (do
+                            (put! result| (reponses->map responses)))))))
+            result|))
+
+
         init-session-fn
         (fn init-session-fn
           [nrepl-connection]
           (go
-            (let [value-string (<! (mult.nrepl.protocols/clone*
-                                    nrepl-connection {}))
-                  {:keys [:new-session] :as value} (read-string value-string)]
-              (println ::value-string value-string)
-              (println ::value value)
+            (let [{:keys [:new-session]} (<! (clone-fn {}))]
               (swap! stateA assoc ::mult.nrepl.spec/session-id new-session)
+              (println :new-session new-session)
               new-session)))
 
         init-fns {[:nrepl :clj]
@@ -58,11 +110,11 @@
                             code-string (format
                                          "(shadow.cljs.devtools.api/nrepl-select %s)"
                                          shadow-build-key)]
-                        (<! (mult.nrepl.protocols/eval*
-                             nrepl-connection
+                        (<! (eval-fn
                              {::mult.nrepl.spec/code-string code-string
-                              ::mult.nrepl.spec/session-id session-id})))
-                      true))
+                              ::mult.nrepl.spec/session-id session-id}))
+                        (println :init-fn-done)
+                        true)))
 
                   [:shadow-cljs :clj]
                   (fn init-fn
@@ -70,20 +122,21 @@
                     (go
                       true))}
 
-        reponses->value-string
-        (fn reponses->string
-          [responses]
-          (let [value-string (->>
-                              (persistent!
-                               (reduce
-                                (fn [result response]
-                                  (if (:value response)
-                                    (conj! result (:value response))
-                                    result))
-                                (transient [])
-                                (js->clj responses :keywordize-keys true)))
-                              (clojure.string/join ""))]
-            value-string))
+        initialize
+        (fn initialize
+          [nrepl-connection]
+          (if (and (connected?)
+                   (get @stateA ::mult.nrepl.spec/session-id))
+            (go true)
+            (go
+              (let [{:keys [::mult.nrepl.spec/nrepl-type
+                            ::mult.nrepl.spec/runtime]} @stateA
+                    init-fn (get init-fns [nrepl-type runtime])]
+                (<! (init-session-fn nrepl-connection))
+                (<!  (init-fn nrepl-connection))
+                true))))
+
+
 
         nrepl-connection
         ^{:type ::mult.nrepl.spec/nrepl-connection}
@@ -94,57 +147,42 @@
                    :keys [::mult.nrepl.spec/session-id
                           ::mult.nrepl.spec/code-string]}]
             {:pre [(s/assert ::mult.nrepl.spec/eval-opts opts)]}
-            (let [nrepl-client (get @stateA ::nrepl-client)
-                  result| (chan 1)]
-              (go
+            (go
                 ;; lazy connect on eval, making it http request/response like
-                ;; if user wants to eval and app down, the response will be 'not connected'
+                ;; if user wants to eval and app is down, the response will be 'not connected'
                 ;; once the app is up, evals will work
                 ;; so no need for reconnecting socket, the request-lazy connect-response is better
-                (<! (mult.nrepl.protocols/connect* this))
-                (.eval nrepl-client code-string session-id
-                       (fn [err responses]
-                         (if err
-                           (do (println ::err err)
-                               (put! result| err))
-                           (put! result| (reponses->value-string responses))))))
-              result|))
+              (<! (mult.nrepl.protocols/connect* this))
+              (<! (initialize this))
+              (<! (eval-fn opts))))
 
           (clone*
             [this {:as opts
                    :keys [::mult.nrepl.spec/session-id]}]
             {:pre [(s/assert ::mult.nrepl.spec/clone-opts opts)]}
-            (let [nrepl-client (get @stateA ::nrepl-client)
-                  result| (chan 1)]
-              (.clone nrepl-client session-id
-                      (fn [err responses]
-                        (if err
-                          (do (println ::err err)
-                              (put! result| err))
-                          (put! result| (reponses->value-string responses)))))
-              result|))
+            (go
+              (<! (mult.nrepl.protocols/connect* this))
+              (<! (clone-fn opts))))
 
           (connect*
             [this]
-            (if (and (get @stateA ::nrepl-client)
-                     (= (.. (get @stateA ::nrepl-client) -readyState) "open"))
-              (go true))
-            (go
-              (let [nrepl-client (.connect NreplClient
-                                           (->
-                                            (get @stateA ::opts)
-                                            (select-keys [::mult.nrepl.spec/host
-                                                          ::mult.nrepl.spec/port])
-                                            (clj->js)))
-                    {:keys [::mult.nrepl.spec/nrepl-type
-                            ::mult.nrepl.spec/runtime]} @stateA
-                    init-fn (get init-fns [nrepl-type runtime])]
-                (doto nrepl-client
-                  (.on "close" (fn [code reason]
-                                 (mult.nrepl.protocols/disconnect* this))))
-                (swap! stateA assoc ::nrepl-client nrepl-client)
-                (<! (init-session-fn this))
-                (<!  (init-fn this)))))
+            (if (connected?)
+              (go true)
+              (let [result| (chan 1)]
+                (let [nrepl-client (.connect NreplClient
+                                             (->
+                                              (get @stateA ::opts)
+                                              (select-keys [::mult.nrepl.spec/host
+                                                            ::mult.nrepl.spec/port])
+                                              (clj->js)))]
+                  (doto nrepl-client
+                    (.on "ready" (fn []
+                                   (put! result| true)))
+                    (.on "close" (fn [code reason]
+                                   (mult.nrepl.protocols/disconnect* this))))
+                  (swap! stateA assoc ::nrepl-client nrepl-client))
+                result|)))
+
           (connect*
             [this {:keys [::mult.nrepl.spec/host
                           ::mult.nrepl.spec/port] :as opts}]

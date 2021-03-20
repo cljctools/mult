@@ -69,7 +69,7 @@
          send-data)
 
 (defonce matchA (r/atom nil))
-(defonce ui-stateA (r/atom
+(defonce stateA (r/atom
                     ^{:type ::mult.spec/ui-state}
                     {}))
 
@@ -111,7 +111,7 @@
                 ::mult.spec/op-update-ui-state
                 (let [{:keys []} value]
                   #_(println ::op-update-ui-state)
-                  (swap! ui-stateA merge value))
+                  (swap! stateA merge value))
 
                 ::mult.spec/op-eval
                 (let [{:keys [::mult.spec/eval-result]} value]
@@ -143,10 +143,11 @@
 
 (defn current-page [matchA]
   (r/with-let
-    [eval-resultA (r/cursor ui-stateA [::mult.spec/eval-result])
-     configA (r/cursor ui-stateA [::mult.spec/config])
-     ns-symbolA (r/cursor ui-stateA [::mult.fmt.spec/ns-symbol])
-     active-nrepl-idA (r/cursor ui-stateA [::mult.spec/nrepl-id])]
+    [eval-valueA (r/cursor stateA [::mult.spec/eval-value])
+     eval-errA (r/cursor stateA [::mult.spec/eval-err])
+     configA (r/cursor stateA [::mult.spec/config])
+     ns-symbolA (r/cursor stateA [::mult.fmt.spec/ns-symbol])
+     active-nrepl-idA (r/cursor stateA [::mult.spec/nrepl-id])]
     (let [active-nrepl-id @active-nrepl-idA
           config @configA]
       [:<>
@@ -162,9 +163,15 @@
               (::mult.spec/nrepl-metas config))]]
        [:> AntRow
         [:div @ns-symbolA]]
+
+       (when @eval-errA
+         [:> AntRow
+          [:section
+           @eval-errA]])
+
        [:> AntRow
         [:section
-         (with-out-str (pprint @eval-resultA))
+         (with-out-str (pprint @eval-valueA))
 
          #_(map-indexed (fn [i v]
                           ^{:key i} [:pre {} (with-out-str (pprint v))])

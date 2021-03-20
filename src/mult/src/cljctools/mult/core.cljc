@@ -44,6 +44,8 @@
 
 (s/def ::tabs (s/coll-of ::mult.editor.spec/tab :into #{}))
 
+(s/def ::nrepl-connections (s/map-of ::mult.spec/nrepl-id ::mult.nrepl.spec/nrepl-connection))
+
 (defonce ^:private registryA (atom {}))
 
 (declare read-ns-symbol
@@ -88,18 +90,12 @@
 
         nrepl-connections
         (persistent!
-         (reduce (fn [result {:keys [::mult.spec/connection-id
-                                     ::mult.spec/connection-opts] :as connection-meta}]
-                   result
-                   #_(assoc! result connection-id
-                             (mult.nrepl.core/create-nrepl-connection
-                              connection-opts)))
+         (reduce (fn [result {:keys [::mult.spec/nrepl-id] :as nrepl-meta}]
+                   (assoc! result nrepl-id
+                           (mult.nrepl.core/create-nrepl-connection
+                            nrepl-meta)))
                  (transient {})
-                 (into #{}
-                       (comp
-                        (filter (fn [connection-meta]
-                                  (= (::mult.spec/repl-protocol connection-meta) :nrepl))))
-                       (get config ::mult.spec/connection-metas))))
+                 (get config ::mult.spec/nrepl-metas)))
 
         cljctools-mult
         ^{:type ::mult.spec/cljctools-mult}
@@ -118,34 +114,18 @@
           #?(:cljs cljs.core/IDeref)
           #?(:cljs (-deref [_] @stateA)))]
 
-    #_(doseq [[logical-repl-id logical-repl] logical-repls
-              :let [{:keys [::mult.spec/connection-id]} @logical-repl
-                    nrepl-connection (get nrepl-connections  connection-id)]
-              :when nrepl-connection]
-        #_(println ::tapping logical-repl-id connection-id)
-        (tap (::recv|mult nrepl-connection) recv|)
-        (pipe send| (::send| nrepl-connection) false))
-
     (reset! stateA (merge
                     opts
                     {::opts opts
                      ::mult.editor.spec/editor editor
+                     ::nrepl-connections nrepl-connections
                      ::tabs {}
                      ::mult.spec/op| op|
                      ::mult.spec/cmd| cmd|}))
     (swap! registryA assoc id)
-    #_(add-watch ui-stateA ::ui-state
-                 (fn [k refA old-state new-state]
-                   (println (count (get @stateA ::tabs)))
-                   (doseq [[tab-id tab] (get @stateA ::tabs)]
-                     (println tab-id)
-                     (when (mult.editor.protocols/active? tab)
-                       (println ::tab-is-active)
-                       (send-data tab {:op ::mult.spec/op-update-ui-state
-                                       ::mult.spec/ui-state new-state})))))
     (doseq [_ (range 0 (::mult.spec/open-n-tabs-on-start config))]
       (create-tab))
-    
+
     (go
       (loop []
         (let [[value port] (alts! [tab-evt| cmd| op|])]
@@ -201,32 +181,37 @@
                 ::mult.spec/cmd-eval
                 (let [active-text-editor (mult.editor.protocols/active-text-editor* editor)
                       filepath (mult.editor.protocols/filepath* active-text-editor)]
-                  #_(when filepath
-                      (let [ns-symbol (mult.fmt.core/text->ns-symbol active-text-editor filepath)
-                            selection-string (mult.editor.protocols/selection* active-text-editor)
-                            logical-repl-ids (filepath->logical-repl-ids
-                                              config
-                                              filepath)
-                            logical-repl (get logical-repls (first logical-repl-ids))]
-                        (when (and ns-symbol logical-repl)
-                          (let [{:keys [value]} (<! (mult.protocols/eval*
-                                                     logical-repl
-                                                     {::mult.spec/code-string selection-string
-                                                      ::mult.fmt.spec/ns-symbol ns-symbol}))]
-                            (swap! ui-stateA assoc ::mult.spec/eval-result value))))))
+                  (when filepath
+                    (let [ns-symbol (mult.fmt.core/text->ns-symbol active-text-editor filepath)
+                          code-string (mult.editor.protocols/selection* active-text-editor)
+                          nrepl-ids (filepath->nrepl-ids
+                                     config
+                                     filepath)
+                          nrepl-id (first nrepl-ids)
+                          nrepl-connection (get-in @stateA [::nrepl-connections nrepl-id])]
+                      (when (and ns-symbol nrepl-connection)
+                        (let [{:keys [::mult.nrepl.spec/runtime]} @nrepl-connection
+                              #_code-string-formatted
+                              #_(cond
+                                  (= runtime :clj)
+                                  (format "(do (in-ns '%s) %s)" ns-symbol code-string)
+
+                                  (= runtime :cljs)
+                                  (format "(binding [*ns* (find-ns '%s)] %s)" ns-symbol code-string))
+                              {:keys [value err]} (<! (mult.nrepl.protocols/eval*
+                                                       nrepl-connection
+                                                       {::mult.nrepl.spec/code-string code-string
+                                                        ::mult.nrepl.spec/ns-symbol ns-symbol}))]
+                          (doseq [[tab-id tab] (get @stateA ::tabs)]
+                            (when (mult.editor.protocols/visible?* tab)
+                              (send-data tab {:op ::mult.spec/op-update-ui-state
+                                              ::mult.spec/eval-value value
+                                              ::mult.spec/eval-err err}))))))))
 
                 (do ::ignore-other-cmds)))
             (recur)))))
     cljctools-mult))
 
-#_(format
-   "(do (in-ns '%s) %s)" ns-symbol code-string)
-
-#_(format
-   "(binding [*ns* (find-ns '%s)]
-                      %s
-                      )"
-   ns-symbol code-string)
 
 (defmulti release
   "Releases cljctools-mult instance"

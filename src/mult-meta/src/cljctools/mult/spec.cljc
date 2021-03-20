@@ -46,9 +46,11 @@
               ::op-select-tab})
 
 (s/def ::eval-result (s/nilable string?))
+(s/def ::eval-err (s/nilable string?))
 
 (s/def ::ui-state (s/keys :req []
-                          :opt [::eval-result
+                          :opt [::eval-value
+                                ::eval-err
                                 ::mult.fmt.spec/ns-symbol
                                 ::config
                                 ::nrepl-id]))
