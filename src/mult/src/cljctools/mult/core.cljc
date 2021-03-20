@@ -198,18 +198,27 @@
 
                                   (= runtime :cljs)
                                   (format "(binding [*ns* (find-ns '%s)] %s)" ns-symbol code-string))
-                              {:keys [value err] :as data} (<! (mult.nrepl.protocols/eval*
+                              {:keys [value err out]} (<! (mult.nrepl.protocols/eval*
                                                                 nrepl-connection
                                                                 {::mult.nrepl.spec/code-string code-string
                                                                  ::mult.nrepl.spec/ns-symbol ns-symbol}))]
-                          (println (type (:out data)))
-                          (println (:out data))
-                          (doseq [[tab-id tab] (get @stateA ::tabs)]
-                            (when (mult.editor.protocols/visible?* tab)
-                              (send-data tab {:op ::mult.spec/op-update-ui-state
-                                              ::mult.spec/eval-value value
-                                              ::mult.spec/eval-out (:out data)
-                                              ::mult.spec/eval-err err}))))))))
+                          
+                          (if (zero? (count (get @stateA ::tabs)))
+                            (do
+                              ;; if no tabs, we print eval results directly to console
+                              (println (format "%s => \n\n %s \n\n" ns-symbol code-string))
+                              (when out
+                                (println out))
+                              (when err
+                                (println err))
+                              (println value))
+                            (doseq [[tab-id tab] (get @stateA ::tabs)]
+                              (when (mult.editor.protocols/visible?* tab)
+                                (send-data tab {:op ::mult.spec/op-update-ui-state
+                                                ::mult.spec/eval-value value
+                                                ::mult.spec/eval-out out
+                                                ::mult.spec/eval-err err}))))
+                          )))))
 
                 (do ::ignore-other-cmds)))
             (recur)))))

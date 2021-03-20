@@ -28,4 +28,4 @@
     :cljctools.mult.nrepl.spec/nrepl-type :shadow-cljs
     :cljctools.mult.nrepl.spec/runtime :clj}}
 
- :cljctools.mult.spec/open-n-tabs-on-start 2}
+ :cljctools.mult.spec/open-n-tabs-on-start 0}
