@@ -21,6 +21,8 @@
    [cljctools.mult.format.spec :as mult.format.spec]
    [cljctools.mult.format.core :as mult.format.core]
 
+   [cljctools.mult.lsp.core :as mult.lsp.core]
+
    [cljctools.mult.protocols :as mult.protocols]
    [cljctools.mult.spec :as mult.spec]
    [cljctools.mult.core :as mult.core]))
@@ -44,6 +46,7 @@
                                             ::mult.format.spec/fmt fmt
                                             ::mult.spec/config config
                                             ::mult.editor.spec/editor editor})]
+      (<! (mult.lsp.core/activate context))
       (mult.editor.core/register-commands*
        editor
        {::mult.editor.core/cmds {::mult.spec/cmd-open {::mult.editor.core/cmd-id ":cljctools.mult.spec/cmd-open"}
@@ -64,6 +67,7 @@
   []
   (go
     (when-let [editor (get @registryA ::editor)]
+      (<! (mult.lsp.core/deactivate))
       (mult.core/release ::mult)
       (mult.format.core/release ::mult-format)
       (mult.editor.protocols/release* editor)

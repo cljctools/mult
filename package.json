@@ -17,7 +17,8 @@
 		"postinstall": "node ./node_modules/vscode/bin/install"
 	},
 	"dependencies": {
-		"nrepl-client": "0.3.0"
+		"nrepl-client": "0.3.0",
+		"vscode-languageclient": "7.0.0"
 	},
 	"devDependencies": {
 		"antd": "4.9.2",
@@ -61,7 +62,7 @@
 			},
 			{
 				"command": ":cljctools.mult.fmt.spec/format-current-form",
-				"key": "tab",
+				"key": "ctrl+alt+m ctrl+alt+f",
 				"when": "editorTextFocus && editorLangId == 'clojure' && !editorReadOnly && !hasOtherSuggestions && !inSnippetMode && !suggestWidgetVisible"
 			}
 		],

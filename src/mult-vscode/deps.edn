@@ -1,4 +1,5 @@
 {:paths ["src"]
  :deps {github.cljctools/mult {:local/root  "../mult"}
         github.cljctools/mult-nrepl-nodejs {:local/root  "../mult-nrepl-nodejs"}
-        github.cljctools/mult-editor-vscode {:local/root  "../mult-editor-vscode"}}}
+        github.cljctools/mult-editor-vscode {:local/root  "../mult-editor-vscode"}
+        github.cljctools/mult-lsp-vscode {:local/root  "../mult-lsp-vscode"}}}
