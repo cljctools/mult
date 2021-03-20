@@ -13,6 +13,7 @@ clojure(script) extension for vscode
 - config driven: define repls in mult.edn file, extension lazy-connects when needed
 - simply a namespace and repls: tab shows current namespace and repls we can evalutate in
 - tabs like browser pages: it's one tab app, but we can open multiple, just like in the browser
+- github releases: download/install .vsix file from github, notify about updates; no store 
 - listen to Jesus and move the mountain: drive development of http-repl - remote evaluation should be an HTTP server https://github.com/cljctools/http-repl
 
 ## development
