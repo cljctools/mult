@@ -170,7 +170,7 @@
 
                 ::mult.spec/cmd-open
                 (let []
-                  (println ::cmd-open))
+                  (create-tab))
 
                 ::mult.spec/cmd-ping
                 (let []
