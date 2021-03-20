@@ -111,12 +111,7 @@
                 ::mult.spec/op-update-ui-state
                 (let [{:keys []} value]
                   #_(println ::op-update-ui-state)
-                  (swap! stateA merge value))
-
-                ::mult.spec/op-eval
-                (let [{:keys [::mult.spec/eval-result]} value]
-                  (println ::op-eval)
-                  #_(swap! stateA assoc ::mult.spec/eval-result eval-result))))
+                  (swap! stateA merge value))))
             (recur)))))))
 
 (defn send-data
@@ -145,6 +140,7 @@
   (r/with-let
     [eval-valueA (r/cursor stateA [::mult.spec/eval-value])
      eval-errA (r/cursor stateA [::mult.spec/eval-err])
+     eval-outA (r/cursor stateA [::mult.spec/eval-out])
      configA (r/cursor stateA [::mult.spec/config])
      ns-symbolA (r/cursor stateA [::mult.fmt.spec/ns-symbol])
      active-nrepl-idA (r/cursor stateA [::mult.spec/nrepl-id])]
@@ -164,15 +160,19 @@
        [:> AntRow
         [:div @ns-symbolA]]
 
+       (when @eval-outA
+         [:> AntRow
+          [:pre
+           @eval-outA]])
+
        (when @eval-errA
          [:> AntRow
-          [:section
+          [:pre
            @eval-errA]])
 
        [:> AntRow
-        [:section
-         (with-out-str (pprint @eval-valueA))
-
+        [:pre
+         @eval-valueA
          #_(map-indexed (fn [i v]
                           ^{:key i} [:pre {} (with-out-str (pprint v))])
                         @eval-result)]]]))

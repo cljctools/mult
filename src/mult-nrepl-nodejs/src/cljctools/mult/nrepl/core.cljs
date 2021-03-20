@@ -37,8 +37,12 @@
           (let [data (->>
                       (reduce
                        (fn [result response]
-                         (if (:value response)
+                         (cond
+                           (:value response)
                            (assoc result :value (clojure.string/join "" [(:value result) (:value response)]))
+                           (:out response)
+                           (assoc result :out (clojure.string/join "" [(:out result) (:out response)]))
+                           :else
                            (merge result response)))
                        {}
                        (js->clj responses :keywordize-keys true)))]
@@ -61,11 +65,8 @@
             (let [session-id (or session-id (get @stateA ::mult.nrepl.spec/session-id))]
               (.eval nrepl-client code-string (str ns-symbol) session-id
                      (fn [err responses]
-                       (println :eval-err (js->clj err :keywordize-keys true))
-                       (println :eval-responses (js->clj responses :keywordize-keys true))
                        (if err
-                         (do (println ::err err)
-                             (put! result| err))
+                         (put! result| err)
                          (put! result| (reponses->map responses))))))
             result|))
 
@@ -79,8 +80,7 @@
               (.clone nrepl-client session-id
                       (fn [err responses]
                         (if err
-                          (do (println ::err err)
-                              (put! result| err))
+                          (do (put! result| err))
                           (do
                             (put! result| (reponses->map responses)))))))
             result|))
@@ -92,7 +92,6 @@
           (go
             (let [{:keys [:new-session]} (<! (clone-fn {}))]
               (swap! stateA assoc ::mult.nrepl.spec/session-id new-session)
-              (println :new-session new-session)
               new-session)))
 
         init-fns {[:nrepl :clj]
@@ -113,7 +112,6 @@
                         (<! (eval-fn
                              {::mult.nrepl.spec/code-string code-string
                               ::mult.nrepl.spec/session-id session-id}))
-                        (println :init-fn-done)
                         true)))
 
                   [:shadow-cljs :clj]
