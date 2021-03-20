@@ -1,7 +1,7 @@
-(ns cljctools.mult.fmt.spec
+(ns cljctools.mult.format.spec
   (:require
    [clojure.spec.alpha :as s]
-   [cljctools.mult.fmt.protocols :as mult.fmt.protocols]))
+   [cljctools.mult.format.protocols :as mult.format.protocols]))
 
 (s/def ::ns-symbol symbol?)
 
@@ -12,8 +12,8 @@
 
 
 (s/def ::fmt #(and
-               (satisfies? mult.fmt.protocols/Fmt %)
-               (satisfies? mult.fmt.protocols/Release %)
+               (satisfies? mult.format.protocols/Fmt %)
+               (satisfies? mult.format.protocols/Release %)
                #?(:clj (satisfies? clojure.lang.IDeref %))
                #?(:cljs (satisfies? cljs.core/IDeref %))))
 

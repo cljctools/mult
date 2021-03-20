@@ -1,4 +1,4 @@
-(ns cljctools.mult.fmt.protocols)
+(ns cljctools.mult.format.protocols)
 
 (defprotocol Release
   (release* [_]))

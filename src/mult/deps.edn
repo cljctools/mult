@@ -4,7 +4,7 @@
                              :tag "v0.2.4"}
 
         github.cljctools/mult-meta {:local/root  "../mult-meta"}
-        github.cljctools/mult-fmt-meta {:local/root  "../mult-fmt-meta"}
+        github.cljctools/mult-format-meta {:local/root  "../mult-format-meta"}
         github.cljctools/mult-editor-meta {:local/root  "../mult-editor-meta"}
         github.cljctools/mult-nrepl-meta {:local/root  "../mult-nrepl-meta"}
-        github.cljctools/mult-fmt {:local/root  "../mult-fmt"}}}
+        github.cljctools/mult-format {:local/root  "../mult-format"}}}

@@ -20,9 +20,9 @@
    [cljctools.mult.nrepl.spec :as mult.nrepl.spec]
    [cljctools.mult.nrepl.core :as mult.nrepl.core]
 
-   [cljctools.mult.fmt.spec :as mult.fmt.spec]
-   [cljctools.mult.fmt.protocols :as mult.fmt.protocols]
-   [cljctools.mult.fmt.core :as mult.fmt.core]
+   [cljctools.mult.format.spec :as mult.format.spec]
+   [cljctools.mult.format.protocols :as mult.format.protocols]
+   [cljctools.mult.format.core :as mult.format.core]
 
    [cljctools.mult.spec :as mult.spec]
    [cljctools.mult.protocols :as mult.protocols]))
@@ -140,7 +140,7 @@
                       active-text-editor (mult.editor.protocols/active-text-editor* editor)
                       filepath (mult.editor.protocols/filepath* active-text-editor)]
                   (when filepath
-                    (let [ns-symbol (mult.fmt.core/text->ns-symbol active-text-editor filepath)
+                    (let [ns-symbol (mult.format.core/text->ns-symbol active-text-editor filepath)
                           nrepl-ids (filepath->nrepl-ids
                                      config
                                      filepath)
@@ -149,7 +149,7 @@
                         (doseq [[tab-id tab] (get @stateA ::tabs)]
                           (when (mult.editor.protocols/visible?* tab)
                             (send-data tab {:op ::mult.spec/op-update-ui-state
-                                            ::mult.fmt.spec/ns-symbol ns-symbol
+                                            ::mult.format.spec/ns-symbol ns-symbol
                                             ::mult.spec/nrepl-id  nrepl-id})))))))
 
                 ::mult.spec/op-select-logical-tab
@@ -182,7 +182,7 @@
                 (let [active-text-editor (mult.editor.protocols/active-text-editor* editor)
                       filepath (mult.editor.protocols/filepath* active-text-editor)]
                   (when filepath
-                    (let [ns-symbol (mult.fmt.core/text->ns-symbol active-text-editor filepath)
+                    (let [ns-symbol (mult.format.core/text->ns-symbol active-text-editor filepath)
                           code-string (mult.editor.protocols/selection* active-text-editor)
                           nrepl-ids (filepath->nrepl-ids
                                      config

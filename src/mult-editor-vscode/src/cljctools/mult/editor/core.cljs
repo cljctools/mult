@@ -14,7 +14,7 @@
    [clojure.walk]
 
    [cljctools.mult.spec :as mult.spec]
-   [cljctools.mult.fmt.spec :as mult.fmt.spec]
+   [cljctools.mult.format.spec :as mult.format.spec]
 
    [cljctools.mult.editor.protocols :as mult.editor.protocols]
    [cljctools.mult.editor.spec :as mult.editor.spec]))
@@ -58,8 +58,8 @@
                :mult-cmds
                (s/map-of ::mult.spec/cmd ::cmd)
 
-               :mult-fmt-cmds
-               (s/map-of ::mult.fmt.spec/cmd ::cmd)))
+               :mult-format-cmds
+               (s/map-of ::mult.format.spec/cmd ::cmd)))
 
 
 (s/def ::register-commands-opts (s/keys :req [::cmds

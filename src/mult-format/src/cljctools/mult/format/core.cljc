@@ -1,4 +1,4 @@
-(ns cljctools.mult.fmt.core
+(ns cljctools.mult.format.core
   (:require
    [clojure.core.async :as a :refer [chan go go-loop <! >! take! put! offer! poll! alt! alts! close!
                                      pub sub unsub mult tap untap mix admix unmix pipe
@@ -23,8 +23,8 @@
 
    [cljctools.mult.editor.spec :as mult.editor.spec]
    [cljctools.mult.editor.protocols :as mult.editor.protocols]
-   [cljctools.mult.fmt.spec :as mult.fmt.spec]
-   [cljctools.mult.fmt.protocols :as mult.fmt.protocols]))
+   [cljctools.mult.format.spec :as mult.format.spec]
+   [cljctools.mult.format.protocols :as mult.format.protocols]))
 
 (do (clojure.spec.alpha/check-asserts true))
 
@@ -44,16 +44,16 @@
   [{:keys [::id
            ::mult.editor.spec/editor] :as opts}]
   {:pre [(s/assert ::create-opts opts)]
-   :post [(s/assert ::mult.fmt.spec/fmt %)]}
+   :post [(s/assert ::mult.format.spec/fmt %)]}
   (let [stateA (atom nil)
         op| (chan 10)
         cmd| (chan 10)
 
         fmt
-        ^{:type ::mult.fmt.spec/fmt}
+        ^{:type ::mult.format.spec/fmt}
         (reify
-          mult.fmt.protocols/Fmt
-          mult.fmt.protocols/Release
+          mult.format.protocols/Fmt
+          mult.format.protocols/Release
           (release*
             [_]
             (close! op|)
@@ -67,8 +67,8 @@
                     opts
                     {::opts opts
                      ::mult.editor.spec/editor editor
-                     ::mult.fmt.spec/op| op|
-                     ::mult.fmt.spec/cmd| cmd|}))
+                     ::mult.format.spec/op| op|
+                     ::mult.format.spec/cmd| cmd|}))
     (swap! registryA assoc id)
     (go
       (loop []
@@ -88,7 +88,7 @@
               cmd|
               (condp = (:op value)
 
-                ::mult.fmt.spec/cmd-format-current-form
+                ::mult.format.spec/cmd-format-current-form
                 (let [text-editor (mult.editor.protocols/active-text-editor* editor)
                       text (mult.editor.protocols/text* text-editor)
                       text-formatted (cljfmt.core/reformat-string text)]
@@ -105,10 +105,10 @@
   [id]
   (when-let [instance (get @registryA id)]
     (release instance)))
-(defmethod release ::mult.fmt.spec/fmt
+(defmethod release ::mult.format.spec/fmt
   [instance]
-  {:pre [(s/assert ::mult.fmt.spec/fmt instance)]}
-  (mult.fmt.protocols/release* instance)
+  {:pre [(s/assert ::mult.format.spec/fmt instance)]}
+  (mult.format.protocols/release* instance)
   (swap! registryA dissoc (get @instance ::id)))
 
 (defn text->ns-symbol
