@@ -38,10 +38,10 @@
   (go
     (let [editor (mult.editor.core/create-editor context {::mult.editor.core/id ::editor})
           config (<! (mult.editor.protocols/read-mult-edn* editor))
-          fmt (mult.format.core/create {::mult.format.core/id ::mult-format
-                                     ::mult.editor.spec/editor editor})
+          mult-format (mult.format.core/create {::mult.format.core/id ::mult-format
+                                                ::mult.editor.spec/editor editor})
           cljctools-mult (mult.core/create {::mult.core/id ::mult
-                                            ::mult.format.spec/fmt fmt
+                                            ::mult.format.spec/mult-format mult-format
                                             ::mult.spec/config config
                                             ::mult.editor.spec/editor editor})]
       (mult.editor.core/register-commands*
@@ -56,8 +56,8 @@
         ::mult.editor.spec/cmd| (::mult.editor.spec/cmd| @editor)})
       (tap (::mult.editor.spec/cmd|mult @editor) (::mult.spec/cmd| @cljctools-mult))
       (tap (::mult.editor.spec/evt|mult @editor) (::mult.spec/op| @cljctools-mult))
-      (tap (::mult.editor.spec/cmd|mult @editor) (::mult.format.spec/cmd| @fmt))
-      (tap (::mult.editor.spec/evt|mult @editor) (::mult.format.spec/op| @fmt))
+      (tap (::mult.editor.spec/cmd|mult @editor) (::mult.format.spec/cmd| @mult-format))
+      (tap (::mult.editor.spec/evt|mult @editor) (::mult.format.spec/op| @mult-format))
       (swap! registryA assoc ::editor editor))))
 
 (defn deactivate

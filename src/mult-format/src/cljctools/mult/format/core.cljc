@@ -44,15 +44,15 @@
   [{:keys [::id
            ::mult.editor.spec/editor] :as opts}]
   {:pre [(s/assert ::create-opts opts)]
-   :post [(s/assert ::mult.format.spec/fmt %)]}
+   :post [(s/assert ::mult.format.spec/mult-format %)]}
   (let [stateA (atom nil)
         op| (chan 10)
         cmd| (chan 10)
 
-        fmt
-        ^{:type ::mult.format.spec/fmt}
+        mult-format
+        ^{:type ::mult.format.spec/mult-format}
         (reify
-          mult.format.protocols/Fmt
+          mult.format.protocols/MultFormat
           mult.format.protocols/Release
           (release*
             [_]
@@ -96,7 +96,7 @@
                   (println ::cmd-format-current-form))
                 (do ::ignore-other-cmds)))
             (recur)))))
-    fmt))
+    mult-format))
 
 (defmulti release
   "Releases the instance"
@@ -105,9 +105,9 @@
   [id]
   (when-let [instance (get @registryA id)]
     (release instance)))
-(defmethod release ::mult.format.spec/fmt
+(defmethod release ::mult.format.spec/mult-format
   [instance]
-  {:pre [(s/assert ::mult.format.spec/fmt instance)]}
+  {:pre [(s/assert ::mult.format.spec/mult-format instance)]}
   (mult.format.protocols/release* instance)
   (swap! registryA dissoc (get @instance ::id)))
 

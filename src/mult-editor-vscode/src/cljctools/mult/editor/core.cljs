@@ -315,12 +315,12 @@
            ::mult.editor.spec/cmd|]}]
   {:pre [(s/assert ::register-commands-opts opts)]}
   (doseq [[cmd-spec-key {:keys [::cmd-id] :as cmd}] cmds]
-    (let [disposable (.. vscode.commands
+    (let [disposable (.. vscode -commands
                          (registerCommand
                           cmd-id
                           (fn [& args]
                             (put! cmd| {:op cmd-spec-key}))))]
-      (.. context.subscriptions (push disposable)))))
+      (.. context -subscriptions (push disposable)))))
 
 (defn create-webview-panel
   [context

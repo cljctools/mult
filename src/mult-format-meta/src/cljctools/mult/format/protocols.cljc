@@ -3,7 +3,7 @@
 (defprotocol Release
   (release* [_]))
 
-(defprotocol Fmt
+(defprotocol MultFormat
   #_Release
   #_IDeref)
 

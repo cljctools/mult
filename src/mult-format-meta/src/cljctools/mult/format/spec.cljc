@@ -11,11 +11,11 @@
                  :cljs #(satisfies? cljs.core.async/Mult %)))
 
 
-(s/def ::fmt #(and
-               (satisfies? mult.format.protocols/Fmt %)
-               (satisfies? mult.format.protocols/Release %)
-               #?(:clj (satisfies? clojure.lang.IDeref %))
-               #?(:cljs (satisfies? cljs.core/IDeref %))))
+(s/def ::mult-format #(and
+                       (satisfies? mult.format.protocols/MultFormat %)
+                       (satisfies? mult.format.protocols/Release %)
+                       #?(:clj (satisfies? clojure.lang.IDeref %))
+                       #?(:cljs (satisfies? cljs.core/IDeref %))))
 
 
 (s/def ::cmd| ::channel)
