@@ -2,7 +2,6 @@
   (:require
    [clojure.spec.alpha :as s]
    [cljctools.mult.protocols :as mult.protocols]
-   [cljctools.mult.format.spec :as mult.format.spec]
    [cljctools.mult.nrepl.spec :as mult.nrepl.spec]))
 
 (s/def ::channel #?(:clj #(instance? clojure.core.async.impl.channels.ManyToManyChannel %)
@@ -53,7 +52,7 @@
                           :opt [::eval-value
                                 ::eval-err
                                 ::eval-out
-                                ::mult.format.spec/ns-symbol
+                                ::ns-symbol
                                 ::config
                                 ::nrepl-id]))
 

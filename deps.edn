@@ -9,7 +9,18 @@
   {:extra-deps {org.clojure/clojure         {:mvn/version "1.10.3"}
                 org.clojure/clojurescript {:mvn/version "1.10.758"}
                 org.clojure/spec.alpha {:mvn/version "0.2.187"}
-                org.clojure/core.async {:mvn/version "1.1.587"}}}
+                org.clojure/core.async {:mvn/version "1.1.587"}}
+
+   :override-deps {github.borkdude/sci {:git/url "https://github.com/borkdude/sci"
+                                        :sha "05f2fe44445d9b21cb0b50d6bac455ca5eea90ec"
+                                        :tag "v0.2.4"}
+
+                   cljfmt/cljfmt {:mvn/version "0.7.0"
+                                  :exclusions [rewrite-clj
+                                               rewrite-cljs]}
+                   github.clj-commons/rewrite-clj {:git/url "https://github.com/clj-commons/rewrite-clj"
+                                                   :sha "db337b393ac527abe4015854d706ece2a9daeed2"
+                                                   :tag "v1.0.579-alpha"}}}
 
   :mult-vscode
   {:extra-deps {github.cljctools/mult-vscode {:local/root "./src/mult-vscode"}}}

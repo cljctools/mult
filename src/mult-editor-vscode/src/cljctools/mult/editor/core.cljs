@@ -11,7 +11,10 @@
    [goog.string :refer [format]]
    [clojure.spec.alpha :as s]
 
-   [clojure.walk]
+   [rewrite-clj.zip :as z]
+   [rewrite-clj.parser :as p]
+   [rewrite-clj.node :as n]
+   [rewrite-clj.paredit]
 
    [cljctools.mult.spec :as mult.spec]
    [cljctools.mult.format.spec :as mult.format.spec]
@@ -74,6 +77,7 @@
   (set-vscode-text-editor* [_ text-editor]))
 
 (declare
+ text->ns-symbol
  create-text-editor
  create-tab
  create-webview-panel
@@ -155,7 +159,7 @@
           (register-commands*
             [_ opts]
             (register-commands context opts)))]
-    
+
     (do
       (.onDidChangeActiveTextEditor (.-window vscode) (fn [text-editor]
                                                         (set-vscode-text-editor* active-text-editor text-editor)
@@ -378,5 +382,3 @@
                                  (on-tab-state-change)))))
     (set! (.-html (.-webview panel)) html)
     panel))
-
-

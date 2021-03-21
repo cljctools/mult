@@ -20,12 +20,10 @@
    [cljctools.mult.nrepl.spec :as mult.nrepl.spec]
    [cljctools.mult.nrepl.core :as mult.nrepl.core]
 
-   [cljctools.mult.format.spec :as mult.format.spec]
-   [cljctools.mult.format.protocols :as mult.format.protocols]
-   [cljctools.mult.format.core :as mult.format.core]
-
    [cljctools.mult.spec :as mult.spec]
-   [cljctools.mult.protocols :as mult.protocols]))
+   [cljctools.mult.protocols :as mult.protocols]
+
+   [cljctools.mult.zip.core :as mult.zip.core]))
 
 (do (clojure.spec.alpha/check-asserts true))
 
@@ -140,7 +138,8 @@
                       active-text-editor (mult.editor.protocols/active-text-editor* editor)
                       filepath (mult.editor.protocols/filepath* active-text-editor)]
                   (when filepath
-                    (let [ns-symbol (mult.format.core/text->ns-symbol active-text-editor filepath)
+                    (let [text (mult.editor.protocols/text* active-text-editor [0 0 100 0])
+                          ns-symbol (mult.zip.core/read-ns-symbol text)
                           nrepl-ids (filepath->nrepl-ids
                                      config
                                      filepath)
@@ -149,7 +148,7 @@
                         (doseq [[tab-id tab] (get @stateA ::tabs)]
                           (when (mult.editor.protocols/visible?* tab)
                             (send-data tab {:op ::mult.spec/op-update-ui-state
-                                            ::mult.format.spec/ns-symbol ns-symbol
+                                            ::mult.spec/ns-symbol ns-symbol
                                             ::mult.spec/nrepl-id  nrepl-id})))))))
 
                 ::mult.spec/op-select-logical-tab
@@ -182,7 +181,8 @@
                 (let [active-text-editor (mult.editor.protocols/active-text-editor* editor)
                       filepath (mult.editor.protocols/filepath* active-text-editor)]
                   (when filepath
-                    (let [ns-symbol (mult.format.core/text->ns-symbol active-text-editor filepath)
+                    (let [text (mult.editor.protocols/text* active-text-editor [0 0 100 0])
+                          ns-symbol (mult.zip.core/read-ns-symbol text)
                           code-string (mult.editor.protocols/selection* active-text-editor)
                           nrepl-ids (filepath->nrepl-ids
                                      config
@@ -199,10 +199,10 @@
                                   (= runtime :cljs)
                                   (format "(binding [*ns* (find-ns '%s)] %s)" ns-symbol code-string))
                               {:keys [value err out]} (<! (mult.nrepl.protocols/eval*
-                                                                nrepl-connection
-                                                                {::mult.nrepl.spec/code-string code-string
-                                                                 ::mult.nrepl.spec/ns-symbol ns-symbol}))]
-                          
+                                                           nrepl-connection
+                                                           {::mult.nrepl.spec/code-string code-string
+                                                            ::mult.nrepl.spec/ns-symbol ns-symbol}))]
+
                           (if (zero? (count (get @stateA ::tabs)))
                             (do
                               ;; if no tabs, we print eval results directly to console
@@ -217,8 +217,7 @@
                                 (send-data tab {:op ::mult.spec/op-update-ui-state
                                                 ::mult.spec/eval-value value
                                                 ::mult.spec/eval-out out
-                                                ::mult.spec/eval-err err}))))
-                          )))))
+                                                ::mult.spec/eval-err err})))))))))
 
                 (do ::ignore-other-cmds)))
             (recur)))))

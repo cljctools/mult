@@ -37,8 +37,8 @@
 
 (defonce ^:private registryA (atom {}))
 
-(declare text->ns-symbol
-         send-data)
+(declare
+ send-data)
 
 (defn create
   [{:keys [::id
@@ -110,17 +110,3 @@
   {:pre [(s/assert ::mult.format.spec/mult-format instance)]}
   (mult.format.protocols/release* instance)
   (swap! registryA dissoc (get @instance ::id)))
-
-(defn text->ns-symbol
-  [text-editor filepath]
-  (let [range [0 0 100 0]
-        text (mult.editor.protocols/text* text-editor range)
-        node (p/parse-string text)
-        zloc (z/of-string (n/string node))
-        ns-symbol (-> zloc z/down z/right z/sexpr)]
-    ns-symbol
-    #_(when first-line
-        (let [ns-string (subs first-line 4)
-              ns-symbol (symbol ns-string)]
-          ns-symbol))
-    #_(prn active-text-editor.document.languageId)))

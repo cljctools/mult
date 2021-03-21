@@ -1,7 +1,5 @@
 {:paths ["src"]
- :deps {cljfmt/cljfmt {:mvn/version "0.7.0"
-                       :exclusions [rewrite-clj
-                                    rewrite-cljs]}
-        github.clj-commons/rewrite-clj {:git/url "https://github.com/clj-commons/rewrite-clj"
-                                        :sha "db337b393ac527abe4015854d706ece2a9daeed2"
-                                        :tag "v1.0.579-alpha"}}}
+ :deps {github.clj-commons/rewrite-clj {}
+        cljfmt/cljfmt {}
+        github.cljctools/mult-editor-meta {:local/root  "../mult-editor-meta"}
+        github.cljctools/mult-format-meta {:local/root  "../mult-format-meta"}}}

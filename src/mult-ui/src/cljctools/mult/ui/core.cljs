@@ -51,9 +51,7 @@
    ["@ant-design/icons/SyncOutlined" :default AntIconSyncOutlined]
    ["@ant-design/icons/ReloadOutlined" :default AntIconReloadOutlined]
 
-   [cljctools.mult.spec :as mult.spec]
-   [cljctools.mult.format.spec :as mult.format.spec]
-   [cljctools.mult.nrepl.spec :as mult.nrepl.spec]))
+   [cljctools.mult.spec :as mult.spec]))
 
 (do (clojure.spec.alpha/check-asserts true))
 
@@ -142,7 +140,7 @@
      eval-errA (r/cursor stateA [::mult.spec/eval-err])
      eval-outA (r/cursor stateA [::mult.spec/eval-out])
      configA (r/cursor stateA [::mult.spec/config])
-     ns-symbolA (r/cursor stateA [::mult.format.spec/ns-symbol])
+     ns-symbolA (r/cursor stateA [::mult.spec/ns-symbol])
      active-nrepl-idA (r/cursor stateA [::mult.spec/nrepl-id])]
     (let [active-nrepl-id @active-nrepl-idA
           config @configA]
