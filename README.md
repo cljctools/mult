@@ -4,8 +4,9 @@ clojure(script) extension for vscode
 
 ## content
 
-- [goal](./docs/design.md#goal)
-- [development](#install-from-source)
+- [rationale](./docs/design.md#rationale)
+- [goal](#goal)
+- [development](#development)
 
 ## goal
 
