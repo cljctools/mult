@@ -91,7 +91,7 @@
                 ::mult.format.spec/cmd-format-current-form
                 (let [text-editor (mult.editor.protocols/active-text-editor* editor)
                       text (mult.editor.protocols/text* text-editor)
-                      text-formatted (cljfmt.core/reformat-string text)]
+                      text-formatted (cljfmt.core/reformat-string text {:remove-consecutive-blank-lines? false})]
                   (<! (mult.editor.protocols/replace* text-editor text-formatted))
                   (println ::cmd-format-current-form))
                 (do ::ignore-other-cmds)))
