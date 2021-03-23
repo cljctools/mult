@@ -23,7 +23,9 @@
 
    [cljctools.mult.protocols :as mult.protocols]
    [cljctools.mult.spec :as mult.spec]
-   [cljctools.mult.core :as mult.core]))
+   [cljctools.mult.core :as mult.core]
+
+   [cljfmt.core]))
 
 (def fs (js/require "fs"))
 (def path (js/require "path"))
@@ -44,6 +46,24 @@
                                             ::mult.format.spec/mult-format mult-format
                                             ::mult.spec/config config
                                             ::mult.editor.spec/editor editor})]
+      (.. vscode -languages
+          (registerDocumentFormattingEditProvider
+           "clojure"
+           (clj->js {:provideDocumentFormattingEdits
+                     (fn [document]
+                       (let [text (.getText document)
+
+                             text-formatted
+                             (cljfmt.core/reformat-string
+                              text
+                              {:remove-consecutive-blank-lines? false})
+
+                             range (vscode.Range.
+                                    (.positionAt document 0)
+                                    (.positionAt document (count text))
+                                    #_(.positionAt document (- (count text) 1)))]
+                         #js [(.. vscode -TextEdit (delete (.validateRange document range)))
+                              (.. vscode -TextEdit (insert (.positionAt document 0) text-formatted))]))})))
       (mult.editor.core/register-commands*
        editor
        {::mult.editor.core/cmds {::mult.spec/cmd-open {::mult.editor.core/cmd-id ":cljctools.mult.spec/cmd-open"}
