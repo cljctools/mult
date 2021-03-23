@@ -55,7 +55,7 @@
   - for shared files (used in both apps) the preference can be set in the config file, still allowing to manually select(pin) :tabapp or :extension (this is how existing extensions approach it)
 
 
-## should be possible
+## <s>should be possible
 
 - have multiple repl connections from an editor window
 - every repl tab has a list of connections (1 or more)
@@ -114,9 +114,9 @@
       - so that when typing into it you are actually editing code in an editor file
 
 
-#### ~~using multiple mult.edn files in a source tree (along with ~/.mult/mult.edn)~~
+#### using multiple mult.edn files in a source tree (along with ~/.mult/mult.edn)
 
-- <s>when a directory tree or workspace is open, mult should find mult.edns
+- when a directory tree or workspace is open, mult should find mult.edns
 - user should have an option to add mult.edns (open their tabs) as they navigate
 - or, should be able to add all mult.edns
 - each mult.edn has it's own connnections, repls and tabs 
@@ -136,7 +136,7 @@
   - you use ~/.mult/mult.edn for that - it has deafult connections and tab
   - its up to user to either change port to constant in a project they rapidly cloned and are "lein repl" ing
   - or open ~/.mult/mult.edn and change the port every time new random one is given on restart (and press update configs)
-  - bottom line: you should always opt for specifying the port</s>
+  - bottom line: you should always opt for specifying the port
 
 one mult.edn, use .vscode/mult.edn or use workspace.json to specify where https://github.com/sergeiudris/deathstar.lab/issues/6#issuecomment-797487475
 
@@ -173,7 +173,7 @@ one mult.edn, use .vscode/mult.edn or use workspace.json to specify where https:
 
 ## transports: extension should understand channels instead of connections
 
-- https://github.com/sergeiudris/deathstar.lab/blob/d848b3c7fa249570d24489030cc64625556a6918/docs/design/design.md#what-if-actual-browser-page-is-game-eval-environment
+- https://github.com/sergeiudris/deathstar.lab/blob/d848b3c7fa249570d24489030cc64625556a6918/docs/design/design.md#what-if-actual-browser-page-is-game-eval-environment</s>
 
 
 ## namespaces, tabs like browser pages: no need for logical tabs
