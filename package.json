@@ -13,9 +13,6 @@
 		"onCommand:cljctools.mult.open"
 	],
 	"main": "./resources/out/mult/main.js",
-	"scripts": {
-		"postinstall": "node ./node_modules/vscode/bin/install"
-	},
 	"dependencies": {
 		"nrepl-client": "0.3.0"
 	},
