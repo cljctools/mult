@@ -25,8 +25,8 @@
   :mult-vscode
   {:extra-deps {github.cljctools/mult-vscode {:local/root "./src/mult-vscode"}}}
 
-  :mult-vscode-ui
-  {:extra-deps {github.cljctools/mult-vscode-ui {:local/root "./src/mult-vscode-ui"}}}
+  :mult-ui-vscode
+  {:extra-deps {github.cljctools/mult-ui-vscode {:local/root "./src/mult-ui-vscode"}}}
 
   :shadow-cljs
   {:extra-deps {thheller/shadow-cljs {:mvn/version "2.11.7"}

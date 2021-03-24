@@ -5,8 +5,8 @@
         :host "0.0.0.0"}
  :builds {:mult {:target :node-library
                 ;;  :target :node-script
-                 :main cljctools.mult.vscode.main/main
-                 :exports-var cljctools.mult.vscode.main/exports
+                 :main cljctools.mult.main/main
+                 :exports-var cljctools.mult.main/exports
                  :output-to "resources/out/mult/main.js"
                  :compiler-options {:optimizations #_:advanced :simple
                                         ;;  :dump-core false
@@ -16,22 +16,22 @@
                                     :source-maps true
                                         ;;  :verbose true
                                     :warnings {:fn-deprecated false}}
-                 :devtools {:repl-init-ns cljctools.mult.vscode.main
+                 :devtools {:repl-init-ns cljctools.mult.main
                             :repl-pprint true
                             :autobuild true
                             :devtools-url "http://localhost:9630"
-                            :after-load cljctools.mult.vscode.main/reload}}
+                            :after-load cljctools.mult.main/reload}}
           
           :mult-ui {:target :browser
                     :output-dir "resources/out/mult-ui"
                     :asset-path "/out/mult-ui"
                     :module-loader true
-                    :modules {:main {:entries [cljctools.mult.vscode.ui.main]}}
+                    :modules {:main {:entries [cljctools.mult.ui.main]}}
                     :compiler-options {:infer-externs   false #_:auto
                                        :closure-warnings {:global-this :off}
                                        :closure-defines  {"mult.impl.tabapp._some_val_"         true}
                                        :warnings {:fn-deprecated false}}
-                    :devtools {:repl-init-ns cljctools.mult.vscode.ui.main
+                    :devtools {:repl-init-ns cljctools.mult.ui.main
                                :repl-pprint true
                                :autobuild true
                                :devtools-url "http://localhost:9630"

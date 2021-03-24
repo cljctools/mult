@@ -9,7 +9,7 @@ repl(){
 }
 
 shadow(){
-    ./node_modules/.bin/shadow-cljs -A:core:shadow-cljs:mult-vscode:mult-vscode-ui "$@"
+    ./node_modules/.bin/shadow-cljs -A:core:shadow-cljs:mult-vscode:mult-ui-vscode "$@"
 }
 
 dev(){
