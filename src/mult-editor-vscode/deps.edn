@@ -2,4 +2,4 @@
  :deps {github.clj-commons/rewrite-clj {}
         github.cljctools/mult-meta {:local/root  "../mult-meta"}
         github.cljctools/mult-editor-meta {:local/root  "../mult-editor-meta"}
-        github.cljctools/mult-format-meta {:local/root  "../mult-format-meta"}}}
+        github.cljctools/edit-process-meta {:local/root  "../../../edit/src/edit-process-meta"}}}

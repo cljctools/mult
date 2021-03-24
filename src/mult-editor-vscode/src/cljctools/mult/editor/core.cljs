@@ -17,7 +17,7 @@
    [rewrite-clj.paredit]
 
    [cljctools.mult.spec :as mult.spec]
-   [cljctools.mult.format.spec :as mult.format.spec]
+   [cljctools.edit.process.spec :as edit.process.spec]
 
    [cljctools.mult.editor.protocols :as mult.editor.protocols]
    [cljctools.mult.editor.spec :as mult.editor.spec]))
@@ -61,8 +61,8 @@
                :mult-cmds
                (s/map-of ::mult.spec/cmd ::cmd)
 
-               :mult-format-cmds
-               (s/map-of ::mult.format.spec/cmd ::cmd)))
+               :edit-process-cmds
+               (s/map-of ::edit.process.spec/op ::cmd)))
 
 
 (s/def ::register-commands-opts (s/keys :req [::cmds

@@ -1,5 +1,0 @@
-{:paths ["src"]
- :deps {github.clj-commons/rewrite-clj {}
-        cljfmt/cljfmt {}
-        github.cljctools/mult-editor-meta {:local/root  "../mult-editor-meta"}
-        github.cljctools/mult-format-meta {:local/root  "../mult-format-meta"}}}

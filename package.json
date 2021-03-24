@@ -39,7 +39,7 @@
 				"title": "Eval current form"
 			},
 			{
-				"command": ":cljctools.mult.format.spec/format-current-form",
+				"command": ":cljctools.edit.process.spec/op-format-current-form",
 				"title": "Format current form"
 			}
 		],
@@ -57,8 +57,8 @@
 				"key": "alt+w"
 			},
 			{
-				"command": ":cljctools.mult.format.spec/format-current-form",
-				"key": "ctrl+alt+m ctrl+alt+tab",
+				"command": ":cljctools.edit.process.spec/op-format-current-form",
+				"key": "ctrl+alt+m ctrl+alt+f",
 				"when": "editorTextFocus && editorLangId == 'clojure' && !editorReadOnly && !hasOtherSuggestions && !inSnippetMode && !suggestWidgetVisible"
 			}
 		],

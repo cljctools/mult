@@ -17,9 +17,9 @@
    [cljctools.mult.editor.spec :as mult.editor.spec]
    [cljctools.mult.editor.core :as mult.editor.core]
 
-   [cljctools.mult.format.protocols :as mult.format.protocols]
-   [cljctools.mult.format.spec :as mult.format.spec]
-   [cljctools.mult.format.core :as mult.format.core]
+   [cljctools.edit.process.protocols :as edit.process.protocols]
+   [cljctools.edit.process.spec :as edit.process.spec]
+   [cljctools.edit.process.core :as edit.process.core]
 
    [cljctools.mult.protocols :as mult.protocols]
    [cljctools.mult.spec :as mult.spec]
@@ -40,10 +40,8 @@
   (go
     (let [editor (mult.editor.core/create-editor context {::mult.editor.core/id ::editor})
           config (<! (mult.editor.protocols/read-mult-edn* editor))
-          mult-format (mult.format.core/create {::mult.format.core/id ::mult-format
-                                                ::mult.editor.spec/editor editor})
+          edit-process (edit.process.core/create {::edit.process.core/id ::edit-process})
           cljctools-mult (mult.core/create {::mult.core/id ::mult
-                                            ::mult.format.spec/mult-format mult-format
                                             ::mult.spec/config config
                                             ::mult.editor.spec/editor editor})]
       (.. vscode -languages
@@ -72,12 +70,12 @@
         ::mult.editor.spec/cmd| (::mult.editor.spec/cmd| @editor)})
       (mult.editor.core/register-commands*
        editor
-       {::mult.editor.core/cmds {::mult.format.spec/cmd-format-current-form {::mult.editor.core/cmd-id ":cljctools.mult.format.spec/format-current-form"}}
+       {::mult.editor.core/cmds {::edit.process.spec/op-format-current-form {::mult.editor.core/cmd-id ":cljctools.edit.process.spec/op-format-current-form"}}
         ::mult.editor.spec/cmd| (::mult.editor.spec/cmd| @editor)})
       (tap (::mult.editor.spec/cmd|mult @editor) (::mult.spec/cmd| @cljctools-mult))
       (tap (::mult.editor.spec/evt|mult @editor) (::mult.spec/op| @cljctools-mult))
-      (tap (::mult.editor.spec/cmd|mult @editor) (::mult.format.spec/cmd| @mult-format))
-      (tap (::mult.editor.spec/evt|mult @editor) (::mult.format.spec/op| @mult-format))
+      (tap (::mult.editor.spec/cmd|mult @editor) (::edit.process.spec/op| @edit-process))
+      (tap (::mult.editor.spec/evt|mult @editor) (::edit.process.spec/op| @edit-process))
       (swap! registryA assoc ::editor editor))))
 
 (defn deactivate
@@ -85,7 +83,7 @@
   (go
     (when-let [editor (get @registryA ::editor)]
       (mult.core/release ::mult)
-      (mult.format.core/release ::mult-format)
+      (edit.process.core/release ::edit-process)
       (mult.editor.protocols/release* editor)
       (swap! registryA dissoc ::editor))))
 

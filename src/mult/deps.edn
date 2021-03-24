@@ -3,4 +3,4 @@
         github.cljctools/mult-meta {:local/root  "../mult-meta"}
         github.cljctools/mult-editor-meta {:local/root  "../mult-editor-meta"}
         github.cljctools/mult-nrepl-meta {:local/root  "../mult-nrepl-meta"}
-        github.cljctools/mult-zip {:local/root  "../mult-zip"}}}
+        github.cljctools/edit {:local/root  "../../../edit/src/edit"}}}

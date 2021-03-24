@@ -23,7 +23,7 @@
    [cljctools.mult.spec :as mult.spec]
    [cljctools.mult.protocols :as mult.protocols]
 
-   [cljctools.mult.zip.core :as mult.zip.core]))
+   [cljctools.edit.core :as edit.core]))
 
 (do (clojure.spec.alpha/check-asserts true))
 
@@ -139,7 +139,7 @@
                       filepath (mult.editor.protocols/filepath* active-text-editor)]
                   (when filepath
                     (let [text (mult.editor.protocols/text* active-text-editor [0 0 100 0])
-                          ns-symbol (mult.zip.core/read-ns-symbol text)
+                          ns-symbol (edit.core/read-ns-symbol text)
                           nrepl-ids (filepath->nrepl-ids
                                      config
                                      filepath)
@@ -182,7 +182,7 @@
                       filepath (mult.editor.protocols/filepath* active-text-editor)]
                   (when filepath
                     (let [text (mult.editor.protocols/text* active-text-editor [0 0 100 0])
-                          ns-symbol (mult.zip.core/read-ns-symbol text)
+                          ns-symbol (edit.core/read-ns-symbol text)
                           code-string (mult.editor.protocols/selection* active-text-editor)
                           nrepl-ids (filepath->nrepl-ids
                                      config
