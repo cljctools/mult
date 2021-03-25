@@ -30,7 +30,8 @@
 (s/def ::evt #{})
 
 (s/def ::cmd| ::channel)
-(s/def ::cmd #{::cmd-format-current-form})
+(s/def ::cmd #{::cmd-format-current-form
+               ::cmd-select-current-form})
 
 (s/def ::ops| ::channel)
 (s/def ::ops #{})

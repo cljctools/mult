@@ -35,8 +35,10 @@
 (s/def ::create-opts (s/keys :req []
                              :opt []))
 
+(s/def ::context some?)
+
 (defn create
-  [{:keys [::mult.edit.spec/clj-string] :as opts}]
+  [context {:keys [::mult.edit.spec/clj-string] :as opts}]
   {:pre [(s/assert ::create-opts opts)]
    :post [(s/assert ::mult.edit.spec/edit %)]}
   (let [stateA (atom nil)
@@ -77,10 +79,11 @@
                       (= "clojure" (.. text-editor -document -languageId)))
              (let [text (.. text-editor -document (getText))
                    cursor (.. text-editor -selection -active) ; is zero based
-                   cursor-position [(. cursor -line) (. cursor -character)]]
-               (put! ops| {:op ::mult.edit.spec/op-clj-string-changed
-                           ::mult.edit.spec/clj-string text
-                           ::mult.edit.spec/cursor-position cursor-position}))))))
+                   cursor-position [(. cursor -line) (. cursor -character)]
+                   zloc (z/of-string text)]
+               
+               
+               )))))
 
     (go
       (loop []
@@ -94,6 +97,15 @@
                 ::mult.edit.spec/cmd-format-current-form
                 (let []
                   (println ::cmd-format-current-form))
+
+                ::mult.edit.spec/cmd-select-current-form
+                (when-let [text-editor (.. vscode -window -activeTextEditor)]
+                  (let [text (.. text-editor -document (getText))
+                        cursor (.. text-editor -selection -active) ; is zero based
+                        cursor-position [(. cursor -line) (. cursor -character)]
+                        zloc (z/of-string text)]
+                    (println cursor-position)))
+
                 (do ::ignore-other-ops))
 
               ops|

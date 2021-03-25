@@ -40,7 +40,7 @@
   (go
     (let [editor (mult.editor.core/create-editor context {})
           config (<! (mult.editor.protocols/read-mult-edn* editor))
-          edit (mult.edit.core/create {})
+          edit (mult.edit.core/create context {})
           cljctools-mult (mult.core/create {::mult.spec/config config
                                             ::mult.edit.spec/edit edit
                                             ::mult.editor.spec/editor editor})]
@@ -57,7 +57,8 @@
          {::mult.editor.core/cmds cmds
           ::mult.editor.spec/cmd| (::mult.editor.spec/cmd| @editor)}))
 
-      (let [cmds {::mult.edit.spec/cmd-format-current-form {::mult.editor.core/cmd-id ":cljctools.mult.edit.spec/cmd-format-current-form"}}]
+      (let [cmds {::mult.edit.spec/cmd-format-current-form {::mult.editor.core/cmd-id ":cljctools.mult.edit.spec/cmd-format-current-form"}
+                  ::mult.edit.spec/cmd-select-current-form {::mult.editor.core/cmd-id ":cljctools.mult.edit.spec/cmd-select-current-form"}}]
         (doseq [k (keys cmds)] (s/assert ::mult.edit.spec/cmd k))
         (mult.editor.core/register-commands*
          editor
