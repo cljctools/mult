@@ -72,18 +72,16 @@
 
     (register-formatter)
 
-    (.. vscode -window
-        (onDidChangeActiveTextEditor
-         (fn [text-editor]
-           (when (and text-editor
-                      (= "clojure" (.. text-editor -document -languageId)))
-             (let [text (.. text-editor -document (getText))
-                   cursor (.. text-editor -selection -active) ; is zero based
-                   cursor-position [(. cursor -line) (. cursor -character)]
-                   zloc (z/of-string text)]
-               
-               
-               )))))
+    #_(.. vscode -window
+          (onDidChangeActiveTextEditor
+           (fn [text-editor]
+             (when (and text-editor
+                        (= "clojure" (.. text-editor -document -languageId)))
+               (let [text (.. text-editor -document (getText))
+                     cursor (.. text-editor -selection -active) ; is zero based
+                     cursor-position {:row (inc (. cursor -line)) :col (inc (. cursor -character))}
+                     zloc (z/of-string text)
+                     zloc-current (z/find-last-by-pos zloc cursor-position)])))))
 
     (go
       (loop []
@@ -102,9 +100,19 @@
                 (when-let [text-editor (.. vscode -window -activeTextEditor)]
                   (let [text (.. text-editor -document (getText))
                         cursor (.. text-editor -selection -active) ; is zero based
-                        cursor-position [(. cursor -line) (. cursor -character)]
-                        zloc (z/of-string text)]
-                    (println cursor-position)))
+                        cursor-position [(inc (. cursor -line)) (inc (. cursor -character))]
+                        zloc (z/of-string text {:track-position? true})
+                        zloc-current (z/find-last-by-pos zloc cursor-position)
+                        [start end] (z/position-span zloc-current)
+
+                        new-selection (vscode.Selection.
+                                       (vscode.Position. (dec (first end)) (dec (second end)))
+                                       (vscode.Position. (dec (first start)) (dec (second start))))]
+                    (set! (.-selection text-editor) new-selection)
+                    #_(do
+                        (println cursor-position)
+                        (println (z/string zloc-current))
+                        (println (z/position-span zloc-current)))))
 
                 (do ::ignore-other-ops))
 
