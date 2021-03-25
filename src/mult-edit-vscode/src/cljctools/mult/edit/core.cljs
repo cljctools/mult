@@ -16,6 +16,9 @@
    [rewrite-clj.zip :as z]
    [rewrite-clj.parser :as p]
    [rewrite-clj.node :as n]
+   [rewrite-clj.node.protocols :as node]
+   [rewrite-clj.zip.base :as base]
+   [rewrite-clj.zip.move :as m]
    [rewrite-clj.paredit]
    [cljfmt.core]
 
@@ -30,7 +33,8 @@
 (def vscode (js/require "vscode"))
 
 (declare
- register-formatter)
+ register-formatter
+ update-decorations)
 
 (s/def ::create-opts (s/keys :req []
                              :opt []))
@@ -72,16 +76,19 @@
 
     (register-formatter)
 
-    #_(.. vscode -window
-          (onDidChangeActiveTextEditor
-           (fn [text-editor]
-             (when (and text-editor
-                        (= "clojure" (.. text-editor -document -languageId)))
-               (let [text (.. text-editor -document (getText))
-                     cursor (.. text-editor -selection -active) ; is zero based
-                     cursor-position {:row (inc (. cursor -line)) :col (inc (. cursor -character))}
-                     zloc (z/of-string text)
-                     zloc-current (z/find-last-by-pos zloc cursor-position)])))))
+    (update-decorations (.. vscode -window -activeTextEditor))
+
+    (.. vscode -window
+        (onDidChangeActiveTextEditor
+         (fn [text-editor]
+           (update-decorations text-editor))))
+
+    (.. vscode -workspace
+        (onDidChangeTextDocument
+         (fn [text-document-event]
+           (let [document (. text-document-event -document)
+                 content-changes (. text-document-event -contentChanges)]
+             (do nil)))))
 
     (go
       (loop []
@@ -142,3 +149,40 @@
                                 #_(.positionAt document (- (count text) 1)))]
                      #js [(.. vscode -TextEdit (delete (.validateRange document range)))
                           (.. vscode -TextEdit (insert (.positionAt document 0) text-formatted))]))}))))
+
+
+(defn update-decorations
+  [text-editor]
+  (when (and text-editor
+             (= "clojure" (.. text-editor -document -languageId))
+             (not (.-multAlreadyOpened (. text-editor -document))))
+    (println ::update-decorations)
+    (let [text (.. text-editor -document (getText))
+          zloc (z/of-string text {:track-position? true})
+
+          text-editor-decoration-type
+          (.. vscode -window
+              (createTextEditorDecorationType
+               (clj->js
+                {:color "#0278ae" #_"#07689f" #_"#3282b8" #_"#51c2d5"})))
+
+          decoration-options
+          (->> zloc
+               (iterate m/next)
+               (take-while identity)
+               (take-while (complement m/end?))
+               (filter (fn [zloc-current]
+                         (when (= :keyword (node/node-type (-> zloc-current z/node)))
+                           #_(println (z/string zloc)))
+                         #_(println (-> zloc z/node n/keyword-node?))
+                         (= :keyword (node/node-type (-> zloc-current z/node)))
+                         #_(= (base/tag zloc) :keyword)))
+               (mapv (fn [zloc-current]
+                       (let [[start end] (z/position-span zloc-current)]
+                         {:range (vscode.Range.
+                                  (vscode.Position. (dec (first start)) (dec (second start)))
+                                  (vscode.Position. (dec (first end)) (dec (second end))))}))))]
+      (.. text-editor
+          (setDecorations
+           text-editor-decoration-type
+           (clj->js decoration-options))))))
