@@ -26,9 +26,7 @@
 (def path (js/require "path"))
 (def vscode (js/require "vscode"))
 
-(s/def ::id keyword?)
-
-(s/def ::create-opts (s/keys :req [::id]
+(s/def ::create-opts (s/keys :req []
                              :opt []))
 
 (s/def ::tab-html-filepath string?)
@@ -86,7 +84,7 @@
 (defn create-editor
   [context
    {:as opts
-    :keys [::id]}]
+    :keys []}]
   {:pre [(s/assert ::create-opts opts)]
    :post [(s/assert ::mult.editor.spec/editor %)]}
   (let [stateA (atom nil)

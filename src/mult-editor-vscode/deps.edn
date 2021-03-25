@@ -1,5 +1,5 @@
 {:paths ["src"]
  :deps {github.clj-commons/rewrite-clj {}
+        github.cljctools/edit-process-meta {}
         github.cljctools/mult-meta {:local/root  "../mult-meta"}
-        github.cljctools/mult-editor-meta {:local/root  "../mult-editor-meta"}
-        github.cljctools/edit-process-meta {:local/root  "../../../edit/src/edit-process-meta"}}}
+        github.cljctools/mult-editor-meta {:local/root  "../mult-editor-meta"}}}

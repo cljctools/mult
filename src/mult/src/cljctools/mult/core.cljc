@@ -25,13 +25,7 @@
 
    [cljctools.edit.core :as edit.core]))
 
-(do (clojure.spec.alpha/check-asserts true))
-
-(s/def ::id  (s/or :keyword keyword? :string string?))
-
-
-(s/def ::create-opts (s/keys :req [::id
-                                   ::mult.spec/config
+(s/def ::create-opts (s/keys :req [::mult.spec/config
                                    ::mult.editor.spec/editor]
                              :opt []))
 
@@ -44,15 +38,12 @@
 
 (s/def ::nrepl-connections (s/map-of ::mult.spec/nrepl-id ::mult.nrepl.spec/nrepl-connection))
 
-(defonce ^:private registryA (atom {}))
-
 (declare read-ns-symbol
          send-data
          filepath->nrepl-ids)
 
 (defn create
-  [{:keys [::id
-           ::mult.spec/config
+  [{:keys [::mult.spec/config
            ::mult.editor.spec/editor] :as opts}]
   {:pre [(s/assert ::create-opts opts)]
    :post [(s/assert ::mult.spec/cljctools-mult %)]}
@@ -120,7 +111,6 @@
                      ::tabs {}
                      ::mult.spec/op| op|
                      ::mult.spec/cmd| cmd|}))
-    (swap! registryA assoc id)
     (doseq [_ (range 0 (::mult.spec/open-n-tabs-on-start config))]
       (create-tab))
 
@@ -222,19 +212,6 @@
                 (do ::ignore-other-cmds)))
             (recur)))))
     cljctools-mult))
-
-(defmulti release
-  "Releases cljctools-mult instance"
-  {:arglists '([id] [cljctools-mult])} (fn [x & args] (type x)))
-(defmethod release :default
-  [id]
-  (when-let [cljctools-mult (get @registryA id)]
-    (release cljctools-mult)))
-(defmethod release ::cljctools-mult
-  [cljctools-mult]
-  {:pre [(s/assert ::cljctools-mult cljctools-mult)]}
-  (mult.protocols/release* cljctools-mult)
-  (swap! registryA dissoc (get @cljctools-mult ::id)))
 
 (defn send-data
   [tab data]

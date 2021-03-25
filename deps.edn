@@ -20,7 +20,11 @@
                                                rewrite-cljs]}
                    github.clj-commons/rewrite-clj {:git/url "https://github.com/clj-commons/rewrite-clj"
                                                    :sha "db337b393ac527abe4015854d706ece2a9daeed2"
-                                                   :tag "v1.0.579-alpha"}}}
+                                                   :tag "v1.0.579-alpha"}
+
+                   github.cljctools/edit {:local/root  "../edit/src/edit"}
+                   github.cljctools/edit-process {:local/root  "../edit/src/edit-process"}
+                   github.cljctools/edit-process-meta {:local/root  "../edit/src/edit-process-meta"}}}
 
   :mult-vscode
   {:extra-deps {github.cljctools/mult-vscode {:local/root "./src/mult-vscode"}}}

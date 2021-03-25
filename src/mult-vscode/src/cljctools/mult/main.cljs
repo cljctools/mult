@@ -38,12 +38,14 @@
 (defn activate
   [context]
   (go
-    (let [editor (mult.editor.core/create-editor context {::mult.editor.core/id ::editor})
+    (let [editor (mult.editor.core/create-editor context {})
           config (<! (mult.editor.protocols/read-mult-edn* editor))
-          edit-process (edit.process.core/create {::edit.process.core/id ::edit-process})
-          cljctools-mult (mult.core/create {::mult.core/id ::mult
-                                            ::mult.spec/config config
+          edit-process (edit.process.core/create {})
+          cljctools-mult (mult.core/create {::mult.spec/config config
                                             ::mult.editor.spec/editor editor})]
+      (swap! registryA merge {::editor editor
+                              ::cljctools-mult cljctools-mult
+                              ::edit-process edit-process})
       (.. vscode -languages
           (registerDocumentFormattingEditProvider
            "clojure"
@@ -75,17 +77,17 @@
       (tap (::mult.editor.spec/cmd|mult @editor) (::mult.spec/cmd| @cljctools-mult))
       (tap (::mult.editor.spec/evt|mult @editor) (::mult.spec/op| @cljctools-mult))
       (tap (::mult.editor.spec/cmd|mult @editor) (::edit.process.spec/op| @edit-process))
-      (tap (::mult.editor.spec/evt|mult @editor) (::edit.process.spec/op| @edit-process))
-      (swap! registryA assoc ::editor editor))))
+      (tap (::mult.editor.spec/evt|mult @editor) (::edit.process.spec/op| @edit-process)))))
 
 (defn deactivate
   []
   (go
-    (when-let [editor (get @registryA ::editor)]
-      (mult.core/release ::mult)
-      (edit.process.core/release ::edit-process)
-      (mult.editor.protocols/release* editor)
-      (swap! registryA dissoc ::editor))))
+    (let [{:keys [::editor ::cljctools-mult ::edit-process]} @registryA]
+      (when (and editor cljctools-mult edit-process)
+        (mult.protocols/release* cljctools-mult)
+        (edit.process.protocols/release* edit-process)
+        (mult.editor.protocols/release* editor)
+        (swap! registryA dissoc ::editor ::edit-process ::mult)))))
 
 (def exports #js {:activate (fn [context]
                               (println ::activate)
