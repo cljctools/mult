@@ -23,8 +23,16 @@
                                                    :tag "v1.0.579-alpha"}
 
                    github.cljctools/edit {:local/root  "../edit/src/edit"}
-                   github.cljctools/edit-process {:local/root  "../edit/src/edit-process"}
-                   github.cljctools/edit-process-meta {:local/root  "../edit/src/edit-process-meta"}}}
+
+                   github.cljctools/mult {:local/root  "./src/mult"}
+                   github.cljctools/mult-meta {:local/root  "./src/mult-meta"}
+                   github.cljctools/mult-nrepl-meta {:local/root  "./src/mult-nrepl-meta"}
+                   github.cljctools/mult-nrepl-nodejs {:local/root  "./src/mult-nrepl-nodejs"}
+                   github.cljctools/mult-editor-meta {:local/root  "./src/mult-editor-meta"}
+                   github.cljctools/mult-editor-vscode {:local/root  "./src/mult-editor-vscode"}
+                   github.cljctools/mult-ui {:local/root  "./src/mult-ui"}
+                   github.cljctools/mult-edit-meta {:local/root  "./src/mult-edit-meta"}
+                   github.cljctools/mult-edit-vscode {:local/root  "./src/mult-edit-vscode"}}}
 
   :mult-vscode
   {:extra-deps {github.cljctools/mult-vscode {:local/root "./src/mult-vscode"}}}

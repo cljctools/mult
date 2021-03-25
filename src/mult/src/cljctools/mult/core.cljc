@@ -50,7 +50,7 @@
   (let [stateA (atom nil)
         tab-recv| (chan 10)
         tab-evt| (chan 10)
-        op| (chan 10)
+        ops| (chan 10)
         cmd| (chan 10)
 
         create-tab
@@ -109,18 +109,18 @@
                      ::mult.editor.spec/editor editor
                      ::nrepl-connections nrepl-connections
                      ::tabs {}
-                     ::mult.spec/op| op|
+                     ::mult.spec/ops| ops|
                      ::mult.spec/cmd| cmd|}))
     (doseq [_ (range 0 (::mult.spec/open-n-tabs-on-start config))]
       (create-tab))
 
     (go
       (loop []
-        (let [[value port] (alts! [tab-evt| cmd| op|])]
+        (let [[value port] (alts! [tab-evt| cmd| ops|])]
           (when value
             (condp = port
 
-              op|
+              ops|
               (condp = (:op value)
 
                 ::mult.editor.spec/evt-did-change-active-text-editor
@@ -140,10 +140,7 @@
                             (send-data tab {:op ::mult.spec/op-update-ui-state
                                             ::mult.spec/ns-symbol ns-symbol
                                             ::mult.spec/nrepl-id  nrepl-id})))))))
-
-                ::mult.spec/op-select-logical-tab
-                (let [{:keys []} value]
-                  (println ::op-select-logical-tab))
+                
                 (do ::ignore-other-ops))
 
               tab-evt|
@@ -215,7 +212,7 @@
 
 (defn send-data
   [tab data]
-  {:pre [(s/assert ::mult.spec/op (:op data))]}
+  {:pre [(s/assert ::mult.spec/ops (:op data))]}
   (mult.editor.protocols/send* tab (pr-str data)))
 
 (defn filepath->nrepl-ids

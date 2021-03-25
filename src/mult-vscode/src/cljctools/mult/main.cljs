@@ -17,9 +17,9 @@
    [cljctools.mult.editor.spec :as mult.editor.spec]
    [cljctools.mult.editor.core :as mult.editor.core]
 
-   [cljctools.edit.process.protocols :as edit.process.protocols]
-   [cljctools.edit.process.spec :as edit.process.spec]
-   [cljctools.edit.process.core :as edit.process.core]
+   [cljctools.mult.edit.protocols :as mult.edit.protocols]
+   [cljctools.mult.edit.spec :as mult.edit.spec]
+   [cljctools.mult.edit.core :as mult.edit.core]
 
    [cljctools.mult.protocols :as mult.protocols]
    [cljctools.mult.spec :as mult.spec]
@@ -40,54 +40,44 @@
   (go
     (let [editor (mult.editor.core/create-editor context {})
           config (<! (mult.editor.protocols/read-mult-edn* editor))
-          edit-process (edit.process.core/create {})
+          edit (mult.edit.core/create {})
           cljctools-mult (mult.core/create {::mult.spec/config config
+                                            ::mult.edit.spec/edit edit
                                             ::mult.editor.spec/editor editor})]
       (swap! registryA merge {::editor editor
                               ::cljctools-mult cljctools-mult
-                              ::edit-process edit-process})
-      (.. vscode -languages
-          (registerDocumentFormattingEditProvider
-           "clojure"
-           (clj->js {:provideDocumentFormattingEdits
-                     (fn [document]
-                       (let [text (.getText document)
+                              ::edit edit})
 
-                             text-formatted
-                             (cljfmt.core/reformat-string
-                              text
-                              {:remove-consecutive-blank-lines? false})
+      (let [cmds {::mult.spec/cmd-open {::mult.editor.core/cmd-id ":cljctools.mult.spec/cmd-open"}
+                  ::mult.spec/cmd-ping {::mult.editor.core/cmd-id ":cljctools.mult.spec/cmd-ping"}
+                  ::mult.spec/cmd-eval {::mult.editor.core/cmd-id ":cljctools.mult.spec/cmd-eval"}}]
+        (doseq [k (keys cmds)] (s/assert ::mult.spec/cmd k))
+        (mult.editor.core/register-commands*
+         editor
+         {::mult.editor.core/cmds cmds
+          ::mult.editor.spec/cmd| (::mult.editor.spec/cmd| @editor)}))
 
-                             range (vscode.Range.
-                                    (.positionAt document 0)
-                                    (.positionAt document (count text))
-                                    #_(.positionAt document (- (count text) 1)))]
-                         #js [(.. vscode -TextEdit (delete (.validateRange document range)))
-                              (.. vscode -TextEdit (insert (.positionAt document 0) text-formatted))]))})))
-      (mult.editor.core/register-commands*
-       editor
-       {::mult.editor.core/cmds {::mult.spec/cmd-open {::mult.editor.core/cmd-id ":cljctools.mult.spec/cmd-open"}
-                                 ::mult.spec/cmd-ping {::mult.editor.core/cmd-id ":cljctools.mult.spec/cmd-ping"}
-                                 ::mult.spec/cmd-eval {::mult.editor.core/cmd-id ":cljctools.mult.spec/cmd-eval"}}
-        ::mult.editor.spec/cmd| (::mult.editor.spec/cmd| @editor)})
-      (mult.editor.core/register-commands*
-       editor
-       {::mult.editor.core/cmds {::edit.process.spec/op-format-current-form {::mult.editor.core/cmd-id ":cljctools.edit.process.spec/op-format-current-form"}}
-        ::mult.editor.spec/cmd| (::mult.editor.spec/cmd| @editor)})
+      (let [cmds {::mult.edit.spec/cmd-format-current-form {::mult.editor.core/cmd-id ":cljctools.mult.edit.spec/cmd-format-current-form"}}]
+        (doseq [k (keys cmds)] (s/assert ::mult.edit.spec/cmd k))
+        (mult.editor.core/register-commands*
+         editor
+         {::mult.editor.core/cmds cmds
+          ::mult.editor.spec/cmd| (::mult.editor.spec/cmd| @editor)}))
+
       (tap (::mult.editor.spec/cmd|mult @editor) (::mult.spec/cmd| @cljctools-mult))
-      (tap (::mult.editor.spec/evt|mult @editor) (::mult.spec/op| @cljctools-mult))
-      (tap (::mult.editor.spec/cmd|mult @editor) (::edit.process.spec/op| @edit-process))
-      (tap (::mult.editor.spec/evt|mult @editor) (::edit.process.spec/op| @edit-process)))))
+      (tap (::mult.editor.spec/evt|mult @editor) (::mult.spec/ops| @cljctools-mult))
+      (tap (::mult.editor.spec/cmd|mult @editor) (::mult.edit.spec/cmd| @edit))
+      (tap (::mult.editor.spec/evt|mult @editor) (::mult.edit.spec/ops| @edit)))))
 
 (defn deactivate
   []
   (go
-    (let [{:keys [::editor ::cljctools-mult ::edit-process]} @registryA]
-      (when (and editor cljctools-mult edit-process)
+    (let [{:keys [::editor ::cljctools-mult ::edit]} @registryA]
+      (when (and editor cljctools-mult edit)
         (mult.protocols/release* cljctools-mult)
-        (edit.process.protocols/release* edit-process)
+        (mult.edit.protocols/release* edit)
         (mult.editor.protocols/release* editor)
-        (swap! registryA dissoc ::editor ::edit-process ::mult)))))
+        (swap! registryA dissoc ::editor ::edit ::mult)))))
 
 (def exports #js {:activate (fn [context]
                               (println ::activate)

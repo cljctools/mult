@@ -11,14 +11,6 @@
    [goog.string :refer [format]]
    [clojure.spec.alpha :as s]
 
-   [rewrite-clj.zip :as z]
-   [rewrite-clj.parser :as p]
-   [rewrite-clj.node :as n]
-   [rewrite-clj.paredit]
-
-   [cljctools.mult.spec :as mult.spec]
-   [cljctools.edit.process.spec :as edit.process.spec]
-
    [cljctools.mult.editor.protocols :as mult.editor.protocols]
    [cljctools.mult.editor.spec :as mult.editor.spec]))
 
@@ -55,13 +47,7 @@
 (s/def ::cmd-id string?)
 (s/def ::cmd (s/keys :req [::cmd-id]))
 
-(s/def ::cmds (s/or
-               :mult-cmds
-               (s/map-of ::mult.spec/cmd ::cmd)
-
-               :edit-process-cmds
-               (s/map-of ::edit.process.spec/op ::cmd)))
-
+(s/def ::cmds (s/map-of keyword? ::cmd))
 
 (s/def ::register-commands-opts (s/keys :req [::cmds
                                               ::mult.editor.spec/cmd|]

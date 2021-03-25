@@ -37,12 +37,16 @@
                ::cmd-ping
                ::cmd-eval})
 
-(s/def ::op| ::channel)
-(s/def ::op #{::op-ping
-              ::op-eval
-              ::op-update-ui-state
-              ::op-did-change-active-text-editor
-              ::op-select-tab})
+(s/def ::ops| ::channel)
+(s/def ::ops #{::op-ping
+               ::op-eval
+               ::op-update-ui-state
+               ::op-did-change-active-text-editor
+               ::op-select-tab})
+
+(s/def ::op (s/merge
+             ::cmd
+             ::ops))
 
 (s/def ::eval-result (s/nilable string?))
 (s/def ::eval-err (s/nilable string?))

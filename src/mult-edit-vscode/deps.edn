@@ -1,0 +1,5 @@
+{:paths ["src"]
+ :deps {github.clj-commons/rewrite-clj {}
+        cljfmt/cljfmt {}
+        github.cljctools/edit {}
+        github.cljctools/mult-edit-meta {}}}

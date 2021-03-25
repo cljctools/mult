@@ -1,2 +1,2 @@
 {:paths ["src"]
- :deps {github.cljctools/mult-nrepl-meta {:local/root  "../mult-nrepl-meta"}}}
+ :deps {github.cljctools/mult-nrepl-meta {}}}
