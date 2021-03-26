@@ -19,6 +19,8 @@
    [rewrite-clj.node.protocols :as node]
    [rewrite-clj.zip.base :as base]
    [rewrite-clj.zip.move :as m]
+   [rewrite-clj.custom-zipper.core :as zraw]
+   [rewrite-clj.zip.findz]
    [rewrite-clj.paredit]
    [cljfmt.core]
 
@@ -109,7 +111,18 @@
                         cursor (.. text-editor -selection -active) ; is zero based
                         cursor-position [(inc (. cursor -line)) (inc (. cursor -character))]
                         zloc (z/of-string text {:track-position? true})
-                        zloc-current (z/find-last-by-pos zloc cursor-position)
+                        p? (constantly true)
+
+                        zloc-current
+                        (->> (sequence
+                              (comp
+                               (take-while identity)
+                               (take-while (complement m/end?))
+                               (filter #(and (p? %)
+                                             (rewrite-clj.zip.findz/position-in-range? % cursor-position))))
+                              (iterate zraw/next zloc))
+                             last)
+
                         [start end] (z/position-span zloc-current)
 
                         new-selection (vscode.Selection.
@@ -167,21 +180,23 @@
                 {:color "#0278ae" #_"#07689f" #_"#3282b8" #_"#51c2d5"})))
 
           decoration-options
-          (->> zloc
-               (iterate m/next)
-               (take-while identity)
-               (take-while (complement m/end?))
-               (filter (fn [zloc-current]
-                         (when (= :keyword (node/node-type (-> zloc-current z/node)))
-                           #_(println (z/string zloc)))
-                         #_(println (-> zloc z/node n/keyword-node?))
-                         (= :keyword (node/node-type (-> zloc-current z/node)))
-                         #_(= (base/tag zloc) :keyword)))
-               (mapv (fn [zloc-current]
-                       (let [[start end] (z/position-span zloc-current)]
-                         {:range (vscode.Range.
-                                  (vscode.Position. (dec (first start)) (dec (second start)))
-                                  (vscode.Position. (dec (first end)) (dec (second end))))}))))]
+
+          (into []
+                (comp
+                 (take-while identity)
+                 (take-while (complement m/end?))
+                 (filter (fn [zloc-current]
+                           (when (= :keyword (node/node-type (-> zloc-current z/node)))
+                             #_(println (z/string zloc)))
+                           #_(println (-> zloc z/node n/keyword-node?))
+                           (= :keyword (node/node-type (-> zloc-current z/node)))
+                           #_(= (base/tag zloc) :keyword)))
+                 (map (fn [zloc-current]
+                        (let [[start end] (z/position-span zloc-current)]
+                          {:range (vscode.Range.
+                                   (vscode.Position. (dec (first start)) (dec (second start)))
+                                   (vscode.Position. (dec (first end)) (dec (second end))))}))))
+                (iterate m/next zloc))]
       (.. text-editor
           (setDecorations
            text-editor-decoration-type
