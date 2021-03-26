@@ -90,6 +90,7 @@
          (fn [text-document-event]
            (let [document (. text-document-event -document)
                  content-changes (. text-document-event -contentChanges)]
+             #_(println ::onDidChangeTextDocument)
              (do nil)))))
 
     (go
@@ -173,31 +174,79 @@
     (let [text (.. text-editor -document (getText))
           zloc (z/of-string text {:track-position? true})
 
-          text-editor-decoration-type
+          decoration-type-keywords
           (.. vscode -window
               (createTextEditorDecorationType
                (clj->js
                 {:color "#0278ae" #_"#07689f" #_"#3282b8" #_"#51c2d5"})))
 
-          decoration-options
+          decoration-type-brackets-fn
+          (fn [color]
+            (.. vscode -window
+                (createTextEditorDecorationType
+                 (clj->js
+                  {:color color}))))
 
-          (into []
-                (comp
-                 (take-while identity)
-                 (take-while (complement m/end?))
-                 (filter (fn [zloc-current]
-                           (when (= :keyword (node/node-type (-> zloc-current z/node)))
-                             #_(println (z/string zloc)))
-                           #_(println (-> zloc z/node n/keyword-node?))
-                           (= :keyword (node/node-type (-> zloc-current z/node)))
-                           #_(= (base/tag zloc) :keyword)))
-                 (map (fn [zloc-current]
-                        (let [[start end] (z/position-span zloc-current)]
-                          {:range (vscode.Range.
-                                   (vscode.Position. (dec (first start)) (dec (second start)))
-                                   (vscode.Position. (dec (first end)) (dec (second end))))}))))
-                (iterate m/next zloc))]
+          decoration-type-brackets
+          [(decoration-type-brackets-fn "#2a9d8f")
+           (decoration-type-brackets-fn "#e9c46a")
+           (decoration-type-brackets-fn "#e76f51")
+           (decoration-type-brackets-fn "#00b4d8")]
+
+          node-typesA (atom {})
+          tagsA (atom {})
+
+          decoration-options-keywords
+          (transient [])
+
+          decoration-options-brackets
+          (mapv
+           #(transient [])
+           decoration-type-brackets)
+
+          stepA (atom 0)
+
+          zlocs (sequence
+                 (comp
+                  (take-while identity)
+                  (take-while (complement m/end?)))
+                 (iterate m/next zloc))]
+      (doseq [zloc-current zlocs]
+        (swap! node-typesA update-in [(node/node-type (-> zloc-current z/node))] (fnil inc 0))
+        (swap! tagsA update-in [(base/tag zloc-current)] (fnil inc 0))
+
+        #_(println (-> zloc z/node n/keyword-node?))
+        #_(= (base/tag zloc) :keyword)
+        #_(println (z/string zloc))
+
+        (when (= :keyword (node/node-type (-> zloc-current z/node)))
+          (let [[start end] (z/position-span zloc-current)]
+            (conj! decoration-options-keywords
+                   {:range (vscode.Range.
+                            (dec (first start)) (dec (second start))
+                            (dec (first end)) (dec (second end)))})))
+
+        (when (= :seq (node/node-type (-> zloc-current z/node)))
+          (let [[start end] (z/position-span zloc-current)
+                decoration-options-bracket (get decoration-options-brackets (mod @stepA (count decoration-type-brackets)))]
+            (swap! stepA inc)
+            (conj! decoration-options-bracket
+                   {:range (vscode.Range.
+                            (dec (first start)) (dec (second start))
+                            (dec (first start)) (second start))})
+            (conj! decoration-options-bracket
+                   {:range (vscode.Range.
+                            (dec (first end)) (dec (second end))
+                            (dec (first end)) (dec (dec (second end))))}))))
+
+      #_(println @node-typesA)
+      #_(println @tagsA)
       (.. text-editor
           (setDecorations
-           text-editor-decoration-type
-           (clj->js decoration-options))))))
+           decoration-type-keywords
+           (clj->js (persistent! decoration-options-keywords))))
+      (doseq [index (range 0 (count decoration-type-brackets))]
+        (.. text-editor
+            (setDecorations
+             (get decoration-type-brackets index)
+             (clj->js (persistent!  (get decoration-options-brackets index)))))))))

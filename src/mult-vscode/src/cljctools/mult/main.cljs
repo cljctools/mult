@@ -33,6 +33,9 @@
 
 (do (clojure.spec.alpha/check-asserts true))
 
+#_(foo)
+#_(foo)
+
 (defonce ^:private registryA (atom {}))
 
 (defn activate
