@@ -36,6 +36,7 @@
 
 (declare
  register-formatter
+ register-keypress
  update-decorations)
 
 (s/def ::create-opts (s/keys :req []
@@ -77,6 +78,7 @@
                      ::mult.edit.spec/evt|mult evt|mult}))
 
     (register-formatter)
+    (register-keypress context)
 
     (update-decorations (.. vscode -window -activeTextEditor))
 
@@ -142,6 +144,24 @@
             (recur)))))
     edit))
 
+
+(defn register-keypress
+  [context]
+  (let [disposable
+        (.. vscode -commands
+            (registerCommand
+             "type"
+             (fn [args]
+
+               (when (= (. args -text) "\n")
+                 (println ::enter-pressed))
+
+               (.. vscode -commands
+                   (executeCommand
+                    "default:type"
+                    args
+                    #_(clj->js {:text (. args -text)}))))))]
+    (.. context -subscriptions (push disposable))))
 
 (defn register-formatter
   []
