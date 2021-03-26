@@ -10,11 +10,11 @@ clojure(script) extension for vscode
 
 ## goal
 
-- multiple apps, multiple repls: seamlessly switch connections for evaluation as we navigate files in source tree
+- multiple apps, multiple repls: connections are seamlessly selected for evaluation as we navigate files in source tree
 - config driven: no connection sequences, jack-ins - define repls in mult.edn file, extension lazy-connects when needed
 - a namespace and repls: tab is clear, shows current namespace and repls we can evalutate in
 - tabs like browser pages: it's one tab app, but we can open multiple, just like in the browser
-- simple: indent-only code formatting, colors and seamsless config driven evaluation
+- simple: indent-only code formatting, colors
 - no linting: shouldn't be part of writing code, it's a creative process
 - no store: download/install .vsix file from github releases, notify the user about updates
 - listen to Jesus and move the mountain: drive development of http-repl - remote evaluation should be an HTTP server https://github.com/cljctools/http-repl
