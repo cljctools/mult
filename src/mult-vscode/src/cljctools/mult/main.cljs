@@ -40,38 +40,37 @@
 
 (defn activate
   [context]
-  (go
-    (let [editor (mult.editor.core/create-editor context {})
-          config (<! (mult.editor.protocols/read-mult-edn* editor))
-          edit (mult.edit.core/create context {})
-          cljctools-mult (mult.core/create {::mult.spec/config config
-                                            ::mult.edit.spec/edit edit
-                                            ::mult.editor.spec/editor editor})]
-      (swap! registryA merge {::editor editor
-                              ::cljctools-mult cljctools-mult
-                              ::edit edit})
+  (let [editor (mult.editor.core/create-editor context {})]
+    ; commands should be registered before activation function returns
+    (let [cmds {::mult.spec/cmd-open {::mult.editor.core/cmd-id "cljctools.mult.spec/cmd-open"}
+                ::mult.spec/cmd-ping {::mult.editor.core/cmd-id "cljctools.mult.spec/cmd-ping"}
+                ::mult.spec/cmd-eval {::mult.editor.core/cmd-id "cljctools.mult.spec/cmd-eval"}}]
+      (doseq [k (keys cmds)] (s/assert ::mult.spec/cmd k))
+      (mult.editor.core/register-commands*
+       editor
+       {::mult.editor.core/cmds cmds
+        ::mult.editor.spec/cmd| (::mult.editor.spec/cmd| @editor)}))
+    (let [cmds {::mult.edit.spec/cmd-format-current-form {::mult.editor.core/cmd-id "cljctools.mult.edit.spec/cmd-format-current-form"}
+                ::mult.edit.spec/cmd-select-current-form {::mult.editor.core/cmd-id "cljctools.mult.edit.spec/cmd-select-current-form"}}]
+      (doseq [k (keys cmds)] (s/assert ::mult.edit.spec/cmd k))
+      (mult.editor.core/register-commands*
+       editor
+       {::mult.editor.core/cmds cmds
+        ::mult.editor.spec/cmd| (::mult.editor.spec/cmd| @editor)}))
+    (go
+      (let [config (<! (mult.editor.protocols/read-mult-edn* editor))
+            edit (mult.edit.core/create context {})
+            cljctools-mult (mult.core/create {::mult.spec/config config
+                                              ::mult.edit.spec/edit edit
+                                              ::mult.editor.spec/editor editor})]
+        (swap! registryA merge {::editor editor
+                                ::cljctools-mult cljctools-mult
+                                ::edit edit})
 
-      (let [cmds {::mult.spec/cmd-open {::mult.editor.core/cmd-id ":cljctools.mult.spec/cmd-open"}
-                  ::mult.spec/cmd-ping {::mult.editor.core/cmd-id ":cljctools.mult.spec/cmd-ping"}
-                  ::mult.spec/cmd-eval {::mult.editor.core/cmd-id ":cljctools.mult.spec/cmd-eval"}}]
-        (doseq [k (keys cmds)] (s/assert ::mult.spec/cmd k))
-        (mult.editor.core/register-commands*
-         editor
-         {::mult.editor.core/cmds cmds
-          ::mult.editor.spec/cmd| (::mult.editor.spec/cmd| @editor)}))
-
-      (let [cmds {::mult.edit.spec/cmd-format-current-form {::mult.editor.core/cmd-id ":cljctools.mult.edit.spec/cmd-format-current-form"}
-                  ::mult.edit.spec/cmd-select-current-form {::mult.editor.core/cmd-id ":cljctools.mult.edit.spec/cmd-select-current-form"}}]
-        (doseq [k (keys cmds)] (s/assert ::mult.edit.spec/cmd k))
-        (mult.editor.core/register-commands*
-         editor
-         {::mult.editor.core/cmds cmds
-          ::mult.editor.spec/cmd| (::mult.editor.spec/cmd| @editor)}))
-
-      (tap (::mult.editor.spec/cmd|mult @editor) (::mult.spec/cmd| @cljctools-mult))
-      (tap (::mult.editor.spec/evt|mult @editor) (::mult.spec/ops| @cljctools-mult))
-      (tap (::mult.editor.spec/cmd|mult @editor) (::mult.edit.spec/cmd| @edit))
-      (tap (::mult.editor.spec/evt|mult @editor) (::mult.edit.spec/ops| @edit)))))
+        (tap (::mult.editor.spec/cmd|mult @editor) (::mult.spec/cmd| @cljctools-mult))
+        (tap (::mult.editor.spec/evt|mult @editor) (::mult.spec/ops| @cljctools-mult))
+        (tap (::mult.editor.spec/cmd|mult @editor) (::mult.edit.spec/cmd| @edit))
+        (tap (::mult.editor.spec/evt|mult @editor) (::mult.edit.spec/ops| @edit))))))
 
 (defn deactivate
   []
