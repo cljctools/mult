@@ -6,7 +6,7 @@
 	"publisher": "github-cljctools",
 	"repository": "https://github.com/cljctools/mult",
 	"engines": {
-		"vscode": "*"
+		"vscode": "^1.30.0"
 	},
 	"activationEvents": [
 		"onLanguage:clojure",
