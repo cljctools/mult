@@ -54,8 +54,15 @@
         evt| (chan (sliding-buffer 10))
         evt|mult (mult evt|)
 
-        zlocA (atom (z/of-string clj-string))
+        text-documentsA (atom {})
 
+        create-text-document-state-fn
+        (fn [text-document]
+          (let [text (. text-document (getText))
+                text-document-stateA
+                (atom {::zloc (z/of-string text {:track-position? true})})]
+            (swap! text-documentsA assoc text-document text-document-stateA)))
+        
         edit
         ^{:type ::mult.edit.spec/edit}
         (reify
@@ -71,7 +78,7 @@
     (reset! stateA (merge
                     opts
                     {:opts opts
-                     ::zlocA zlocA
+                     ::text-documentsA text-documentsA
                      ::mult.edit.spec/ops| ops|
                      ::mult.edit.spec/cmd| cmd|
                      ::mult.edit.spec/evt| evt|
@@ -80,12 +87,15 @@
     (register-formatter)
     (register-keypress context)
 
-    (update-decorations (.. vscode -window -activeTextEditor))
+    #_(update-decorations (.. vscode -window -activeTextEditor))
 
     (.. vscode -window
         (onDidChangeActiveTextEditor
          (fn [text-editor]
-           (update-decorations text-editor))))
+           #_(println :change (.. text-editor -document -languageId))
+           #_(when text-editor
+               (println :change (.. text-editor -document -id)))
+           #_(update-decorations text-editor))))
 
     (.. vscode -workspace
         (onDidChangeTextDocument
@@ -94,6 +104,21 @@
                  content-changes (. text-document-event -contentChanges)]
              #_(println ::onDidChangeTextDocument)
              (do nil)))))
+
+    (.. vscode -workspace
+        (onDidOpenTextDocument
+         (fn [text-document]
+           (when (= "clojure" (. text-document -languageId))
+             (println ::open (. text-document -fileName))
+             (let [text-document-stateA
+                   (create-text-document-state-fn text-document)])))))
+
+    (.. vscode -workspace
+        (onDidCloseTextDocument
+         (fn [text-document]
+           (when (= "clojure" (. text-document -languageId))
+             (println ::close (. text-document -fileName))
+             (swap! text-documentsA dissoc text-document)))))
 
     (go
       (loop []
@@ -110,10 +135,14 @@
 
                 ::mult.edit.spec/cmd-select-current-form
                 (when-let [text-editor (.. vscode -window -activeTextEditor)]
-                  (let [text (.. text-editor -document (getText))
+                  (when-not (get @text-documentsA (. text-editor -document))
+                    (create-text-document-state-fn (. text-editor -document)))
+                  (let [text-document-stateA (get @text-documentsA (. text-editor -document))
+                        ;; text (.. text-editor -document (getText))
+                        ;; zloc (z/of-string text {:track-position? true})
+                        zloc (get @text-document-stateA ::zloc)
                         cursor (.. text-editor -selection -active) ; is zero based
                         cursor-position [(inc (. cursor -line)) (inc (. cursor -character))]
-                        zloc (z/of-string text {:track-position? true})
                         p? (constantly true)
 
                         zloc-current
@@ -143,6 +172,8 @@
               (do nil))
             (recur)))))
     edit))
+
+
 
 
 (defn register-keypress
