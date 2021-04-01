@@ -23,7 +23,6 @@
                                                    :tag "v1.0.579-alpha"}
 
                    github.cljctools/edit {:local/root  "../edit/src/edit"}
-                   github.cljctools/edit-db {:local/root  "../edit/src/edit-db"}
 
                    github.cljctools/mult {:local/root  "./src/mult"}
                    github.cljctools/mult-meta {:local/root  "./src/mult-meta"}

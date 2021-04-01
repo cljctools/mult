@@ -2,5 +2,4 @@
  :deps {github.clj-commons/rewrite-clj {}
         cljfmt/cljfmt {}
         github.cljctools/edit {}
-        github.cljctools/edit-db {}
         github.cljctools/mult-edit-meta {}}}
