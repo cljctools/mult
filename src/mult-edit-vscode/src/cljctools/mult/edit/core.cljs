@@ -137,46 +137,43 @@
 
                 ::mult.edit.spec/cmd-select-current-form
                 (when-let [text-editor (.. vscode -window -activeTextEditor)]
-                  (let [text (.. text-editor -document (getText))
-                        cursor (.. text-editor -selection -active)
-                        cursor-position [(. cursor -line) (. cursor -character)]
-                        [string-left string-right] (edit.string/split-at-position text cursor-position)
-                        data (edit.scan/scan string-right [])]
-                    (println data))
-                  
-                  #_(when-not (get @text-documentsA (. text-editor -document))
-                      (create-text-document-state-fn (. text-editor -document)))
-                  
-
-                  #_(time
-                     (let [text-document-stateA (get @text-documentsA (. text-editor -document))
+                  #_(let [text (.. text-editor -document (getText))
+                          cursor (.. text-editor -selection -active)
+                          cursor-position [(. cursor -line) (. cursor -character)]
+                          [string-left string-right] (edit.string/split-at-position text cursor-position)
+                          data (edit.scan/scan string-right [])]
+                      (println data))
+                  (when-not (get @text-documentsA (. text-editor -document))
+                    (create-text-document-state-fn (. text-editor -document)))
+                  (time
+                   (let [text-document-stateA (get @text-documentsA (. text-editor -document))
                         ;; text (.. text-editor -document (getText))
                         ;; zloc (z/of-string text {:track-position? true})
-                           zloc (get @text-document-stateA ::zloc)
-                           cursor (.. text-editor -selection -active) ; is zero based
-                           cursor-position [(inc (. cursor -line)) (inc (. cursor -character))]
-                           p? (constantly true)
+                         zloc (get @text-document-stateA ::zloc)
+                         cursor (.. text-editor -selection -active) ; is zero based
+                         cursor-position [(inc (. cursor -line)) (inc (. cursor -character))]
+                         p? (constantly true)
 
-                           zloc-current
-                           (->> (sequence
-                                 (comp
-                                  (take-while identity)
-                                  (take-while (complement m/end?))
-                                  (filter #(and (p? %)
-                                                (rewrite-clj.zip.findz/position-in-range? % cursor-position))))
-                                 (iterate zraw/next zloc))
-                                last)
+                         zloc-current
+                         (->> (sequence
+                               (comp
+                                (take-while identity)
+                                (take-while (complement m/end?))
+                                (filter #(and (p? %)
+                                              (rewrite-clj.zip.findz/position-in-range? % cursor-position))))
+                               (iterate zraw/next zloc))
+                              last)]
+                     (when zloc-current
+                       (let [[start end] (z/position-span zloc-current)
 
-                           [start end] (z/position-span zloc-current)
-
-                           new-selection (vscode.Selection.
-                                          (vscode.Position. (dec (first end)) (dec (second end)))
-                                          (vscode.Position. (dec (first start)) (dec (second start))))]
-                       (set! (.-selection text-editor) new-selection)
-                       #_(do
-                           (println cursor-position)
-                           (println (z/string zloc-current))
-                           (println (z/position-span zloc-current))))))
+                             new-selection (vscode.Selection.
+                                            (vscode.Position. (dec (first end)) (dec (second end)))
+                                            (vscode.Position. (dec (first start)) (dec (second start))))]
+                         (set! (.-selection text-editor) new-selection)))
+                     #_(do
+                         (println cursor-position)
+                         (println (z/string zloc-current))
+                         (println (z/position-span zloc-current))))))
 
                 (do ::ignore-other-ops))
 
@@ -184,9 +181,6 @@
               (do nil))
             (recur)))))
     edit))
-
-
-
 
 (defn register-keypress
   [context]
@@ -225,7 +219,8 @@
                                 (.positionAt document (count text))
                                 #_(.positionAt document (- (count text) 1)))]
                      #js [(.. vscode -TextEdit (delete (.validateRange document range)))
-                          (.. vscode -TextEdit (insert (.positionAt document 0) text-formatted))]))}))))
+                          (.. vscode -TextEdit (insert (.positionAt document 0) text-formatted))]
+                     ))}))))
 
 
 (defn update-decorations
