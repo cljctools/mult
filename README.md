@@ -7,6 +7,7 @@ clojure(script) extension for vscode
 - [rationale](./docs/design.md#rationale)
 - [goal](#goal)
 - [development](#development)
+- [design](./docs/design.md)
 
 ## goal
 
