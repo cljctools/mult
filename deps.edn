@@ -25,6 +25,7 @@
                    github.cljctools/edit {:local/root  "../edit/src/edit"}
 
                    github.cljctools.cljctools/nrepl-client {:local/root  "../cljctools/src/nrepl-client"}
+                   github.cljctools.bittorrent/bencode {:local/root  "../bittorrent/src/bencode"}
                    github.cljctools.cljctools/socket-nodejs {:local/root  "../cljctools/src/socket-nodejs"}
 
                    github.cljctools/mult {:local/root  "./src/mult"}
