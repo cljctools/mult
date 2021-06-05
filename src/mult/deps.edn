@@ -3,5 +3,4 @@
         github.cljctools/edit {}
         github.cljctools/mult-meta {}
         github.cljctools/mult-editor-meta {}
-        github.cljctools/mult-nrepl-meta {}
         github.cljctools/mult-edit-meta {}}}

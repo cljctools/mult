@@ -2,7 +2,7 @@
   (:require
    [clojure.spec.alpha :as s]
    [cljctools.mult.protocols :as mult.protocols]
-   [cljctools.mult.nrepl.spec :as mult.nrepl.spec]))
+   [cljctools.nrepl-client.spec :as nrepl-client.spec]))
 
 (s/def ::channel #?(:clj #(instance? clojure.core.async.impl.channels.ManyToManyChannel %)
                     :cljs #(instance? cljs.core.async.impl.channels/ManyToManyChannel %)))
@@ -22,7 +22,7 @@
                         ::list? list?))
 
 (s/def ::nrepl-meta (s/merge
-                     ::mult.nrepl.spec/create-nrepl-connection-opts
+                     ::nrepl-client.spec/create-nrepl-connection-opts
                      (s/keys :req [::nrepl-id
                                    ::include-file?])))
 

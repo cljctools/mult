@@ -24,10 +24,11 @@
 
                    github.cljctools/edit {:local/root  "../edit/src/edit"}
 
+                   github.cljctools.cljctools/nrepl-client {:local/root  "../cljctools/src/nrepl-client"}
+                   github.cljctools.cljctools/socket-nodejs {:local/root  "../cljctools/src/socket-nodejs"}
+
                    github.cljctools/mult {:local/root  "./src/mult"}
                    github.cljctools/mult-meta {:local/root  "./src/mult-meta"}
-                   github.cljctools/mult-nrepl-meta {:local/root  "./src/mult-nrepl-meta"}
-                   github.cljctools/mult-nrepl-nodejs {:local/root  "./src/mult-nrepl-nodejs"}
                    github.cljctools/mult-editor-meta {:local/root  "./src/mult-editor-meta"}
                    github.cljctools/mult-editor-vscode {:local/root  "./src/mult-editor-vscode"}
                    github.cljctools/mult-ui {:local/root  "./src/mult-ui"}
