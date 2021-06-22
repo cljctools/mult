@@ -16,10 +16,9 @@
    [cljctools.mult.editor.spec :as mult.editor.spec]
    [cljctools.mult.editor.protocols :as mult.editor.protocols]
 
-   [cljctools.socket.spec :as socket.spec]
-   [cljctools.socket.protocols :as socket.protocols]
-   [cljctools.socket.core :as socket.core]
-   [cljctools.nrepl-client.core :as nrepl-client.core]
+   [cljctools.mult.nrepl.protocols :as mult.nrepl.protocols]
+   [cljctools.mult.nrepl.spec :as mult.nrepl.spec]
+   [cljctools.mult.nrepl.core :as mult.nrepl.core]
 
    [cljctools.mult.spec :as mult.spec]
    [cljctools.mult.protocols :as mult.protocols]
