@@ -1,6 +1,0 @@
-{:paths ["src"]
- :deps {cljfmt/cljfmt {}
-        github.cljctools/mult {}
-        github.cljctools/mult-nrepl-nodejs {}
-        github.cljctools/mult-editor-vscode {}
-        github.cljctools/mult-edit-vscode {}}}

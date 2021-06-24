@@ -1,0 +1,48 @@
+{:paths ["src" "resources"]
+ :mvn/repos {"central" {:url "https://repo1.maven.org/maven2/"}
+             "clojars" {:url "https://clojars.org/repo/"}}
+ :deps
+ {}
+
+ :aliases
+ {:core
+  {:extra-deps {org.clojure/clojure         {:mvn/version "1.10.3"}
+                org.clojure/clojurescript {:mvn/version "1.10.758"}
+                org.clojure/spec.alpha {:mvn/version "0.2.187"}
+                org.clojure/core.async {:mvn/version "1.1.587"}}
+
+   :override-deps {github.clj-commons/rewrite-clj {:git/url "https://github.com/clj-commons/rewrite-clj"
+                                                   :sha "db337b393ac527abe4015854d706ece2a9daeed2"
+                                                   :tag "v1.0.579-alpha"}
+                   github.borkdude/sci {:git/url "https://github.com/borkdude/sci"
+                                        :sha "05f2fe44445d9b21cb0b50d6bac455ca5eea90ec"
+                                        :tag "v0.2.4"}}}
+
+  :mult-vscode
+  {:extra-deps {cljfmt/cljfmt {:mvn/version "0.7.0"
+                               :exclusions [rewrite-clj/rewrite-clj
+                                            rewrite-cljs/rewrite-cljs]}
+                github.clj-commons/rewrite-clj {}
+                github.borkdude/sci {}
+                github.cljctools/edit {:local/root  "../../cljctools/edit"}
+
+                github.cljctools.mult/mult {:local/root  "../mult"}
+                github.cljctools.mult/mult-vscode {:local/root "../mult-vscode"}}}
+
+  :mult-ui-vscode
+  {:extra-deps {reagent/reagent {:mvn/version "1.0.0-rc1" :exclusions [cljsjs/react cljsjs/react-dom]}
+                metosin/reitit {:mvn/version "0.5.12"}
+                metosin/reitit-spec {:mvn/version "0.5.12"}
+                metosin/reitit-frontend {:mvn/version "0.5.12"}
+                ;; Just for pretty printting the match
+                fipp {:mvn/version "0.6.23"}
+
+                github.cljctools.mult/mult {:local/root  "../mult"}
+                github.cljctools.mult/mult-ui {:local/root  "../mult-ui"}
+                github.cljctools.mult/mult-ui-vscode {:local/root "../mult-ui-vscode"}}}
+
+  :shadow-cljs
+  {:extra-deps {thheller/shadow-cljs {:mvn/version "2.11.7"}
+                nrepl/nrepl {:mvn/version "0.8.3"}
+                cider/cider-nrepl {:mvn/version "0.25.5"}
+                cider/piggieback {:mvn/version "0.5.2"}}}}}
