@@ -39,11 +39,11 @@
 				"title": "Eval current form"
 			},
 			{
-				"command": "cljctools.mult.edit.spec/cmd-format-current-form",
+				"command": "cljctools.mult.spec/cmd-format-current-form",
 				"title": "Format current form"
 			},
 			{
-				"command": "cljctools.mult.edit.spec/cmd-select-current-form",
+				"command": "cljctools.mult.spec/cmd-select-current-form",
 				"title": "Select current form"
 			}
 		],
@@ -62,12 +62,12 @@
 				"when": "editorTextFocus && editorLangId == 'clojure' && !editorReadOnly && !hasOtherSuggestions && !inSnippetMode && !suggestWidgetVisible"
 			},
 			{
-				"command": "cljctools.mult.edit.spec/cmd-format-current-form",
+				"command": "cljctools.mult.spec/cmd-format-current-form",
 				"key": "ctrl+alt+m ctrl+alt+f",
 				"when": "editorTextFocus && editorLangId == 'clojure' && !editorReadOnly && !hasOtherSuggestions && !inSnippetMode && !suggestWidgetVisible"
 			},
 			{
-				"command": "cljctools.mult.edit.spec/cmd-select-current-form",
+				"command": "cljctools.mult.spec/cmd-select-current-form",
 				"key": "ctrl+w",
 				"when": "editorTextFocus && editorLangId == 'clojure' && !editorReadOnly && !hasOtherSuggestions && !inSnippetMode && !suggestWidgetVisible"
 			}

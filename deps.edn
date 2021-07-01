@@ -26,8 +26,8 @@
                 github.borkdude/sci {}
                 github.cljctools/edit {:local/root  "../../cljctools/edit"}
 
-                github.cljctools.mult/mult {:local/root  "../mult"}
-                github.cljctools.mult/mult-vscode {:local/root "../mult-vscode"}}}
+                github.cljctools.mult/mult {:local/root  "./mult"}
+                github.cljctools.mult/mult-vscode {:local/root "./mult-vscode"}}}
 
   :mult-ui-vscode
   {:extra-deps {reagent/reagent {:mvn/version "1.0.0-rc1" :exclusions [cljsjs/react cljsjs/react-dom]}
@@ -37,9 +37,9 @@
                 ;; Just for pretty printting the match
                 fipp {:mvn/version "0.6.23"}
 
-                github.cljctools.mult/mult {:local/root  "../mult"}
-                github.cljctools.mult/mult-ui {:local/root  "../mult-ui"}
-                github.cljctools.mult/mult-ui-vscode {:local/root "../mult-ui-vscode"}}}
+                github.cljctools.mult/mult {:local/root  "./mult"}
+                github.cljctools.mult/mult-ui {:local/root  "./mult-ui"}
+                github.cljctools.mult/mult-ui-vscode {:local/root "./mult-ui-vscode"}}}
 
   :shadow-cljs
   {:extra-deps {thheller/shadow-cljs {:mvn/version "2.11.7"}
