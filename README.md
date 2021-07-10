@@ -16,7 +16,7 @@ clojure(script) extension for vscode
 - tabs like browser pages: it's one tab app, but we can open multiple, just like in the browser
 - simple: indent-only code formatting, colors
 - no code linting, static analysis and other crotches: shouldn't be part of programming - writing code it's a creative process
-- no store and no binaries released with repo: only source code and source releases and building from source
+- no store and no binaries released with repo: only source code and build from source
 - listen to Jesus and move the mountain: drive development of http-repl - remote evaluation should be an HTTP server https://github.com/cljctools/http-repl
 
 ## rationale
