@@ -38,7 +38,7 @@ clojure(script) extension for vscode
   - Emacs + Cider
     - perfect, if you're into it
   - IntelliJ + Cursive
-    - ~~both are closed source~~, Cursive comes with conditions
+    - Cursive comes with conditions
   - VSCode + Calva
     - can be considered the current best option
     - VSCode can be considered the best open source editor
