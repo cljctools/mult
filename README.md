@@ -41,7 +41,7 @@ clojure(script) extension for vscode
     - Cursive comes with conditions
   - VSCode + Calva
     - can be considered the current best option
-    - VSCode can be considered the best open source editor
+    - VSCode is the undeniable best open source editor
     - Calva works perfectly, but is written in typescript
     - nodejs runtime is undesirable, but not a problem
 - what exactly mult's design and value is ? what's the trigger to bother at all?
