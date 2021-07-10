@@ -147,8 +147,8 @@
             {:pre [(s/assert ::mult.spec/eval-opts opts)]}
             (go
                 ;; lazy connect on eval, making it http request/response like
-                ;; if user wants to eval and app is down, the response will be 'not connected'
-                ;; once the app is up, evals will work
+                ;; if user wants to eval and program is down, the response will be 'not connected'
+                ;; once the program is up, evals will work
                 ;; so no need for reconnecting socket, the request-lazy connect-response is better
               (<! (mult.protocols/connect* this))
               (<! (initialize this))
