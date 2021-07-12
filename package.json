@@ -2,9 +2,6 @@
 	"name": "mult",
 	"description": "clojure/script extension",
 	"version": "0.0.0",
-	"license": "MIT",
-	"publisher": "github-cljctools",
-	"repository": "https://github.com/cljctools/mult",
 	"engines": {
 		"vscode": "^1.30.0"
 	},
