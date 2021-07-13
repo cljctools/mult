@@ -1,14 +1,8 @@
-# mult
+mult
 
 clojure(script) extension for vscode
 
-## content
-
-- [goal](#goal)
-- [rationale](#rationale)
-- [development](#development)
-
-## goal
+goal
 
 - multiple apps, multiple repls: connections are seamlessly selected for evaluation as we navigate files in source tree
 - config driven: no connection sequences, jack-ins, jack-ass - define repls in mult.edn file, extension lazy-connects when needed
@@ -19,7 +13,7 @@ clojure(script) extension for vscode
 - no store and no binaries released with repo: only source code and build from source
 - listen to Jesus and move the mountain: drive development of http-repl - remote evaluation should be an HTTP server https://github.com/cljctools/http-repl
 
-## rationale
+rationale
 
 - clojure(script) IDE experience is no minor issue - it's the thing between you and programs
 - the editor and the extension 
@@ -73,19 +67,17 @@ clojure(script) extension for vscode
   - again, an eval-able predicate in mult.edn is used to determine which file corresponds to which repl(s)
   - for shared files (used in both apps) the preference can be set in the config file, still allowing to manually select(pin) :tabapp or :extension (this is how existing extensions approach it)
 
-## development
+development
 
-- requires `git`, `nodejs`, `java`
+- requires git, nodejs, java
 
-```bash
 git clone https://github.com/cljctools/mult
 cd mult
 bash f dev # will run shadow-cljs :mult and :mult-ui builds
 
-```
-- press `F5`, it will open VSCode extension debug window with mult running
+- press F5, it will open VSCode extension debug window with mult running
 - to compile .vsix: 
-  - `bash f release`
-  - `bash f vsix`
-  - vsix can be installed: in VSCode open Extensions  ->  `...` -> `Install from VSIX...` and select the `mult.vsix` file
+  - bash f release
+  - bash f vsix
+  - vsix can be installed: in VSCode open Extensions  ->  ... -> Install from VSIX... and select the mult.vsix file
   - or via command line https://code.visualstudio.com/api/working-with-extensions/publishing-extension#packaging-extensions
