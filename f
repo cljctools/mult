@@ -24,7 +24,7 @@ compile(){
     shadow compile :mult-vscode :mult-ui-vscode
 }
 
-release(){
+build(){
     rm -rf resources/out
     npm i
     shadow release :mult-vscode :mult-ui-vscode

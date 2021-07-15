@@ -79,7 +79,7 @@ bash f dev # will run shadow-cljs :mult and :mult-ui builds
 
 - press F5, it will open VSCode extension debug window with mult running
 - to compile .vsix: 
-  - bash f release
+  - bash f build
   - bash f vsix
   - vsix can be installed: in VSCode open Extensions  ->  ... -> Install from VSIX... and select the mult.vsix file
   - or via command line https://code.visualstudio.com/api/working-with-extensions/publishing-extension#packaging-extensions
