@@ -12,6 +12,7 @@ goal
 - no code linting, static analysis and other crotches: shouldn't be part of programming - writing code it's a creative process
 - no store and no binaries released with repo: only source code and build from source
 - releases - no, commit hashses as points
+- updates - no update notifications
 - language - clojure
 - runtime - nodejs, browser
 - listen to Jesus and move the mountain: drive development of http-repl - remote evaluation should be an HTTP server https://github.com/cljctools/http-repl
