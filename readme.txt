@@ -14,9 +14,9 @@ goal
 - releases - no, commit hashses as points
 - updates - no update notifications
 - language - clojure
-- runtime - nodejs, browser
+- runtime - NodeJS, Browser
 - build - is done with one cli command, build tool - shadow-cljs
-- nodejs, JVM - if missing is downloaded into repo's dir for use by build
+- NodeJS, JVM - if missing is downloaded into repo's dir for use by build
 - listen to Jesus and move the mountain: drive development of http-repl - remote evaluation should be an HTTP server https://github.com/cljctools/http-repl
 
 rationale
@@ -43,7 +43,7 @@ rationale
     - can be considered the current best option
     - VSCode is the undeniable best open source editor
     - Calva works perfectly, but is written in typescript
-    - nodejs runtime is undesirable, but not a problem
+    - NodeJS runtime is undesirable, but not a problem
 - what exactly mult's design and value is ? what's the trigger to bother at all?
   - sometimes (rarely, but it happens), you run multiple apps that form a system
   - it's not an every-day thing, but when it happens, pain follows
@@ -75,7 +75,7 @@ rationale
 
 development
 
-- requires git, nodejs, java
+- requires git, NodeJS, java
 
 git clone https://github.com/cljctools/mult
 cd mult
