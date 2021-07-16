@@ -15,6 +15,8 @@ goal
 - updates - no update notifications
 - language - clojure
 - runtime - nodejs, browser
+- build - is done with one cli command, build tool - shadow-cljs
+- nodejs, JVM - if missing is downloaded into repo's dir for use by build
 - listen to Jesus and move the mountain: drive development of http-repl - remote evaluation should be an HTTP server https://github.com/cljctools/http-repl
 
 rationale
